@@ -258,6 +258,34 @@
 
 
 
+
+  async function applyCmsPage() {
+    const slug = (location.pathname.split('/').pop() || 'index.html').replace(/\.html$/i, '') || 'index';
+    const response = await fetch(
+      url + '/rest/v1/cms_pages?select=title,content,published&slug=eq.' + encodeURIComponent(slug) + '&published=eq.true&limit=1',
+      { headers }
+    );
+    if (!response.ok) throw new Error('Could not load CMS page.');
+    const rows = await response.json();
+    const page = rows?.[0];
+    if (!page) return;
+    const content = page.content || {};
+    const heroTitle = content.hero_title || content.hero?.title || page.title;
+    const intro = content.intro || content.hero?.description || content.description;
+    const hero = document.querySelector('.hero');
+    const heading = hero?.querySelector('h1');
+    const paragraph = hero?.querySelector('p');
+    if (heading && heroTitle) heading.textContent = heroTitle;
+    if (paragraph && intro) paragraph.textContent = intro;
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta && content.meta_description) meta.content = content.meta_description;
+    document.querySelectorAll('[data-cms-field]').forEach(element => {
+      const key = element.dataset.cmsField;
+      const value = content[key] ?? content.hero?.[key];
+      if (value !== undefined && value !== null && typeof value !== 'object') element.textContent = String(value);
+    });
+  }
+
   async function getMedia(pageSlug) {
     const response = await fetch(
       url + '/rest/v1/media?select=page_slug,sort_order,url,alt_text,title,active&active=eq.true&page_slug=eq.' + encodeURIComponent(pageSlug) + '&order=sort_order.asc',
