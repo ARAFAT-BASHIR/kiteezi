@@ -1081,101 +1081,20 @@
 
 
 <!-- =========================================================
-     TESTIMONIALS
+     GUEST REVIEWS
      ========================================================= -->
-
 <section class="section sand">
-
-  <div class="container">
-
-    <div class="section-head">
-
-      <div class="eyebrow">
-        Guest experience
-      </div>
-
-      <h2>
-        Built around the people who visit us.
-      </h2>
-
-    </div>
-
-
-    <div class="grid grid-3">
-
-
-      <div class="review">
-
-        <div class="stars">
-          ★★★★★
-        </div>
-
-        <h3>
-          Family-friendly days
-        </h3>
-
-        <p>
-          “A simple place to spend a full afternoon:
-          swimming, food and space for the children.”
-        </p>
-
-        <small>
-          Guest feedback • sample content
-        </small>
-
-      </div>
-
-
-      <div class="review">
-
-        <div class="stars">
-          ★★★★★
-        </div>
-
-        <h3>
-          School groups
-        </h3>
-
-        <p>
-          “The school swimming schedule is easy to coordinate
-          when the group details are sent in advance.”
-        </p>
-
-        <small>
-          School group feedback • sample content
-        </small>
-
-      </div>
-
-
-      <div class="review">
-
-        <div class="stars">
-          ★★★★★
-        </div>
-
-        <h3>
-          Celebrations
-        </h3>
-
-        <p>
-          “The gardens give us room to bring our own setup
-          while Kiteezi handles food and drinks.”
-        </p>
-
-        <small>
-          Event feedback • sample content
-        </small>
-
-      </div>
-
-
-    </div>
-
-  </div>
-
-</section>
-
+<div class="container">
+<div class="section-head"><div class="eyebrow">Guest experience</div><h2>What guests are saying.</h2><p>Reviews are submitted by guests and published after moderation.</p></div>
+<div id="public-reviews" class="grid grid-3">Loading reviews…</div>
+<div class="form-card" style="margin-top:28px;padding:24px;background:#fff;border-radius:16px">
+<h3>Leave a review</h3>
+<form id="reviewForm" class="form">
+<label>Name<input name="customer_name" required maxlength="120"></label>
+<label>Rating<select name="rating" required><option value="">Select</option><option value="5">5 — Excellent</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select></label>
+<label>Message<textarea name="message" required minlength="5" maxlength="2000"></textarea></label>
+<button class="btn btn-dark">Submit review</button><div id="reviewStatus" class="notice" hidden></div>
+</form></div></div></section>
 
 <!-- =========================================================
      LOCATION / CONTACT
