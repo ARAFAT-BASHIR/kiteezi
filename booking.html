@@ -1,530 +1,1330 @@
 <!doctype html>
-
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#0f5132">
+
   <title>Book Now | Kiteezi Recreational Center</title>
-  <meta name="description" content="Book swimming, sports, dining, events and other activities at Kiteezi Recreational Center.">
+
   <link rel="stylesheet" href="styles.css">
+
   <style>
-    .booking-wrap{max-width:980px;margin:0 auto}
+    .booking-wrap{max-width:1050px;margin:auto}
     .form-card{background:#fff;border-radius:18px;padding:28px;box-shadow:0 12px 35px rgba(0,0,0,.08)}
     .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
     .field{display:flex;flex-direction:column;gap:7px}
-    .field.full{grid-column:1/-1}
+    .full{grid-column:1/-1}
     .field label{font-weight:700}
-    .field input,.field select,.field textarea{width:100%;padding:13px 14px;border:1px solid #d7ddd8;border-radius:10px;font:inherit;background:#fff}
-    .field textarea{min-height:130px;resize:vertical}
-    .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid rgba(15,81,50,.15);border-color:#0f5132}
-    .required{color:#b42318}
-    .service-info{margin-top:18px;padding:16px;border-radius:12px;background:#f5f7f4;display:none}
-    .service-info.show{display:block}
-    .booking-summary{margin-top:20px;padding:18px;border-radius:12px;background:#f7f1e6;display:none}
-    .booking-summary.show{display:block}
-    .summary-row{display:flex;justify-content:space-between;gap:20px;padding:7px 0;border-bottom:1px solid rgba(0,0,0,.08)}
+    .field input,.field select,.field textarea{
+      width:100%;
+      box-sizing:border-box;
+      padding:13px 14px;
+      border:1px solid #d7ddd8;
+      border-radius:10px;
+      font:inherit;
+      background:#fff
+    }
+    .field textarea{min-height:110px;resize:vertical}
+    .section-box{
+      padding:20px;
+      border:1px solid #e1e6e1;
+      border-radius:14px;
+      background:#fafcf9
+    }
+    .section-box h3{margin-top:0}
+    .food-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px
+    }
+    .food-item{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px;
+      border:1px solid #e1e6e1;
+      border-radius:10px;
+      background:#fff
+    }
+    .food-item label{
+      display:flex;
+      gap:9px;
+      align-items:center;
+      cursor:pointer
+    }
+    .food-item input{width:auto}
+    .quantity{
+      width:70px!important;
+      padding:8px!important
+    }
+    .summary{
+      margin-top:20px;
+      padding:18px;
+      border-radius:12px;
+      background:#f7f1e6
+    }
+    .summary-row{
+      display:flex;
+      justify-content:space-between;
+      gap:15px;
+      padding:7px 0;
+      border-bottom:1px solid rgba(0,0,0,.08)
+    }
     .summary-row:last-child{border-bottom:0}
-    .notice{margin-bottom:22px}
-    .form-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
-    .status{margin-top:18px;padding:14px 16px;border-radius:10px;display:none}
+    .status{
+      margin-top:18px;
+      padding:14px 16px;
+      border-radius:10px;
+      display:none
+    }
     .status.show{display:block}
     .status.success{background:#e8f5ec;color:#14532d}
     .status.error{background:#fdecec;color:#991b1b}
-    .status.info{background:#eef4ff;color:#1e40af}
+    .hidden{display:none!important}
     @media(max-width:720px){
-      .form-grid{grid-template-columns:1fr}
-      .field.full{grid-column:auto}
+      .form-grid,.food-grid{grid-template-columns:1fr}
+      .full{grid-column:auto}
       .form-card{padding:20px}
     }
   </style>
-</head><body>  <div class="topbar">
-    <div class="container navin">
-      <div>📍 <span data-site-location>Kiteezi, Lusanjja, Kampala, Uganda</span></div>
-      <div class="mobile">
-        <a data-site-phone-link href="tel:+256766529086">Call us</a>
-        <span> • </span>
-        <a data-site-whatsapp-link href="https://wa.me/256709763803" target="_blank" rel="noopener">WhatsApp</a>
-      </div>
-    </div>
-  </div>  <header class="nav">
-    <div class="container navin">
-      <a class="brand" href="index.html" aria-label="Kiteezi Recreational Center home">
-        <span class="brand-mark">K</span>
-        <span class="brand-name" data-site-business-name>Kiteezi Recreational Center</span>
-      </a>  <nav class="links" aria-label="Main navigation">
-    <a href="index.html">Home</a>
-    <a href="swimming.html">Swimming</a>
-    <a href="sports.html">Sports</a>
-    <a href="menu.html">Dining</a>
-    <a href="events.html">Events</a>
-    <a href="about.html">About</a>
-    <a class="btn btn-primary" href="booking.html">Book Now</a>
-  </nav>
-</div>
+</head>
 
-  </header>  <main><section class="hero">
+<body>
+
+<header class="nav">
+  <div class="container navin">
+
+    <a class="brand" href="index.html">
+      <span class="brand-mark">K</span>
+      <span class="brand-name">
+        Kiteezi Recreational Center
+      </span>
+    </a>
+
+    <nav class="links">
+      <a href="index.html">Home</a>
+      <a href="swimming.html">Swimming</a>
+      <a href="sports.html">Sports</a>
+      <a href="menu.html">Dining</a>
+      <a href="events.html">Events</a>
+      <a href="about.html">About</a>
+      <a class="btn btn-primary" href="booking.html">Book Now</a>
+    </nav>
+
+  </div>
+</header>
+
+<main>
+
+<section class="hero">
   <div class="container hero-content">
     <div class="eyebrow">Reservations</div>
-    <h1>Plan your visit.</h1>
+
+    <h1>Book your visit.</h1>
+
     <p>
-      Tell us what you would like to book, when you would like to come,
-      and how we can reach you.
+      Choose your service, date, time, guests and catering.
+      You no longer need to type out the food you want.
     </p>
   </div>
 </section>
 
 <section class="section">
-  <div class="container booking-wrap">
 
-    <div class="notice">
-      <strong>Booking information</strong>
-      <p>
-        Submit your request below. Our team will review availability and
-        contact you using the details you provide. A booking request is
-        not confirmed until it has been accepted by Kiteezi Recreational Center.
-      </p>
-    </div>
+<div class="container booking-wrap">
 
-    <div class="form-card">
+<div class="form-card">
 
-      <form id="bookingForm" novalidate>
+<form id="bookingForm">
 
-        <div class="form-grid">
+<div class="form-grid">
 
-          <div class="field">
-            <label for="customerName">
-              Full name <span class="required">*</span>
-            </label>
-            <input
-              id="customerName"
-              name="customerName"
-              type="text"
-              autocomplete="name"
-              required
-              maxlength="120"
-              placeholder="Your full name"
-            >
-          </div>
+<div class="field">
+<label for="customerName">Full name *</label>
+<input
+  id="customerName"
+  name="customerName"
+  required
+  maxlength="120"
+  autocomplete="name"
+>
+</div>
 
-          <div class="field">
-            <label for="phone">
-              Phone number <span class="required">*</span>
-            </label>
-            <input
-              id="phone"
-              name="phone"
-              type="tel"
-              autocomplete="tel"
-              required
-              maxlength="30"
-              placeholder="+256..."
-            >
-          </div>
+<div class="field">
+<label for="phone">Phone number *</label>
+<input
+  id="phone"
+  name="phone"
+  type="tel"
+  required
+  maxlength="30"
+  autocomplete="tel"
+>
+</div>
 
-          <div class="field">
-            <label for="email">Email address</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autocomplete="email"
-              maxlength="160"
-              placeholder="you@example.com"
-            >
-          </div>
+<div class="field">
+<label for="email">Email</label>
+<input
+  id="email"
+  name="email"
+  type="email"
+  maxlength="160"
+  autocomplete="email"
+>
+</div>
 
-          <div class="field">
-            <label for="service">
-              What would you like to book? <span class="required">*</span>
-            </label>
-            <select id="service" name="service" required>
-              <option value="">Select a service</option>
-              <option value="Swimming">Swimming</option>
-              <option value="Football">Football</option>
-              <option value="Sports">Sports</option>
-              <option value="Restaurant / Dining">Restaurant / Dining</option>
-              <option value="Birthday / Private Event">Birthday / Private Event</option>
-              <option value="Corporate / Group Event">Corporate / Group Event</option>
-              <option value="Other Event">Other Event</option>
-            </select>
-          </div>
+<div class="field">
+<label for="service">Service *</label>
 
-          <div id="serviceInfo" class="service-info full">
-            <strong id="serviceInfoTitle"></strong>
-            <div id="serviceInfoText"></div>
-          </div>
+<select id="service" name="service" required>
 
-          <div class="field">
-            <label for="bookingDate">
-              Preferred date <span class="required">*</span>
-            </label>
-            <input
-              id="bookingDate"
-              name="bookingDate"
-              type="date"
-              required
-            >
-          </div>
+<option value="">Select a service</option>
 
-          <div class="field">
-            <label for="bookingTime">
-              Preferred time <span class="required">*</span>
-            </label>
-            <input
-              id="bookingTime"
-              name="bookingTime"
-              type="time"
-              required
-            >
-          </div>
+<option value="Swimming">
+Swimming
+</option>
 
-          <div class="field">
-            <label for="guests">
-              Number of people <span class="required">*</span>
-            </label>
-            <input
-              id="guests"
-              name="guests"
-              type="number"
-              min="1"
-              max="1000"
-              value="1"
-              required
-            >
-          </div>
+<option value="Football">
+Football
+</option>
 
-          <div class="field">
-            <label for="occasion">Occasion / booking type</label>
-            <select id="occasion" name="occasion">
-              <option value="">Select if applicable</option>
-              <option value="Personal visit">Personal visit</option>
-              <option value="Family outing">Family outing</option>
-              <option value="Birthday">Birthday</option>
-              <option value="Wedding">Wedding</option>
-              <option value="Corporate">Corporate</option>
-              <option value="Team / Sports group">Team / Sports group</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
+<option value="Sports">
+Sports
+</option>
 
-          <div id="cateringSection" class="field full" style="display:none">
-            <label for="catering">
-              Catering / food and drinks
-            </label>
-            <textarea
-              id="catering"
-              name="catering"
-              maxlength="2000"
-              placeholder="Tell us about food, drinks, catering quantities or any dietary requirements."
-            ></textarea>
-          </div>
+<option value="Restaurant / Dining">
+Restaurant / Dining
+</option>
 
-          <div class="field full">
-            <label for="notes">Additional requirements</label>
-            <textarea
-              id="notes"
-              name="notes"
-              maxlength="3000"
-              placeholder="Anything else we should know about your booking?"
-            ></textarea>
-          </div>
+<option value="Birthday / Private Event">
+Birthday / Private Event
+</option>
 
-          <div class="field full">
-            <label for="paymentMethod">Preferred payment method</label>
-            <select id="paymentMethod" name="paymentMethod">
-              <option value="">Select if applicable</option>
-              <option value="Mobile Money">Mobile Money</option>
-              <option value="Cash">Cash</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
+<option value="Corporate / Group Event">
+Corporate / Group Event
+</option>
 
-        </div>
+<option value="Other Event">
+Other Event
+</option>
 
-        <div id="bookingSummary" class="booking-summary">
-          <strong>Booking summary</strong>
+</select>
 
-          <div class="summary-row">
-            <span>Service</span>
-            <strong id="summaryService">—</strong>
-          </div>
+</div>
 
-          <div class="summary-row">
-            <span>Date</span>
-            <strong id="summaryDate">—</strong>
-          </div>
+<div class="field">
+<label for="bookingDate">Date *</label>
+<input
+  id="bookingDate"
+  name="bookingDate"
+  type="date"
+  required
+>
+</div>
 
-          <div class="summary-row">
-            <span>Time</span>
-            <strong id="summaryTime">—</strong>
-          </div>
+<div class="field">
+<label for="bookingTime">Time *</label>
+<input
+  id="bookingTime"
+  name="bookingTime"
+  type="time"
+  required
+>
+</div>
 
-          <div class="summary-row">
-            <span>Guests</span>
-            <strong id="summaryGuests">—</strong>
-          </div>
-        </div>
+<div class="field">
+<label for="guests">Number of people *</label>
+<input
+  id="guests"
+  name="guests"
+  type="number"
+  min="1"
+  max="1000"
+  value="1"
+  required
+>
+</div>
 
-        <div class="form-actions">
-          <button class="btn btn-primary" id="submitBooking" type="submit">
-            Submit Booking Request
-          </button>
+<div class="field">
+<label for="occasion">Booking type</label>
 
-          <a
-            class="btn btn-dark"
-            data-site-whatsapp-link
-            href="https://wa.me/256709763803"
-            target="_blank"
-            rel="noopener"
-          >
-            WhatsApp Instead
-          </a>
-        </div>
+<select id="occasion" name="occasion">
 
-        <div id="bookingStatus" class="status" role="status" aria-live="polite"></div>
+<option value="">Select</option>
+<option>Personal visit</option>
+<option>Family outing</option>
+<option>Birthday</option>
+<option>Wedding</option>
+<option>Corporate</option>
+<option>Team / Sports group</option>
+<option>Other</option>
 
-      </form>
+</select>
 
-    </div>
+</div>
 
-  </div>
+
+<!-- CATERING -->
+
+<div
+  id="cateringBox"
+  class="section-box full hidden"
+>
+
+<h3>
+Food & drinks
+</h3>
+
+<p>
+Choose exactly what you want for your booking.
+You can select a buffet package or individual menu items.
+</p>
+
+
+<div class="field">
+
+<label for="cateringType">
+Catering option
+</label>
+
+<select id="cateringType">
+
+<option value="none">
+No catering
+</option>
+
+<option value="buffet">
+Buffet package
+</option>
+
+<option value="menu">
+Individual menu items
+</option>
+
+<option value="both">
+Buffet + individual items
+</option>
+
+</select>
+
+</div>
+
+
+<!-- BUFFET -->
+
+<div
+  id="buffetBox"
+  class="field hidden"
+>
+
+<label for="buffet">
+Choose buffet
+</label>
+
+<select id="buffet">
+
+<option value="">
+Select buffet
+</option>
+
+<option
+  value="Standard Buffet"
+  data-price="0"
+>
+Standard Buffet
+</option>
+
+<option
+  value="Premium Buffet"
+  data-price="0"
+>
+Premium Buffet
+</option>
+
+<option
+  value="Executive Buffet"
+  data-price="0"
+>
+Executive Buffet
+</option>
+
+</select>
+
+<small>
+Final buffet pricing is confirmed by Kiteezi staff.
+</small>
+
+</div>
+
+
+<!-- MENU -->
+
+<div
+  id="menuBox"
+  class="field hidden"
+>
+
+<label>
+Choose menu items
+</label>
+
+<div
+  id="menuItems"
+  class="food-grid"
+>
+Loading menu…
+</div>
+
+</div>
+
+</div>
+
+
+<div class="field full">
+
+<label for="notes">
+Additional requirements
+</label>
+
+<textarea
+  id="notes"
+  name="notes"
+  maxlength="3000"
+  placeholder="Special arrangements or other requirements"
+></textarea>
+
+</div>
+
+
+<div class="field full">
+
+<label for="paymentMethod">
+Preferred payment method
+</label>
+
+<select
+  id="paymentMethod"
+  name="paymentMethod"
+>
+
+<option value="">
+Select
+</option>
+
+<option value="Mobile Money">
+Mobile Money
+</option>
+
+<option value="Cash">
+Cash
+</option>
+
+<option value="Other">
+Other
+</option>
+
+</select>
+
+</div>
+
+</div>
+
+
+<div class="summary">
+
+<h3>
+Booking summary
+</h3>
+
+<div class="summary-row">
+<span>Service</span>
+<strong id="summaryService">—</strong>
+</div>
+
+<div class="summary-row">
+<span>Date</span>
+<strong id="summaryDate">—</strong>
+</div>
+
+<div class="summary-row">
+<span>Time</span>
+<strong id="summaryTime">—</strong>
+</div>
+
+<div class="summary-row">
+<span>Guests</span>
+<strong id="summaryGuests">—</strong>
+</div>
+
+<div class="summary-row">
+<span>Catering</span>
+<strong id="summaryCatering">None</strong>
+</div>
+
+<div class="summary-row">
+<span>Estimated food total</span>
+<strong id="summaryTotal">UGX 0</strong>
+</div>
+
+</div>
+
+
+<div style="margin-top:20px">
+
+<button
+  class="btn btn-primary"
+  id="submitBooking"
+  type="submit"
+>
+Submit Booking Request
+</button>
+
+</div>
+
+
+<div
+  id="bookingStatus"
+  class="status"
+  role="status"
+  aria-live="polite"
+></div>
+
+
+</form>
+
+</div>
+
+</div>
+
 </section>
 
-  </main>  <footer class="footer">
-    <div class="container footer-grid">  <div>
-    <h3 data-site-business-name>Kiteezi Recreational Center</h3>
-    <p data-site-tagline>Comfort • Dining • Recreation</p>
-    <p data-site-location>Kiteezi, Lusanjja, Kampala, Uganda</p>
-  </div>
+</main>
 
-  <div>
-    <h3>Explore</h3>
-    <p><a href="swimming.html">Swimming</a></p>
-    <p><a href="sports.html">Sports</a></p>
-    <p><a href="menu.html">Dining</a></p>
-    <p><a href="events.html">Events</a></p>
-  </div>
 
-  <div>
-    <h3>Contact</h3>
-    <p>
-      <a data-site-phone-link href="tel:+256766529086">
-        <span data-site-phone>+256 766 529086</span>
-      </a>
-    </p>
-    <p>
-      <a
-        data-site-whatsapp-link
-        href="https://wa.me/256709763803"
-        target="_blank"
-        rel="noopener"
-      >
-        WhatsApp
-      </a>
-    </p>
-  </div>
+<footer class="footer">
+
+<div class="container footer-grid">
+
+<div>
+<h3>Kiteezi Recreational Center</h3>
+<p>Comfort • Dining • Recreation</p>
+<p>Kiteezi, Lusanjja, Kampala, Uganda</p>
+</div>
+
+<div>
+<h3>Explore</h3>
+<p><a href="swimming.html">Swimming</a></p>
+<p><a href="sports.html">Sports</a></p>
+<p><a href="menu.html">Dining</a></p>
+<p><a href="events.html">Events</a></p>
+</div>
+
+<div>
+<h3>Contact</h3>
+<p>
+<a href="tel:+256766529086">
++256 766 529086
+</a>
+</p>
+</div>
 
 </div>
 
-<div class="container copyright">
-  © <span data-current-year>2026</span>
-  <span data-site-business-name>Kiteezi Recreational Center</span>.
-  All rights reserved.
+</footer>
+
+
+<script src="config.js"></script>
+<script src="content.js"></script>
+<script src="site.js"></script>
+
+<script>
+
+(function(){
+
+'use strict';
+
+
+const C =
+window.KITEEZI_CONFIG || {};
+
+
+const SUPABASE_URL =
+String(C.SUPABASE_URL || '')
+.replace(/\/+$/);
+
+
+const SUPABASE_KEY =
+C.SUPABASE_ANON_KEY || '';
+
+
+const form =
+document.getElementById('bookingForm');
+
+
+const service =
+document.getElementById('service');
+
+
+const cateringBox =
+document.getElementById('cateringBox');
+
+
+const cateringType =
+document.getElementById('cateringType');
+
+
+const buffetBox =
+document.getElementById('buffetBox');
+
+
+const menuBox =
+document.getElementById('menuBox');
+
+
+const menuItems =
+document.getElementById('menuItems');
+
+
+const status =
+document.getElementById('bookingStatus');
+
+
+const submitButton =
+document.getElementById('submitBooking');
+
+
+const dateInput =
+document.getElementById('bookingDate');
+
+
+const today =
+new Date();
+
+
+dateInput.min =
+`${today.getFullYear()}-${String(
+today.getMonth()+1
+).padStart(2,'0')}-${String(
+today.getDate()
+).padStart(2,'0')}`;
+
+
+let menu = [];
+
+
+function money(value){
+
+return 'UGX ' +
+new Intl.NumberFormat('en-UG')
+.format(Number(value)||0);
+
+}
+
+
+function showStatus(message,type){
+
+status.textContent =
+message;
+
+status.className =
+`status show ${type}`;
+
+}
+
+
+function updateCateringVisibility(){
+
+const serviceNeedsCatering =
+[
+'Restaurant / Dining',
+'Birthday / Private Event',
+'Corporate / Group Event',
+'Other Event'
+].includes(service.value);
+
+
+cateringBox.classList.toggle(
+'hidden',
+!serviceNeedsCatering
+);
+
+
+if(!serviceNeedsCatering){
+
+cateringType.value =
+'none';
+
+}
+
+
+updateCateringType();
+
+}
+
+
+function updateCateringType(){
+
+const type =
+cateringType.value;
+
+
+buffetBox.classList.toggle(
+'hidden',
+!(
+type === 'buffet' ||
+type === 'both'
+)
+);
+
+
+menuBox.classList.toggle(
+'hidden',
+!(
+type === 'menu' ||
+type === 'both'
+)
+);
+
+
+updateSummary();
+
+}
+
+
+async function loadMenu(){
+
+if(
+!SUPABASE_URL ||
+!SUPABASE_KEY
+){
+
+menuItems.textContent =
+'Menu configuration is unavailable.';
+
+return;
+
+}
+
+
+try{
+
+const response =
+await fetch(
+SUPABASE_URL +
+'/rest/v1/menu_items' +
+'?select=id,name,description,price,in_stock' +
+'&in_stock=eq.true' +
+'&order=name.asc',
+{
+
+headers:{
+apikey:SUPABASE_KEY,
+Authorization:
+'Bearer ' + SUPABASE_KEY
+}
+
+}
+);
+
+
+if(!response.ok){
+
+throw new Error(
+'Menu could not be loaded.'
+);
+
+}
+
+
+menu =
+await response.json();
+
+
+renderMenu();
+
+}catch(error){
+
+console.error(error);
+
+menuItems.textContent =
+'Unable to load the current menu.';
+
+}
+
+}
+
+
+function renderMenu(){
+
+if(!menu.length){
+
+menuItems.textContent =
+'No menu items are currently available.';
+
+return;
+
+}
+
+
+menuItems.innerHTML =
+menu.map(item => `
+
+<div class="food-item">
+
+<label>
+
+<input
+type="checkbox"
+data-menu-id="${item.id}"
+data-price="${Number(item.price)||0}"
+data-name="${String(item.name)
+.replace(/"/g,'&quot;')}"
+>
+
+<span>
+
+<strong>
+${item.name}
+</strong>
+
+<br>
+
+<small>
+${money(item.price)}
+</small>
+
+</span>
+
+</label>
+
+<input
+class="quantity"
+type="number"
+min="1"
+value="1"
+data-menu-qty="${item.id}"
+disabled
+>
+
 </div>
 
-  </footer>  <script src="config.js"></script>  <script src="content.js"></script>  <script src="site.js"></script>  <script>
-    (() => {
-      const form = document.getElementById('bookingForm');
-      const service = document.getElementById('service');
-      const cateringSection = document.getElementById('cateringSection');
-      const serviceInfo = document.getElementById('serviceInfo');
-      const serviceInfoTitle = document.getElementById('serviceInfoTitle');
-      const serviceInfoText = document.getElementById('serviceInfoText');
-      const status = document.getElementById('bookingStatus');
-      const submitButton = document.getElementById('submitBooking');
+`).join('');
 
-      const summary = {
-        box: document.getElementById('bookingSummary'),
-        service: document.getElementById('summaryService'),
-        date: document.getElementById('summaryDate'),
-        time: document.getElementById('summaryTime'),
-        guests: document.getElementById('summaryGuests')
-      };
 
-      const dateInput = document.getElementById('bookingDate');
+menuItems
+.querySelectorAll(
+'input[type="checkbox"]'
+)
+.forEach(check => {
 
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      dateInput.min = `${yyyy}-${mm}-${dd}`;
+check.addEventListener(
+'change',
+() => {
 
-      const descriptions = {
-        'Swimming': 'Swimming bookings are handled according to pool availability and applicable swimming arrangements.',
-        'Football': 'Football bookings are subject to field availability and the selected time.',
-        'Sports': 'Sports bookings are subject to facility availability and the activity requested.',
-        'Restaurant / Dining': 'For dining and group visits, tell us the number of guests and any catering requirements.',
-        'Birthday / Private Event': 'Private events can include food and drinks. Tell us about your event requirements below.',
-        'Corporate / Group Event': 'Corporate and group bookings can include catering. Please provide as much detail as possible.',
-        'Other Event': 'Tell us about your event, expected guests and any catering or setup requirements.'
-      };
+const qty =
+menuItems.querySelector(
+`[data-menu-qty="${check.dataset.menuId}"]`
+);
 
-      function showStatus(message, type) {
-        status.textContent = message;
-        status.className = `status show ${type}`;
-      }
+qty.disabled =
+!check.checked;
 
-      function updateService() {
-        const value = service.value;
-        const eventLike = [
-          'Restaurant / Dining',
-          'Birthday / Private Event',
-          'Corporate / Group Event',
-          'Other Event'
-        ].includes(value);
+updateSummary();
 
-        cateringSection.style.display = eventLike ? 'flex' : 'none';
+}
+);
 
-        if (eventLike) {
-          document.getElementById('catering').placeholder =
-            'Tell us about food, drinks, catering quantities or any dietary requirements.';
-        }
+});
 
-        if (value && descriptions[value]) {
-          serviceInfoTitle.textContent = value;
-          serviceInfoText.textContent = descriptions[value];
-          serviceInfo.classList.add('show');
-        } else {
-          serviceInfo.classList.remove('show');
-        }
 
-        updateSummary();
-      }
+menuItems
+.querySelectorAll(
+'[data-menu-qty]'
+)
+.forEach(input => {
 
-      function updateSummary() {
-        const value = service.value;
-        const date = dateInput.value;
-        const time = document.getElementById('bookingTime').value;
-        const guests = document.getElementById('guests').value;
+input.addEventListener(
+'input',
+updateSummary
+);
 
-        if (!value && !date && !time) {
-          summary.box.classList.remove('show');
-          return;
-        }
+});
 
-        summary.box.classList.add('show');
-        summary.service.textContent = value || '—';
-        summary.date.textContent = date || '—';
-        summary.time.textContent = time || '—';
-        summary.guests.textContent = guests || '—';
-      }
+}
 
-      service.addEventListener('change', updateService);
-      dateInput.addEventListener('change', updateSummary);
-      document.getElementById('bookingTime').addEventListener('change', updateSummary);
-      document.getElementById('guests').addEventListener('input', updateSummary);
 
-      form.addEventListener('input', () => {
-        if (status.classList.contains('show')) {
-          status.className = 'status';
-          status.textContent = '';
-        }
-      });
+function getSelectedMenu(){
 
-      form.addEventListener('submit', async (event) => {
-        event.preventDefault();
+return Array.from(
+menuItems.querySelectorAll(
+'input[type="checkbox"]:checked'
+)
+).map(check => {
 
-        if (!form.checkValidity()) {
-          form.reportValidity();
-          return;
-        }
+const quantity =
+menuItems.querySelector(
+`[data-menu-qty="${check.dataset.menuId}"]`
+);
 
-        const cfg = window.KITEEZI_CONFIG || {};
-        const supabaseUrl = cfg.SUPABASE_URL;
-        const supabaseKey = cfg.SUPABASE_ANON_KEY;
 
-        if (!supabaseUrl || !supabaseKey) {
-          showStatus(
-            'The booking system is not configured yet. Please contact us directly on WhatsApp or phone.',
-            'error'
-          );
-          return;
-        }
+return {
 
-        const data = {
-          customer_name: document.getElementById('customerName').value.trim(),
-          phone: document.getElementById('phone').value.trim(),
-          email: document.getElementById('email').value.trim() || null,
-          booking_date: document.getElementById('bookingDate').value,
-          start_time: document.getElementById('bookingTime').value,
-          guests: Number(document.getElementById('guests').value),
-          notes: JSON.stringify({
-            service: service.value,
-            occasion: document.getElementById('occasion').value || null,
-            catering: document.getElementById('catering').value.trim() || null,
-            additional_requirements: document.getElementById('notes').value.trim() || null,
-            payment_method: document.getElementById('paymentMethod').value || null,
-            source: 'public_website'
-          }),
-          status: 'pending'
-        };
+menu_item_id:
+check.dataset.menuId,
 
-        submitButton.disabled = true;
-        submitButton.textContent = 'Submitting…';
-        showStatus('Submitting your booking request…', 'info');
+name:
+check.dataset.name,
 
-        try {
-          const response = await fetch(`${supabaseUrl}/rest/v1/bookings`, {
-            method: 'POST',
-            headers: {
-              'apikey': supabaseKey,
-              'Authorization': `Bearer ${supabaseKey}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            },
-            body: JSON.stringify(data)
-          });
+quantity:
+Math.max(
+1,
+Number(quantity.value)||1
+),
 
-          const result = await response.text();
+price:
+Number(check.dataset.price)||0
 
-          if (!response.ok) {
-            let message = 'We could not submit the booking request.';
-            try {
-              const parsed = JSON.parse(result);
-              if (parsed.message) message = parsed.message;
-              else if (parsed.hint) message = parsed.hint;
-            } catch (_) {}
+};
 
-            throw new Error(message);
-          }
+});
 
-          showStatus(
-            'Your booking request has been received. Our team will contact you to confirm availability and the next steps.',
-            'success'
-          );
+}
 
-          form.reset();
-          document.getElementById('guests').value = 1;
-          cateringSection.style.display = 'none';
-          serviceInfo.classList.remove('show');
-          summary.box.classList.remove('show');
 
-        } catch (error) {
-          console.error('Kiteezi booking error:', error);
+function updateSummary(){
 
-          showStatus(
-            error.message ||
-            'We could not submit your booking. Please contact us on WhatsApp so we can assist you.',
-            'error'
-          );
-        } finally {
-          submitButton.disabled = false;
-          submitButton.textContent = 'Submit Booking Request';
-        }
-      });
+document.getElementById(
+'summaryService'
+).textContent =
+service.value || '—';
 
-      updateService();
-    })();
-  </script></body>
+
+document.getElementById(
+'summaryDate'
+).textContent =
+dateInput.value || '—';
+
+
+document.getElementById(
+'summaryTime'
+).textContent =
+document.getElementById(
+'bookingTime'
+)?.value || '—';
+
+
+document.getElementById(
+'summaryGuests'
+).textContent =
+document.getElementById(
+'guests'
+)?.value || '—';
+
+
+const type =
+cateringType.value;
+
+
+let description =
+'None';
+
+
+let total = 0;
+
+
+if(
+type === 'buffet' ||
+type === 'both'
+){
+
+const buffet =
+document.getElementById(
+'buffet'
+);
+
+
+if(buffet.value){
+
+description =
+buffet.value;
+
+}
+
+}
+
+
+if(
+type === 'menu' ||
+type === 'both'
+){
+
+const selected =
+getSelectedMenu();
+
+
+if(selected.length){
+
+description =
+description === 'None'
+? selected.map(
+item =>
+`${item.name} × ${item.quantity}`
+).join(', ')
+: description +
+' + ' +
+selected.map(
+item =>
+`${item.name} × ${item.quantity}`
+).join(', ');
+
+}
+
+
+total =
+selected.reduce(
+(sum,item) =>
+sum +
+item.price *
+item.quantity,
+0
+);
+
+}
+
+
+document.getElementById(
+'summaryCatering'
+).textContent =
+description;
+
+
+document.getElementById(
+'summaryTotal'
+).textContent =
+money(total);
+
+}
+
+
+service.addEventListener(
+'change',
+updateCateringVisibility
+);
+
+
+cateringType.addEventListener(
+'change',
+updateCateringType
+);
+
+
+document.getElementById(
+'buffet'
+).addEventListener(
+'change',
+updateSummary
+);
+
+
+dateInput.addEventListener(
+'change',
+updateSummary
+);
+
+
+document.getElementById(
+'bookingTime'
+)?.addEventListener(
+'change',
+updateSummary
+);
+
+
+document.getElementById(
+'guests'
+)?.addEventListener(
+'input',
+updateSummary
+);
+
+
+form.addEventListener(
+'submit',
+async function(event){
+
+event.preventDefault();
+
+
+status.className =
+'status';
+
+
+status.textContent =
+'';
+
+
+if(!form.checkValidity()){
+
+form.reportValidity();
+
+return;
+
+}
+
+
+if(
+!SUPABASE_URL ||
+!SUPABASE_KEY
+){
+
+showStatus(
+'Supabase configuration is missing.',
+'error'
+);
+
+return;
+
+}
+
+
+submitButton.disabled =
+true;
+
+submitButton.textContent =
+'Submitting…';
+
+
+try{
+
+const data =
+new FormData(form);
+
+
+const selectedMenu =
+getSelectedMenu();
+
+
+const buffet =
+document.getElementById(
+'buffet'
+).value;
+
+
+const cateringTypeValue =
+cateringType.value;
+
+
+const cateringDetails = {
+
+type:
+cateringTypeValue,
+
+buffet:
+buffet || null,
+
+items:
+selectedMenu
+
+};
+
+
+const payload = {
+
+customer_name:
+String(
+data.get('customerName') || ''
+).trim(),
+
+phone:
+String(
+data.get('phone') || ''
+).trim(),
+
+email:
+String(
+data.get('email') || ''
+).trim() || null,
+
+service:
+String(
+data.get('service') || ''
+).trim(),
+
+booking_date:
+data.get('bookingDate'),
+
+booking_time:
+data.get('bookingTime'),
+
+guests:
+Number(data.get('guests')),
+
+occasion:
+String(
+data.get('occasion') || ''
+).trim() || null,
+
+catering:
+JSON.stringify(
+cateringDetails
+),
+
+notes:
+String(
+data.get('notes') || ''
+).trim() || null,
+
+payment_method:
+String(
+data.get('paymentMethod') || ''
+).trim() || null
+
+};
+
+
+const response =
+await fetch(
+SUPABASE_URL +
+'/rest/v1/bookings',
+{
+
+method:'POST',
+
+headers:{
+
+apikey:
+SUPABASE_KEY,
+
+Authorization:
+'Bearer ' +
+SUPABASE_KEY,
+
+'Content-Type':
+'application/json',
+
+Prefer:
+'return=representation'
+
+},
+
+body:
+JSON.stringify(payload)
+
+}
+);
+
+
+const text =
+await response.text();
+
+
+if(!response.ok){
+
+let message =
+'Booking could not be submitted.';
+
+try{
+
+const parsed =
+JSON.parse(text);
+
+message =
+parsed.message ||
+parsed.error ||
+parsed.hint ||
+message;
+
+}catch(_){}
+
+
+throw new Error(message);
+
+}
+
+
+form.reset();
+
+
+menuItems
+.querySelectorAll(
+'input[type="checkbox"]'
+)
+.forEach(check => {
+
+check.checked =
+false;
+
+});
+
+
+menuItems
+.querySelectorAll(
+'[data-menu-qty]'
+)
+.forEach(input => {
+
+input.disabled =
+true;
+
+});
+
+
+cateringBox.classList.add(
+'hidden'
+);
+
+
+updateSummary();
+
+
+showStatus(
+'Your booking request has been submitted successfully. Kiteezi will review it and contact you to confirm availability.',
+'success'
+);
+
+
+window.scrollTo({
+top:document.body.scrollHeight,
+behavior:'smooth'
+});
+
+
+}catch(error){
+
+console.error(
+'Booking submission failed:',
+error
+);
+
+
+showStatus(
+error.message ||
+'Unable to submit the booking.',
+'error'
+);
+
+}finally{
+
+submitButton.disabled =
+false;
+
+submitButton.textContent =
+'Submit Booking Request';
+
+}
+
+});
+
+
+loadMenu();
+
+updateSummary();
+
+})();
+
+</script>
+
+</body>
 </html>
