@@ -214,11 +214,63 @@
 
   async function getMenuItems() {
     return supabaseFetch(
-      '/rest/v1/menu_items' +
-      '?select=id,name,description,price,in_stock,category_id' +
-      '&order=name.asc'
+      '/rest/v1/menu_items?select=id,name,description,price,price_on_request,in_stock,img_url,alt_text,category_id,menu_categories(name,sort_order)&order=name.asc'
     );
   }
+
+  const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[char]));
+
+  async function renderMenuCatalog() {
+    const target = $('#menu-catalog');
+    if (!target) return;
+    try {
+      const [items, pages] = await Promise.all([
+        getMenuItems(),
+        supabaseFetch('/rest/v1/cms_pages?select=title,content&slug=eq.menu&published=eq.true&limit=1')
+      ]);
+      const content = pages?.[0]?.content || {};
+      if ($('[data-menu-title]')) $('[data-menu-title]').textContent = content.hero_title || pages?.[0]?.title || 'Menu';
+      if ($('[data-menu-description]')) $('[data-menu-description]').textContent = content.intro || 'Browse the current Kiteezi menu.';
+      if ($('[data-menu-intro]')) $('[data-menu-intro]').textContent = content.intro || 'Select meals and drinks to add them to your cart.';
+      const groups = new Map();
+      (items || []).forEach(item => {
+        const category = item.menu_categories?.name || 'Other';
+        if (!groups.has(category)) groups.set(category, []);
+        groups.get(category).push(item);
+      });
+      if (!groups.size) {
+        target.innerHTML = '<p class="muted">No menu items are currently published.</p>';
+        return;
+      }
+      target.innerHTML = Array.from(groups.entries()).map(([category, rows]) => {
+        const card = rows.map(item => {
+          const unavailable = item.in_stock === false;
+          const onRequest = item.price_on_request === true || Number(item.price || 0) === 0;
+          const price = onRequest ? 'Ask' : 'UGX ' + money(item.price);
+          const image = item.img_url
+            ? '<div class="menu-item-image"><img src="' + escapeHtml(item.img_url) + '" alt="' + escapeHtml(item.alt_text || item.name) + '" loading="lazy"></div>'
+            : '';
+          return '<div class="menu-item">' + image +
+            '<div><h4>' + escapeHtml(item.name) + '</h4><p>' + escapeHtml(item.description || '') + '</p></div>' +
+            '<div class="menu-price">' + price + '</div></div>' +
+            '<div class="menu-order-row"><span class="muted">' + price + '</span>' +
+            '<button type="button" class="btn btn-dark menu-add" data-add-to-cart data-menu-item-id="' + escapeHtml(item.id) + '"' +
+            ((unavailable || onRequest) ? ' disabled' : '') + '>' +
+            (unavailable ? 'Unavailable' : onRequest ? 'Price on request' : 'Add to Cart') + '</button></div>';
+        }).join('');
+        return '<article class="card"><div class="card-body"><span class="badge">' +
+          escapeHtml(category) + '</span>' + card + '</div></article>';
+      }).join('');
+      bindMenuButtons();
+      bindCartButtons();
+    } catch (error) {
+      console.error(error);
+      target.innerHTML = '<p class="muted">Unable to load the menu right now. Please try again later.</p>';
+    }
+  }
+
 
   async function resolveMenuItem(button) {
     const databaseId =
@@ -416,6 +468,7 @@
     updateCartUI();
     bindMenuButtons();
     bindCartButtons();
+    renderMenuCatalog();
     initMobileNavigation();
     initSiteYear();
 
