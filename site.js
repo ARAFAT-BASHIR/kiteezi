@@ -1,23 +1,34 @@
-(function(){
+(function () {
+  'use strict';
 
   /* ============================================================
      KITEEZI PUBLIC WEBSITE CORE
      ============================================================
 
-     This file preserves the existing Kiteezi public-site
-     functionality while adding support for centralized
-     business/contact settings from Supabase.
+     This file preserves the existing public-site behaviour and
+     provides the shared client-side foundation for:
+
+       - Supabase access using the publishable/anon key
+       - centralized business settings
+       - public navigation
+       - mobile navigation
+       - contact / WhatsApp enquiries
+       - persistent shopping cart
+       - cart count and cart drawer
+       - menu-item/cart integration
+       - existing booking-page compatibility
 
      IMPORTANT:
-     - Uses the existing Supabase publishable/anon key only.
-     - Never put a service-role key in this file.
-     - Existing website design/content remains the fallback.
-     - Admin portal remains completely separate.
+       - Never put a Supabase service-role key here.
+       - Admin remains separate.
+       - Existing HTML remains the fallback.
+       - Database writes are only made where the public page
+         explicitly requests them.
      ============================================================ */
 
   const C = window.KITEEZI_CONFIG || {};
 
-  const url = (C.SUPABASE_URL || '').replace(/\/$/, '');
+  const url = String(C.SUPABASE_URL || '').replace(/\/$/, '');
   const key = C.SUPABASE_ANON_KEY || '';
 
   const headers = {
@@ -25,6 +36,8 @@
     Authorization: 'Bearer ' + key,
     'Content-Type': 'application/json'
   };
+
+  const CART_KEY = 'kiteezi_cart_v1';
 
   const $ = (selector, root = document) =>
     root.querySelector(selector);
@@ -44,12 +57,16 @@
       }[match])
     );
 
+  const money = value =>
+    new Intl.NumberFormat('en-UG').format(
+      Math.max(0, Number(value) || 0)
+    );
+
   /* ------------------------------------------------------------
      SUPABASE API
      ------------------------------------------------------------ */
 
   const api = async (path, options = {}) => {
-
     if (!url || !key) {
       throw new Error(
         'Kiteezi Supabase configuration is missing.'
@@ -69,7 +86,7 @@
 
     const text = await response.text();
 
-    let data;
+    let data = null;
 
     try {
       data = text ? JSON.parse(text) : null;
@@ -92,9 +109,9 @@
 
   window.Kiteezi = {
     api,
-    esc
+    esc,
+    money
   };
-
 
   /* ------------------------------------------------------------
      YEAR
@@ -106,124 +123,110 @@
     element.textContent = year;
   });
 
+  $$('[data-current-year]').forEach(element => {
+    element.textContent = year;
+  });
 
   /* ------------------------------------------------------------
      PUBLIC NAVIGATION
      ------------------------------------------------------------ */
 
-  const path =
+  const currentPath =
     location.pathname.split('/').pop() ||
     'index.html';
 
   $$('.links a').forEach(link => {
-
     const href =
       (link.getAttribute('href') || '')
-        .split('?')[0];
+        .split('?')[0]
+        .split('#')[0];
 
-    if (href === path) {
+    if (href === currentPath) {
       link.classList.add('active');
     }
-
   });
-
 
   /* ------------------------------------------------------------
      MOBILE MENU
      ------------------------------------------------------------ */
 
-  const mobileButton =
-    $('[data-mobile]');
+  const mobileButton = $('[data-mobile]');
 
   if (mobileButton) {
+    mobileButton.addEventListener('click', () => {
+      const links = $('.links');
 
-    mobileButton.onclick = () => {
+      if (!links) {
+        return;
+      }
 
-      $('.links')?.classList.toggle(
-        'mobile-open'
+      links.classList.toggle('mobile-open');
+
+      mobileButton.setAttribute(
+        'aria-expanded',
+        links.classList.contains('mobile-open')
+          ? 'true'
+          : 'false'
       );
-
-    };
-
+    });
   }
 
+  $$('.links a').forEach(link => {
+    link.addEventListener('click', () => {
+      $('.links')?.classList.remove('mobile-open');
+    });
+  });
 
   /* ------------------------------------------------------------
      ADMIN PORTAL PROTECTION
      ------------------------------------------------------------
 
-     The public website must never expose an admin link.
-     The admin portal is accessed separately through /admin/.
+     The public website must not expose the admin portal through
+     public navigation.
      ------------------------------------------------------------ */
 
   $$('a[href*="admin/"]').forEach(link => {
     link.remove();
   });
 
-
   /* ------------------------------------------------------------
-     CENTRALIZED BUSINESS SETTINGS
-     ------------------------------------------------------------
-
-     Phase 1 introduces site_settings.
-
-     If the table exists and is readable, values are loaded.
-     If anything fails, the existing HTML remains untouched.
+     CENTRALIZED SITE SETTINGS
      ------------------------------------------------------------ */
 
   let siteSettings = {};
 
   async function loadSiteSettings() {
-
     try {
-
       const rows = await api(
         'site_settings?select=key,value'
       );
 
-      siteSettings =
-        Object.fromEntries(
-          (rows || []).map(row => [
-            row.key,
-            row.value
-          ])
-        );
+      siteSettings = Object.fromEntries(
+        (rows || []).map(row => [
+          row.key,
+          row.value
+        ])
+      );
 
       applySiteSettings(siteSettings);
 
       return siteSettings;
-
     } catch (error) {
-
       console.warn(
-        'Kiteezi site settings unavailable. Existing website content will remain visible.',
+        'Kiteezi site settings unavailable. Existing HTML will remain visible.',
         error
       );
 
       return {};
-
     }
-
   }
 
-
   function applySiteSettings(settings) {
-
     if (!settings || typeof settings !== 'object') {
       return;
     }
 
-
-    /* ----------------------------------------------------------
-       Generic data-site-setting support
-
-       Example:
-
-       <span data-site-setting="business_name"></span>
-       ---------------------------------------------------------- */
-
     $$('[data-site-setting]').forEach(element => {
-
       const setting =
         element.dataset.siteSetting;
 
@@ -239,188 +242,127 @@
           'input, textarea, select'
         )
       ) {
-
         element.value = value;
-
       } else if (
         element.dataset.settingHtml === 'true'
       ) {
-
-        element.innerHTML =
-          String(value);
-
+        element.innerHTML = String(value);
       } else {
-
-        element.textContent =
-          String(value);
-
+        element.textContent = String(value);
       }
-
     });
 
+    /* Existing booking/contact pages use these
+       more specific data attributes. */
 
-    /* ----------------------------------------------------------
-       TOP BAR LOCATION
-       ---------------------------------------------------------- */
+    const businessName =
+      settings.business_name ||
+      settings.businessName;
 
-    if (settings.location) {
+    const tagline =
+      settings.business_tagline ||
+      settings.tagline;
+
+    const location =
+      settings.location;
+
+    const phone =
+      settings.phone;
+
+    const whatsapp =
+      settings.whatsapp ||
+      settings.whatsapp_number;
+
+    const whatsappLink =
+      settings.whatsapp_link ||
+      (
+        whatsapp
+          ? 'https://wa.me/' +
+            String(whatsapp).replace(/[^0-9]/g, '')
+          : ''
+      );
+
+    if (businessName) {
+      $$('[data-site-business-name]')
+        .forEach(element => {
+          element.textContent = businessName;
+        });
+
+      $$('.brand-name')
+        .forEach(element => {
+          element.textContent = businessName;
+        });
+    }
+
+    if (tagline) {
+      $$('[data-site-tagline]')
+        .forEach(element => {
+          element.textContent = tagline;
+        });
+    }
+
+    if (location) {
+      $$('[data-site-location]')
+        .forEach(element => {
+          element.textContent = location;
+        });
 
       $$('.topbar .container span:first-child')
         .forEach(element => {
-          element.textContent =
-            settings.location;
+          element.textContent = location;
         });
-
     }
 
-
-    /* ----------------------------------------------------------
-       TOP BAR PHONE
-       ---------------------------------------------------------- */
-
-    if (settings.phone) {
-
-      $$('.topbar .container span:last-child')
+    if (phone) {
+      $$('[data-site-phone]')
         .forEach(element => {
-
-          element.textContent =
-            'Daily enquiries: ' +
-            settings.phone;
-
+          element.textContent = phone;
         });
 
-    }
-
-
-    /* ----------------------------------------------------------
-       BUSINESS BRAND
-       ---------------------------------------------------------- */
-
-    if (settings.business_name) {
-
-      $$('.brand span:not(.brand-mark)')
+      $$('[data-site-phone-link]')
         .forEach(element => {
-
-          const small =
-            element.querySelector('small');
-
-          Array.from(
-            element.childNodes
-          ).forEach(node => {
-
-            if (node.nodeType === 3) {
-
-              node.nodeValue =
-                settings.business_name + ' ';
-
-            }
-
-          });
-
-          if (
-            small &&
-            settings.business_tagline
-          ) {
-
-            small.textContent =
-              settings.business_tagline;
-
-          }
-
+          element.href =
+            'tel:' +
+            String(phone)
+              .replace(/[^\d+]/g, '');
         });
-
-    }
-
-
-    /* ----------------------------------------------------------
-       FOOTER BRAND / LOCATION
-       ---------------------------------------------------------- */
-
-    if (settings.location) {
-
-      $$('.footer .brand span:not(.brand-mark) small')
-        .forEach(element => {
-
-          element.textContent =
-            settings.location;
-
-        });
-
-    }
-
-
-    /* ----------------------------------------------------------
-       PHONE LINKS
-       ---------------------------------------------------------- */
-
-    if (settings.phone) {
-
-      const phone =
-        String(settings.phone)
-          .replace(/[^0-9+]/g, '');
 
       $$('.footer a[href^="tel:"]')
         .forEach(element => {
-
           element.href =
-            'tel:' + phone;
+            'tel:' +
+            String(phone)
+              .replace(/[^\d+]/g, '');
 
-          element.textContent =
-            settings.phone;
-
+          if (
+            element.children.length === 0
+          ) {
+            element.textContent = phone;
+          }
         });
-
     }
 
-
-    /* ----------------------------------------------------------
-       WHATSAPP LINKS
-       ---------------------------------------------------------- */
-
-    $$('.footer a[href*="wa.me/"]')
-      .forEach(element => {
-
-        if (settings.whatsapp_link) {
-
-          element.href =
-            settings.whatsapp_link;
-
-        }
-
-        if (settings.whatsapp) {
-
-          element.textContent =
-            'WhatsApp: ' +
-            settings.whatsapp;
-
-        }
-
-      });
-
-
-    /* ----------------------------------------------------------
-       FOOTER CONTACT / LOCATION LINKS
-       ---------------------------------------------------------- */
-
-    if (settings.location) {
-
-      $$('.footer a[href="contact.html"]')
+    if (whatsappLink) {
+      $$('[data-site-whatsapp-link]')
         .forEach(element => {
-
-          element.textContent =
-            settings.location;
-
+          element.href = whatsappLink;
         });
 
+      $$('.footer a[href*="wa.me/"]')
+        .forEach(element => {
+          element.href = whatsappLink;
+
+          if (
+            whatsapp &&
+            element.textContent.trim()
+              .toLowerCase()
+              .startsWith('whatsapp')
+          ) {
+            element.textContent =
+              'WhatsApp: ' + whatsapp;
+          }
+        });
     }
-
-
-    /* ----------------------------------------------------------
-       SOCIAL MEDIA
-
-       Empty links are hidden.
-       Existing HTML icons are preserved.
-       ---------------------------------------------------------- */
 
     const socialKeys = [
       'facebook',
@@ -428,224 +370,4 @@
       'youtube'
     ];
 
-    $$('.footer .socials a')
-      .forEach((element, index) => {
-
-        const setting =
-          socialKeys[index];
-
-        if (!setting) {
-          return;
-        }
-
-        if (settings[setting]) {
-
-          element.href =
-            settings[setting];
-
-          element.hidden = false;
-
-        } else {
-
-          element.hidden = true;
-
-        }
-
-      });
-
-  }
-
-
-  /* Load centralized settings without
-     preventing the rest of the website from loading. */
-
-  loadSiteSettings();
-
-
-  /* ------------------------------------------------------------
-     CONTACT FORM
-     ------------------------------------------------------------ */
-
-  const contact =
-    $('[data-contact-form]');
-
-  if (contact) {
-
-    contact.addEventListener(
-      'submit',
-      event => {
-
-        event.preventDefault();
-
-        const formData =
-          new FormData(contact);
-
-        const whatsapp =
-          siteSettings.whatsapp_number ||
-          siteSettings.whatsapp ||
-          C.WHATSAPP ||
-          '256709763803';
-
-        const text =
-`Kiteezi website enquiry
-Name: ${formData.get('name') || ''}
-Phone: ${formData.get('phone') || ''}
-Email: ${formData.get('email') || ''}
-Message: ${formData.get('message') || ''}`;
-
-        const box =
-          $('[data-form-message]', contact);
-
-        if (box) {
-
-          box.textContent =
-            'Opening WhatsApp to send your enquiry to Kiteezi reception.';
-
-          box.hidden = false;
-
-        }
-
-        window.open(
-          'https://wa.me/' +
-          String(whatsapp)
-            .replace(/[^0-9]/g, '') +
-          '?text=' +
-          encodeURIComponent(text),
-          '_blank'
-        );
-
-      }
-    );
-
-  }
-
-
-  /* ------------------------------------------------------------
-     BOOKING FORM
-     ------------------------------------------------------------ */
-
-  const bookingForm =
-    $('[data-booking-form]');
-
-  if (bookingForm) {
-    initBooking(bookingForm);
-  }
-
-
-  async function initBooking(form) {
-
-    const serviceSelect =
-      $('[name="service"]', form);
-
-    const foodBox =
-      $('[data-catering]', form);
-
-    const menuBox =
-      $('[data-menu-options]', form);
-
-    const totalBox =
-      $('[data-food-total]', form);
-
-    const payBox =
-      $('[data-payment]', form);
-
-
-    if (!serviceSelect) {
-      return;
-    }
-
-
-    /* ----------------------------------------------------------
-       REQUESTED SERVICE FROM URL
-       ---------------------------------------------------------- */
-
-    const params =
-      new URLSearchParams(
-        location.search
-      );
-
-    const requested =
-      params.get('service');
-
-
-    const known = {
-
-      'school-swimming':
-        'School Swimming',
-
-      'training':
-        'Swimming Training',
-
-      'event':
-        'Event & Catering',
-
-      'basketball':
-        'Basketball',
-
-      'football':
-        'Football'
-
-    };
-
-
-    /* ----------------------------------------------------------
-       LOAD SERVICES
-       ---------------------------------------------------------- */
-
-    try {
-
-      const services =
-        await api(
-          'services?select=id,name,category,description,price,duration_minutes&active=eq.true&order=category,name'
-        );
-
-
-      if (
-        Array.isArray(services) &&
-        services.length
-      ) {
-
-        const existing =
-          services.map(
-            service =>
-              String(service.name)
-                .toLowerCase()
-          );
-
-
-        /*
-         * Keep the existing virtual sports
-         * fallback for installations where
-         * Basketball / Football are not yet
-         * stored in services.
-         */
-
-        const extra = [
-
-          {
-            id: 'virtual-basketball',
-            name: 'Basketball',
-            category: 'sports',
-            price: 0
-          },
-
-          {
-            id: 'virtual-football',
-            name: 'Football',
-            category: 'sports',
-            price: 0
-          }
-
-        ].filter(service =>
-          !existing.includes(
-            service.name.toLowerCase()
-          )
-        );
-
-
-        const allServices =
-          services.concat(extra);
-
-
-        serviceSelect.innerHTML =
-          all
+   
