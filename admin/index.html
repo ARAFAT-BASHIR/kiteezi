@@ -1,46 +1,293 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>Kiteezi Admin Portal</title><link rel="stylesheet" href="stylez.css"><style>
-body{background:#f3f6f3}.admin-shell{display:grid;grid-template-columns:250px 1fr;min-height:100vh}.side{background:#10251c;color:#fff;padding:22px;position:sticky;top:0;height:100vh;overflow:auto}.side a{display:block;padding:11px;border-radius:9px;color:#cbd8d0;margin:3px 0;text-decoration:none}.side a:hover,.side a.active{background:#2d6a4f;color:#fff}.main{padding:30px;min-width:0}.top{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:22px}.panel{background:#fff;border:1px solid #e0e6e1;border-radius:16px;padding:20px;margin-bottom:18px;overflow:auto}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.metric{background:#fff;padding:18px;border-radius:14px;border:1px solid #e0e6e1}.metric b{font-size:27px;color:#1b4332;display:block}.tab{display:none}.tab.active{display:block}.admin table{width:100%;border-collapse:collapse}.admin th,.admin td{padding:11px;border-bottom:1px solid #e7ebe8;text-align:left;font-size:13px;vertical-align:top}.pill{display:inline-block;padding:4px 8px;border-radius:99px;background:#edf4ef;color:#1b4332;font-size:11px;font-weight:800}.login{min-height:100vh;display:grid;place-items:center;padding:20px}.login-card{max-width:430px;width:100%;background:#fff;border:1px solid #e0e6e1;border-radius:20px;padding:28px;box-shadow:0 12px 35px #00000012}.hide{display:none!important}.admin .form label{margin-bottom:12px}.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:15px}.toolbar input,.toolbar select{padding:10px;border:1px solid #d9e1dc;border-radius:9px}.mini{font-size:12px}.right{margin-left:auto}.actions{display:flex;gap:6px;flex-wrap:wrap}.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:20px;z-index:20}.modal.open{display:flex}.modal-card{background:#fff;border-radius:18px;padding:22px;max-width:700px;width:100%;max-height:90vh;overflow:auto}@media(max-width:850px){.admin-shell{grid-template-columns:1fr}.side{height:auto;position:static}.side nav{display:flex;overflow:auto;gap:4px}.side a{white-space:nowrap}.metrics{grid-template-columns:1fr 1fr}.main{padding:18px}}@media(max-width:500px){.metrics{grid-template-columns:1fr}}
-</style></head><body class="admin">
-<div id="loginView" class="login"><div class="login-card"><div class="brand"><span class="brand-mark">K</span><span>Kiteezi Admin<small>Private Management Portal</small></span></div><h2>Staff sign in</h2><p class="muted">This portal is separate from the public website. Only an active authenticated Kiteezi staff profile can enter.</p><form id="loginForm" class="form"><label>Email<input type="email" name="email" required autocomplete="username"></label><label>Password<input type="password" name="password" required autocomplete="current-password"></label><button class="btn btn-dark" type="submit">Sign in</button><div id="loginMsg" class="notice" hidden></div></form></div></div>
-<div id="app" class="admin-shell hide"><aside class="side"><div class="brand" style="color:#fff;margin-bottom:20px"><span class="brand-mark">K</span><span>Kiteezi Admin<small style="color:#bfcfc5">Private Operations</small></span></div><nav><a href="#dashboard" data-tab="dashboard">Dashboard</a><a href="#bookings" data-tab="bookings">Bookings</a><a href="#restaurant" data-tab="restaurant">Restaurant / POS</a><a href="#inventory" data-tab="inventory">Inventory</a><a href="#swimming" data-tab="swimming">Swimming</a><a href="#events" data-tab="events">Events</a><a href="#sports" data-tab="sports">Sports</a><a href="#reports" data-tab="reports">Reports</a><a href="#settings" data-tab="settings">Settings</a></nav><button id="logout" class="btn" style="margin-top:20px;width:100%">Sign out</button></aside>
-<main class="main"><div class="top"><div><div class="eyebrow">Operations</div><h1 style="margin:3px 0;color:#1b4332">Kiteezi Management System</h1><div id="who" class="muted mini"></div></div><span id="rolePill" class="pill"></span></div>
-<section id="dashboard" class="tab"><div class="metrics"><div class="metric"><b id="mBookings">0</b>Today's bookings</div><div class="metric"><b id="mPending">0</b>Pending bookings</div><div class="metric"><b id="mOrders">0</b>Open orders</div><div class="metric"><b id="mLow">0</b>Low-stock items</div></div><div class="panel"><h2>Today's operations</h2><div id="todayOps">Loading…</div></div><div class="panel"><h2>Payment controls</h2><p>Cash, Airtel Money <strong>4371872</strong> and MTN Mobile Money <strong>716644</strong> are supported. Mobile Money references remain pending until staff verify them.</p></div></section>
-<section id="bookings" class="tab"><div class="panel"><div class="toolbar"><h2 style="margin-right:auto">Bookings</h2><select id="bookingFilter"><option value="all">All</option><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="cancelled">Cancelled</option><option value="completed">Completed</option></select><button class="btn btn-dark" id="refreshBookings">Refresh</button></div><div id="bookingTable">Loading…</div></div></section>
-<section id="restaurant" class="tab"><div class="panel"><h2>Restaurant / POS</h2><p class="muted">Create a customer order, add menu items and save it to the existing <code>orders</code> and <code>order_items</code> tables. Cash can be marked paid at entry; Airtel/MTN remain pending until verified.</p><div class="grid grid-3"><label>Customer name<input id="posName" placeholder="Walk-in customer"></label><label>Phone<input id="posPhone"></label><label>Payment<select id="posPayment"><option value="cash">Cash</option><option value="airtel">Airtel Money — 4371872</option><option value="mtn">MTN Mobile Money — 716644</option></select></label></div><div id="posItems"></div><div class="toolbar"><strong>Total: <span id="posTotal">UGX 0</span></strong><button class="btn btn-dark right" id="saveOrder">Save order</button></div><div id="posMsg" class="notice" hidden></div></div></section>
-<section id="inventory" class="tab"><div class="panel"><h2>Inventory</h2><p class="muted">Current quantity is calculated from stock movements. Use the buttons to record purchases, usage, waste or adjustments.</p><div id="inventoryTable">Loading…</div></div></section>
-<section id="swimming" class="tab"><div class="panel"><h2>Swimming</h2><p>Manage swimming bookings from the unified Bookings screen. School and training records can be extended through the existing <code>swimming_sessions</code> table without changing the public site.</p><a class="btn btn-dark" href="#bookings" data-go="bookings">Open swimming bookings</a></div></section>
-<section id="events" class="tab"><div class="panel"><h2>Events & catering</h2><p>Event bookings carry the catering selections, estimated food total and no-outside-catering agreement in the booking record. Staff can confirm the booking after availability and payment review.</p><div class="notice">Venue space is free for applicable event/group bookings; customers pay for Kiteezi food and drinks. Outside catering is not permitted.</div></div></section>
-<section id="sports" class="tab"><div class="panel"><h2>Sports</h2><p>Basketball and football are supported as sports services. The public booking form does not request catering for swimming or sports.</p><div class="grid grid-3"><div class="card"><div class="card-body"><h3>Basketball</h3><p>Use bookings to schedule court sessions.</p></div></div><div class="card"><div class="card-body"><h3>Football</h3><p>Use bookings to schedule football group sessions.</p></div></div><div class="card"><div class="card-body"><h3>Availability</h3><p>Reception confirms facility availability before confirmation.</p></div></div></div></div></section>
-<section id="reports" class="tab"><div class="panel"><h2>Reports</h2><div id="reportData">Loading…</div></div></section>
-<section id="settings" class="tab"><div class="panel"><h2>Payment & system settings</h2><p><strong>Cash:</strong> accepted at reception</p><p><strong>Airtel Money:</strong> 4371872</p><p><strong>MTN Mobile Money:</strong> 716644</p><p class="muted">Do not put a Supabase service-role key in this website. Database RLS must remain the final authorization layer.</p></div></section>
-</main></div>
-<div id="paymentModal" class="modal"><div class="modal-card"><h2>Verify payment</h2><form id="paymentForm" class="form"><input type="hidden" name="id"><label>Payment method<select name="method"><option value="cash">Cash</option><option value="airtel">Airtel Money</option><option value="mtn">MTN Mobile Money</option></select></label><label>Amount<input type="number" min="0" name="amount" required></label><label>Transaction/reference<input name="reference"></label><label>Staff note<textarea name="note"></textarea></label><div class="toolbar"><button type="button" class="btn" id="closePayment">Cancel</button><button class="btn btn-dark" type="submit">Mark verified</button></div><div id="paymentMsg" class="notice" hidden></div></form></div></div>
-<script>
-const C={url:'https://aldpezvbetliuvagiekg.supabase.co',key:'sb_publishable_O4khVKMLU4yyoMDfWWH9Yw_Ha7IGHAL'};
-let session=null,profile=null,services=[],menu=[],bookings=[];
-const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
-const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-async function req(path,opt={}){if(!session&&path!=='auth/v1/token?grant_type=password')throw Error('Not signed in');const h={apikey:C.key,Authorization:'Bearer '+(session?.access_token||C.key),'Content-Type':'application/json',...(opt.headers||{})};const r=await fetch(C.url+'/'+(path.startsWith('auth/')?path:'rest/v1/'+path),{...opt,headers:h});const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw Error(d?.message||d?.hint||d?.details||t||('HTTP '+r.status));return d}
-function msg(el,text,error=false){el.textContent=text;el.className='notice'+(error?' error':'');el.hidden=false}
-async function signIn(e){e.preventDefault();const f=e.target,m=$('#loginMsg');try{m.hidden=true;const r=await req('auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email:f.email.value,password:f.password.value})});session=r;localStorage.setItem('kiteezi_admin_session',JSON.stringify(r));await boot();}catch(x){msg(m,x.message,true)}}
-async function boot(){const u=await req('auth/v1/user');profile=(await req('profiles?select=id,full_name,role,active&id=eq.'+encodeURIComponent(u.id)+'&limit=1'))?.[0];if(!profile||!profile.active)throw Error('Your account is authenticated but does not have an active Kiteezi staff profile. Ask the owner to create/activate your profile.');$('#loginView').classList.add('hide');$('#app').classList.remove('hide');$('#who').textContent=profile.full_name||u.email;$('#rolePill').textContent=profile.role;await loadAll();show(location.hash.slice(1)||'dashboard')}
-async function loadAll(){services=await req('services?select=id,name,category,price,active&active=eq.true&order=category,name');menu=await req('menu_items?select=id,name,description,price,in_stock&order=name');await loadBookings();await loadInventory();renderPOS();await dashboard();}
-async function loadBookings(){bookings=await req('bookings?select=id,customer_id,service_id,booking_date,start_time,people,source,status,payment_status,total,notes,created_at&order=booking_date.asc,start_time.asc&limit=500');renderBookings()}
-function serviceName(id,b){if(b?.notes){try{const n=JSON.parse(b.notes);if(n.requested_service)return n.requested_service}catch{}}return services.find(s=>s.id===id)?.name||'Unknown service'}
-async function customerMap(){const ids=[...new Set(bookings.map(b=>b.customer_id).filter(Boolean))];if(!ids.length)return {};const d=await req('customers?select=id,name,phone,email&id=in.('+ids.join(',')+')');return Object.fromEntries(d.map(x=>[x.id,x]))}
-async function renderBookings(){const wrap=$('#bookingTable');if(!bookings.length){wrap.innerHTML='<p class="muted">No bookings found.</p>';return}const cm=await customerMap(),filter=$('#bookingFilter').value;const rows=bookings.filter(b=>filter==='all'||b.status===filter).map(b=>{let n={};try{n=JSON.parse(b.notes||'{}')}catch{};return `<tr><td><strong>${esc(cm[b.customer_id]?.name||'Unknown')}</strong><br>${esc(cm[b.customer_id]?.phone||'')}</td><td>${esc(serviceName(b.service_id,b))}</td><td>${esc(b.booking_date)}<br>${esc(b.start_time||'')}</td><td>${b.people}</td><td>${esc(b.source)}</td><td>UGX ${Number(b.total||0).toLocaleString()}<br><span class="pill">${esc(b.payment_status)}</span></td><td><select class="status-select" data-status="${b.id}"><option ${b.status==='pending'?'selected':''}>pending</option><option ${b.status==='confirmed'?'selected':''}>confirmed</option><option ${b.status==='cancelled'?'selected':''}>cancelled</option><option ${b.status==='completed'?'selected':''}>completed</option></select><button class="btn mini" data-pay="${b.id}">Payment</button>${n.catering_required?'<div class="mini" style="margin-top:5px">Catering required</div>':''}</td></tr>`}).join('');wrap.innerHTML='<table><tr><th>Customer</th><th>Service</th><th>Date/time</th><th>People</th><th>Source</th><th>Total/payment</th><th>Actions</th></tr>'+rows+'</table>';$$('[data-status]').forEach(s=>s.onchange=async()=>{try{await req('bookings?id=eq.'+s.dataset.status,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({status:s.value})});await loadBookings();}catch(e){alert(e.message);}});$$('[data-pay]').forEach(b=>b.onclick=()=>openPayment(b.dataset.pay));}
-async function openPayment(id){const b=bookings.find(x=>x.id===id);if(!b)return;const f=$('#paymentForm');f.id.value=id;let n={};try{n=JSON.parse(b.notes||'{}')}catch{};f.method.value=n.payment_method||'cash';f.amount.value=b.total||'';f.reference.value=n.payment_reference||'';$('#paymentMsg').hidden=true;$('#paymentModal').classList.add('open')}
-async function verifyPayment(e){e.preventDefault();const f=e.target,m=$('#paymentMsg');try{let b=bookings.find(x=>x.id===f.id.value),n={};try{n=JSON.parse(b.notes||'{}')}catch{};n.payment_method=f.method.value;n.payment_reference=f.reference.value;n.payment_verified_by=profile.id;n.payment_verified_at=new Date().toISOString();n.payment_note=f.note.value;n.payment_amount=Number(f.amount.value||0);await req('bookings?id=eq.'+encodeURIComponent(f.id.value),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({payment_status:'paid',total:Number(f.amount.value||b.total||0),notes:JSON.stringify(n)})});try{await req('audit_logs',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({actor_id:profile.id,action:'verify_booking_payment',entity_type:'booking',entity_id:b.id,details:{method:f.method.value,amount:Number(f.amount.value||0),reference:f.reference.value||null}})});}catch(_){}$('#paymentModal').classList.remove('open');await loadBookings();}catch(x){msg(m,x.message,true)}}
-async function dashboard(){const today=new Date().toISOString().slice(0,10);const todays=bookings.filter(b=>b.booking_date===today);$('#mBookings').textContent=todays.length;$('#mPending').textContent=bookings.filter(b=>b.status==='pending').length;const orders=await req('orders?select=id,status&status=neq.completed&limit=500');$('#mOrders').textContent=orders.length;$('#todayOps').innerHTML=todays.length?'<table><tr><th>Time</th><th>Service</th><th>People</th><th>Status</th></tr>'+todays.map(b=>`<tr><td>${esc(b.start_time||'')}</td><td>${esc(serviceName(b.service_id,b))}</td><td>${b.people}</td><td>${esc(b.status)}</td></tr>`).join('')+'</table>':'<p class="muted">No bookings for today.</p>';}
-async function loadInventory(){const items=await req('inventory_items?select=id,name,unit,reorder_level,active&active=eq.true&order=name');const moves=await req('stock_movements?select=item_id,quantity,movement_type&limit=5000');const rows=items.map(i=>{const q=moves.filter(m=>m.item_id===i.id).reduce((s,m)=>s+(m.movement_type==='in'||m.movement_type==='purchase'||m.movement_type==='adjustment'?Number(m.quantity):m.movement_type==='out'||m.movement_type==='usage'||m.movement_type==='waste'?-Number(m.quantity):0),0);return {...i,q}});$('#mLow').textContent=rows.filter(i=>i.q<=Number(i.reorder_level||0)).length;$('#inventoryTable').innerHTML='<table><tr><th>Item</th><th>On hand</th><th>Reorder</th><th>Status</th><th></th></tr>'+rows.map(i=>`<tr><td>${esc(i.name)}</td><td>${i.q} ${esc(i.unit)}</td><td>${i.reorder_level}</td><td>${i.q<=Number(i.reorder_level||0)?'<span class="pill">Reorder</span>':'<span class="pill">OK</span>'}</td><td><button class="btn mini" data-stock="${i.id}" data-name="${esc(i.name)}">Record movement</button></td></tr>`).join('')+'</table>';$$('[data-stock]').forEach(b=>b.onclick=()=>recordStock(b.dataset.stock,b.dataset.name));}
-async function recordStock(id,name){const type=prompt('Movement type for '+name+' (in/out/waste/adjustment):','in');if(!type)return;const q=Number(prompt('Quantity:','1'));if(!q)return;const reason=prompt('Reason/supplier:','');try{await req('stock_movements',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({item_id:id,quantity:q,movement_type:type,reason,staff_id:profile.id})});await loadInventory()}catch(e){alert(e.message)}}
-function renderPOS(){const wrap=$('#posItems');wrap.innerHTML='<div class="grid grid-3">'+menu.filter(i=>i.in_stock).map(i=>`<label>${esc(i.name)}<small>UGX ${Number(i.price).toLocaleString()}</small><input type="number" min="0" step="1" value="0" data-pos-item="${i.id}" data-price="${i.price}"></label>`).join('')+'</div>';$$('[data-pos-item]').forEach(i=>i.oninput=calcPOS);calcPOS()}
-function calcPOS(){let t=0;$$('[data-pos-item]').forEach(i=>t+=Number(i.value||0)*Number(i.dataset.price||0));$('#posTotal').textContent='UGX '+t.toLocaleString();return t}
-async function saveOrder(){const m=$('#posMsg');try{const total=calcPOS(),payment=$('#posPayment').value,phone=$('#posPhone').value.trim(),name=$('#posName').value.trim()||'Walk-in customer';if(total<=0)throw Error('Add at least one menu item before saving the order.');let customerId=null;if(phone){const c=await req('customers?select=id&phone=eq.'+encodeURIComponent(phone)+'&limit=1');customerId=c?.[0]?.id;if(!customerId){const n=await req('customers',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({name,phone})});customerId=n?.[0]?.id}}const paymentStatus=payment==='cash'?'paid':'unpaid';const o=await req('orders',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({customer_id:customerId,source:'pos',status:'open',payment_status:paymentStatus,total,created_by:profile.id})});const order=o?.[0];if(!order)throw Error('Order was not created. Check orders RLS.');const items=$$('[data-pos-item]').map(i=>({order_id:order.id,menu_item_id:i.dataset.posItem,qty:Number(i.value||0),unit_price:Number(i.dataset.price||0)})).filter(i=>i.qty>0);if(items.length)await req('order_items',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(items)});try{await req('audit_logs',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({actor_id:profile.id,action:'create_pos_order',entity_type:'order',entity_id:order.id,details:{payment_method:payment,total}})});}catch(_){}msg(m,'Order '+order.id+' saved. '+(payment==='cash'?'Cash marked paid. Mobile Money orders remain unpaid until verified.':'Payment remains pending until verified.'));renderPOS();await dashboard()}catch(e){msg(m,e.message,true)}}
-async function reports(){const total=bookings.reduce((s,b)=>s+Number(b.total||0),0);$('#reportData').innerHTML=`<div class="grid grid-3"><div class="card"><div class="card-body"><h3>Booking value</h3><strong>UGX ${total.toLocaleString()}</strong></div></div><div class="card"><div class="card-body"><h3>Bookings</h3><strong>${bookings.length}</strong></div></div><div class="card"><div class="card-body"><h3>Confirmed</h3><strong>${bookings.filter(b=>b.status==='confirmed').length}</strong></div></div></div>`}
-function show(id){const valid=['dashboard','bookings','restaurant','inventory','swimming','events','sports','reports','settings'];if(!valid.includes(id))id='dashboard';$$('.tab').forEach(s=>s.classList.toggle('active',s.id===id));$$('[data-tab]').forEach(a=>a.classList.toggle('active',a.dataset.tab===id));if(location.hash.slice(1)!==id)history.replaceState(null,'','#'+id);if(id==='reports')reports()}
-$$('[data-tab]').forEach(a=>a.onclick=e=>{e.preventDefault();show(a.dataset.tab)});$$('[data-go]').forEach(a=>a.onclick=e=>{e.preventDefault();show(a.dataset.go)});
-$('#loginForm').addEventListener('submit',signIn);$('#logout').onclick=()=>{localStorage.removeItem('kiteezi_admin_session');location.reload()};$('#refreshBookings').onclick=loadBookings;$('#bookingFilter').onchange=renderBookings;$('#paymentForm').addEventListener('submit',verifyPayment);$('#closePayment').onclick=()=>$('#paymentModal').classList.remove('open');$('#saveOrder').onclick=saveOrder;
-(async()=>{try{const saved=localStorage.getItem('kiteezi_admin_session');if(saved){session=JSON.parse(saved);await boot()}else throw Error('no session')}catch(e){localStorage.removeItem('kiteezi_admin_session');$('#loginView').classList.remove('hide');}})();
-</script></body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Kiteezi Admin Portal</title>
+<link rel="stylesheet" href="stylez.css">
+
+<style>
+body{background:#f3f6f3}
+.admin-shell{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+.side{background:#10251c;color:#fff;padding:22px;position:sticky;top:0;height:100vh;overflow:auto}
+.side a{display:block;padding:11px;border-radius:9px;color:#cbd8d0;margin:3px 0;text-decoration:none}
+.side a:hover,.side a.active{background:#2d6a4f;color:#fff}
+.main{padding:30px;min-width:0}
+.top{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:22px}
+.panel{background:#fff;border:1px solid #e0e6e1;border-radius:16px;padding:20px;margin-bottom:18px;overflow:auto}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.metric{background:#fff;padding:18px;border-radius:14px;border:1px solid #e0e6e1}
+.metric b{font-size:27px;color:#1b4332;display:block}
+.tab{display:none}
+.tab.active{display:block}
+.admin table{width:100%;border-collapse:collapse}
+.admin th,.admin td{padding:11px;border-bottom:1px solid #e7ebe8;text-align:left;font-size:13px;vertical-align:top}
+.pill{display:inline-block;padding:4px 8px;border-radius:99px;background:#edf4ef;color:#1b4332;font-size:11px;font-weight:800}
+.login{min-height:100vh;display:grid;place-items:center;padding:20px}
+.login-card{max-width:430px;width:100%;background:#fff;border:1px solid #e0e6e1;border-radius:20px;padding:28px;box-shadow:0 12px 35px #00000012}
+.hide{display:none!important}
+.admin .form label{margin-bottom:12px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:15px}
+.toolbar input,.toolbar select{padding:10px;border:1px solid #d9e1dc;border-radius:9px}
+.mini{font-size:12px}
+.right{margin-left:auto}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:20px;z-index:20}
+.modal.open{display:flex}
+.modal-card{background:#fff;border-radius:18px;padding:22px;max-width:700px;width:100%;max-height:90vh;overflow:auto}
+.setting-help{font-size:12px;color:#66756d;margin-top:5px}
+.social-status{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+@media(max-width:850px){
+  .admin-shell{grid-template-columns:1fr}
+  .side{height:auto;position:static}
+  .side nav{display:flex;overflow:auto;gap:4px}
+  .side a{white-space:nowrap}
+  .metrics{grid-template-columns:1fr 1fr}
+  .main{padding:18px}
+}
+@media(max-width:500px){
+  .metrics{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body class="admin">
+
+<div id="loginView" class="login">
+  <div class="login-card">
+
+    <div class="brand">
+      <span class="brand-mark">K</span>
+      <span>
+        Kiteezi Admin
+        <small>Private Management Portal</small>
+      </span>
+    </div>
+
+    <h2>Staff sign in</h2>
+
+    <p class="muted">
+      This portal is separate from the public website.
+      Only an active authenticated Kiteezi staff profile can enter.
+    </p>
+
+    <form id="loginForm" class="form">
+
+      <label>
+        Email
+        <input
+          type="email"
+          name="email"
+          required
+          autocomplete="username"
+        >
+      </label>
+
+      <label>
+        Password
+        <input
+          type="password"
+          name="password"
+          required
+          autocomplete="current-password"
+        >
+      </label>
+
+      <button class="btn btn-dark" type="submit">
+        Sign in
+      </button>
+
+      <div id="loginMsg" class="notice" hidden></div>
+
+    </form>
+  </div>
+</div>
+
+
+<div id="app" class="admin-shell hide">
+
+  <aside class="side">
+
+    <div
+      class="brand"
+      style="color:#fff;margin-bottom:20px"
+    >
+      <span class="brand-mark">K</span>
+      <span>
+        Kiteezi Admin
+        <small style="color:#bfcfc5">
+          Private Operations
+        </small>
+      </span>
+    </div>
+
+    <nav>
+      <a href="#dashboard" data-tab="dashboard">
+        Dashboard
+      </a>
+
+      <a href="#bookings" data-tab="bookings">
+        Bookings
+      </a>
+
+      <a href="#restaurant" data-tab="restaurant">
+        Restaurant / POS
+      </a>
+
+      <a href="#inventory" data-tab="inventory">
+        Inventory
+      </a>
+
+      <a href="#swimming" data-tab="swimming">
+        Swimming
+      </a>
+
+      <a href="#events" data-tab="events">
+        Events
+      </a>
+
+      <a href="#sports" data-tab="sports">
+        Sports
+      </a>
+
+      <a href="#reports" data-tab="reports">
+        Reports
+      </a>
+
+      <a href="#settings" data-tab="settings">
+        Settings
+      </a>
+    </nav>
+
+    <button
+      id="logout"
+      class="btn"
+      style="margin-top:20px;width:100%"
+    >
+      Sign out
+    </button>
+
+  </aside>
+
+
+  <main class="main">
+
+    <div class="top">
+
+      <div>
+        <div class="eyebrow">
+          Operations
+        </div>
+
+        <h1 style="margin:3px 0;color:#1b4332">
+          Kiteezi Management System
+        </h1>
+
+        <div id="who" class="muted mini"></div>
+      </div>
+
+      <span id="rolePill" class="pill"></span>
+
+    </div>
+
+
+    <!-- DASHBOARD -->
+
+    <section id="dashboard" class="tab">
+
+      <div class="metrics">
+
+        <div class="metric">
+          <b id="mBookings">0</b>
+          Today's bookings
+        </div>
+
+        <div class="metric">
+          <b id="mPending">0</b>
+          Pending bookings
+        </div>
+
+        <div class="metric">
+          <b id="mOrders">0</b>
+          Open orders
+        </div>
+
+        <div class="metric">
+          <b id="mLow">0</b>
+          Low-stock items
+        </div>
+
+      </div>
+
+
+      <div class="panel">
+
+        <h2>
+          Today's operations
+        </h2>
+
+        <div id="todayOps">
+          Loading…
+        </div>
+
+      </div>
+
+
+      <div class="panel">
+
+        <h2>
+          Payment controls
+        </h2>
+
+        <p>
+          Cash, Airtel Money and MTN Mobile Money
+          are supported.
+          Mobile Money references remain pending
+          until staff verify them.
+        </p>
+
+      </div>
+
+    </section>
+
+
+    <!-- BOOKINGS -->
+
+    <section id="bookings" class="tab">
+
+      <div class="panel">
+
+        <div class="toolbar">
+
+          <h2 style="margin-right:auto">
+            Bookings
+          </h2>
+
+          <select id="bookingFilter">
+            <option value="all">All</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="completed">Completed</option>
+          </select>
+
+          <button
+            class="btn btn-dark"
+            id="refreshBookings"
+          >
+            Refresh
+          </button>
+
+        </div>
+
+        <div id="bookingTable">
+          Loading…
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!--
