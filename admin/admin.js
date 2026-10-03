@@ -11,8 +11,11 @@ async function login(e){
   const f=new FormData(e.currentTarget);
   const email=String(f.get('email')||'').trim();
   const password=String(f.get('password')||'');
-  const msg=$('#loginMsg');
-  msg.hidden=true;
+  const statusEl=$('#loginMsg');
+  const submitBtn=e.currentTarget.querySelector('button[type="submit"]');
+  statusEl.hidden=false;
+  statusEl.textContent='Signing in…';
+  if(submitBtn) submitBtn.disabled=true;
   try{
     if(!URL||!KEY) throw Error('Admin configuration is missing.');
     const response=await fetch(URL+'/auth/v1/token?grant_type=password',{
@@ -33,8 +36,10 @@ async function login(e){
     show();
   }catch(err){
     session=null; profile=null;
-    msg.textContent=err?.message||'Sign in failed.';
-    msg.hidden=false;
+    statusEl.textContent=err?.message||'Sign in failed. Please try again.';
+    statusEl.hidden=false;
+  } finally {
+    if(submitBtn) submitBtn.disabled=false;
   }
 }
 async function restore(){try{session=JSON.parse(sessionStorage.getItem('kiteezi_admin_session')||'null');if(!session?.access_token)throw Error();const p=await api('/rest/v1/profiles?select=*&id=eq.'+encodeURIComponent(session.user.id)+'&limit=1');profile=p?.[0];if(!profile?.active)throw Error();show()}catch{session=null;$('#loginView').classList.remove('hide')}}
