@@ -256,6 +256,29 @@
       });
   }
 
+
+  async function getServices() {
+    const response = await fetch(
+      url + '/rest/v1/services?select=id,name,price,pricing_mode,team_threshold,small_group_price,full_team_price&active=eq.true',
+      { headers }
+    );
+    if (!response.ok) throw new Error('Could not load services.');
+    return response.json();
+  }
+
+  async function applyServicePrices() {
+    const services = await getServices();
+    const byName = Object.fromEntries(services.map(item => [String(item.name).toLowerCase(), item]));
+    document.querySelectorAll('[data-db-service-price]').forEach(element => {
+      const service = byName[String(element.dataset.dbServicePrice).toLowerCase()];
+      if (!service) return;
+      const price = Number(service.price);
+      element.textContent = Number.isFinite(price) && price > 0
+        ? 'UGX ' + new Intl.NumberFormat('en-UG').format(price)
+        : 'Price on request';
+    });
+  }
+
   window.KiteeziContent = {
     settings: null,
 
@@ -268,7 +291,7 @@
         settings;
 
       applySettings(settings);
-
+      await applyServicePrices();
       return settings;
     },
 
@@ -281,6 +304,7 @@
         settings;
 
       applySettings(settings);
+      applyServicePrices().catch(error => console.warn('Service prices unavailable:', error));
     })
     .catch(error => {
       console.warn(
