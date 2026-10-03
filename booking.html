@@ -1,14 +1,530 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Kiteezi Recreational Center in Kiteezi, Lusanjja, Kampala."><title>Booking | Kiteezi Recreational Center</title><link rel="stylesheet" href="styles.css"></head><body><div class="topbar"><div class="container"><span>Kiteezi, Lusanjja, Kampala</span><span>Daily enquiries: +256 766 529086</span></div></div><header class="nav"><div class="container navin"><a class="brand" href="index.html"><span class="brand-mark">K</span><span>Kiteezi Recreational Center<small>Comfort • Dining • Recreation</small></span></a><button class="mobile btn" data-mobile>☰</button><nav class="links"><a href="index.html">Home</a><a href="swimming.html">Swimming</a><a href="menu.html">Menu</a><a href="events.html">Events</a><a href="sports.html">Sports</a><a href="about.html">About</a><a href="contact.html">Contact</a><a class="btn btn-primary" href="booking.html">Book Now</a></nav></div></header><main><section class="page-hero"><div class="container"><div class="eyebrow">Bookings</div><h1>Tell us what you need.</h1><p>Online bookings are sent directly to Kiteezi reception for confirmation. Sports and swimming are booked separately from catering; applicable venue/event bookings include Kiteezi food and drink selection.</p></div></section><section class="section"><div class="container split"><div><div class="section-head"><div class="eyebrow">Booking form</div><h2>Request your visit.</h2><p>Choose a service, provide the date and group details, and the reception team can confirm availability.</p></div><form class="form" data-booking-form>
-<label>Service<select name="service" required><option>Loading services…</option></select></label>
-<label>Date<input type="date" name="date" required></label>
-<label>Preferred time<input type="time" name="time" required></label>
-<label>Number of people<input type="number" min="1" value="1" name="people" required></label>
-<label>Full name<input name="name" required autocomplete="name"></label>
-<label>Phone / WhatsApp<input name="phone" required autocomplete="tel"></label>
-<label>Email<input type="email" name="email" autocomplete="email"></label>
-<div class="card" data-catering style="padding:18px;margin:8px 0" hidden><h3>Catering & food/drinks</h3><p><strong>The venue space is free for applicable event/group bookings.</strong> Customers pay for food and drinks supplied by Kiteezi Recreational Center. Outside food or drinks are not permitted.</p><div data-menu-options></div><p><strong>Estimated catering total: <span data-food-total>UGX 0</span></strong></p><label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" name="catering_agreement" required> <span>I understand that outside catering/food and drinks are not allowed for this booking.</span></label></div>
-<label>Payment method<select name="payment_method"><option value="cash">Cash at Kiteezi</option><option value="airtel">Airtel Money — 4371872</option><option value="mtn">MTN Mobile Money — 716644</option></select></label>
-<label>Mobile Money transaction/reference (if already paid)<input name="payment_reference" placeholder="Optional — staff will verify before marking paid"></label>
-<div class="notice" data-payment><strong>Payment verification:</strong> Mobile Money references are recorded as pending until Kiteezi staff verify the payment. Cash is paid at reception.</div>
-<label>Notes<textarea name="notes" placeholder="School name, event type, swimmer level, dietary requirements, or anything else the team should know."></textarea></label>
-<button class="btn btn-dark" type="submit">Send booking request</button><div class="notice" data-form-message hidden></div></form></div><div><img src="https://images.unsplash.com/photo-1519315901367-f34ff9154487?auto=format&fit=crop&w=1000&q=85" style="border-radius:22px;height:500px;object-fit:cover;width:100%"><div class="card" style="margin-top:20px"><div class="card-body"><h3>Prefer to visit physically?</h3><p>Reception can create the same booking for walk-in customers, phone calls and WhatsApp enquiries. Staff record the booking source and payment status so the center has one reliable schedule.</p></div></div></div></div></section></main><footer class="footer"><div class="container footer-grid"><div><div class="brand" style="color:#fff"><span class="brand-mark">K</span><span>Kiteezi Recreational Center<small style="color:#bfcfc5">Kiteezi • Lusanjja • Kampala</small></span></div><p>A welcoming destination for swimming, dining, sports, gardens, celebrations and everyday relaxation.</p><div class="socials"><a href="#">f</a><a href="#">◎</a><a href="#">▶</a><a href="https://wa.me/256709763803">W</a></div></div><div><h4>Explore</h4><a href="swimming.html">Swimming</a><a href="menu.html">Restaurant & Menu</a><a href="events.html">Events & Catering</a><a href="sports.html">Sports</a></div><div><h4>Bookings</h4><a href="booking.html">Make a Booking</a><a href="booking.html?service=school-swimming">School Swimming</a><a href="booking.html?service=training">Swimming Training</a><a href="booking.html?service=event">Event Enquiry</a></div><div><h4>Contact</h4><a href="tel:+256766529086">+256 766 529086</a><a href="https://wa.me/256709763803">WhatsApp: +256 709 763803</a><a href="contact.html">Kiteezi, Lusanjja, Kampala</a></div></div><div class="container copyright">© <span data-year></span> Kiteezi Recreational Center. All rights reserved.</div></footer><script src="js/config.js"></script><script src="js/site.js"></script></body></html>
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0f5132">
+  <title>Book Now | Kiteezi Recreational Center</title>
+  <meta name="description" content="Book swimming, sports, dining, events and other activities at Kiteezi Recreational Center.">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .booking-wrap{max-width:980px;margin:0 auto}
+    .form-card{background:#fff;border-radius:18px;padding:28px;box-shadow:0 12px 35px rgba(0,0,0,.08)}
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+    .field{display:flex;flex-direction:column;gap:7px}
+    .field.full{grid-column:1/-1}
+    .field label{font-weight:700}
+    .field input,.field select,.field textarea{width:100%;padding:13px 14px;border:1px solid #d7ddd8;border-radius:10px;font:inherit;background:#fff}
+    .field textarea{min-height:130px;resize:vertical}
+    .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid rgba(15,81,50,.15);border-color:#0f5132}
+    .required{color:#b42318}
+    .service-info{margin-top:18px;padding:16px;border-radius:12px;background:#f5f7f4;display:none}
+    .service-info.show{display:block}
+    .booking-summary{margin-top:20px;padding:18px;border-radius:12px;background:#f7f1e6;display:none}
+    .booking-summary.show{display:block}
+    .summary-row{display:flex;justify-content:space-between;gap:20px;padding:7px 0;border-bottom:1px solid rgba(0,0,0,.08)}
+    .summary-row:last-child{border-bottom:0}
+    .notice{margin-bottom:22px}
+    .form-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
+    .status{margin-top:18px;padding:14px 16px;border-radius:10px;display:none}
+    .status.show{display:block}
+    .status.success{background:#e8f5ec;color:#14532d}
+    .status.error{background:#fdecec;color:#991b1b}
+    .status.info{background:#eef4ff;color:#1e40af}
+    @media(max-width:720px){
+      .form-grid{grid-template-columns:1fr}
+      .field.full{grid-column:auto}
+      .form-card{padding:20px}
+    }
+  </style>
+</head><body>  <div class="topbar">
+    <div class="container navin">
+      <div>📍 <span data-site-location>Kiteezi, Lusanjja, Kampala, Uganda</span></div>
+      <div class="mobile">
+        <a data-site-phone-link href="tel:+256766529086">Call us</a>
+        <span> • </span>
+        <a data-site-whatsapp-link href="https://wa.me/256709763803" target="_blank" rel="noopener">WhatsApp</a>
+      </div>
+    </div>
+  </div>  <header class="nav">
+    <div class="container navin">
+      <a class="brand" href="index.html" aria-label="Kiteezi Recreational Center home">
+        <span class="brand-mark">K</span>
+        <span class="brand-name" data-site-business-name>Kiteezi Recreational Center</span>
+      </a>  <nav class="links" aria-label="Main navigation">
+    <a href="index.html">Home</a>
+    <a href="swimming.html">Swimming</a>
+    <a href="sports.html">Sports</a>
+    <a href="menu.html">Dining</a>
+    <a href="events.html">Events</a>
+    <a href="about.html">About</a>
+    <a class="btn btn-primary" href="booking.html">Book Now</a>
+  </nav>
+</div>
+
+  </header>  <main><section class="hero">
+  <div class="container hero-content">
+    <div class="eyebrow">Reservations</div>
+    <h1>Plan your visit.</h1>
+    <p>
+      Tell us what you would like to book, when you would like to come,
+      and how we can reach you.
+    </p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container booking-wrap">
+
+    <div class="notice">
+      <strong>Booking information</strong>
+      <p>
+        Submit your request below. Our team will review availability and
+        contact you using the details you provide. A booking request is
+        not confirmed until it has been accepted by Kiteezi Recreational Center.
+      </p>
+    </div>
+
+    <div class="form-card">
+
+      <form id="bookingForm" novalidate>
+
+        <div class="form-grid">
+
+          <div class="field">
+            <label for="customerName">
+              Full name <span class="required">*</span>
+            </label>
+            <input
+              id="customerName"
+              name="customerName"
+              type="text"
+              autocomplete="name"
+              required
+              maxlength="120"
+              placeholder="Your full name"
+            >
+          </div>
+
+          <div class="field">
+            <label for="phone">
+              Phone number <span class="required">*</span>
+            </label>
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              autocomplete="tel"
+              required
+              maxlength="30"
+              placeholder="+256..."
+            >
+          </div>
+
+          <div class="field">
+            <label for="email">Email address</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autocomplete="email"
+              maxlength="160"
+              placeholder="you@example.com"
+            >
+          </div>
+
+          <div class="field">
+            <label for="service">
+              What would you like to book? <span class="required">*</span>
+            </label>
+            <select id="service" name="service" required>
+              <option value="">Select a service</option>
+              <option value="Swimming">Swimming</option>
+              <option value="Football">Football</option>
+              <option value="Sports">Sports</option>
+              <option value="Restaurant / Dining">Restaurant / Dining</option>
+              <option value="Birthday / Private Event">Birthday / Private Event</option>
+              <option value="Corporate / Group Event">Corporate / Group Event</option>
+              <option value="Other Event">Other Event</option>
+            </select>
+          </div>
+
+          <div id="serviceInfo" class="service-info full">
+            <strong id="serviceInfoTitle"></strong>
+            <div id="serviceInfoText"></div>
+          </div>
+
+          <div class="field">
+            <label for="bookingDate">
+              Preferred date <span class="required">*</span>
+            </label>
+            <input
+              id="bookingDate"
+              name="bookingDate"
+              type="date"
+              required
+            >
+          </div>
+
+          <div class="field">
+            <label for="bookingTime">
+              Preferred time <span class="required">*</span>
+            </label>
+            <input
+              id="bookingTime"
+              name="bookingTime"
+              type="time"
+              required
+            >
+          </div>
+
+          <div class="field">
+            <label for="guests">
+              Number of people <span class="required">*</span>
+            </label>
+            <input
+              id="guests"
+              name="guests"
+              type="number"
+              min="1"
+              max="1000"
+              value="1"
+              required
+            >
+          </div>
+
+          <div class="field">
+            <label for="occasion">Occasion / booking type</label>
+            <select id="occasion" name="occasion">
+              <option value="">Select if applicable</option>
+              <option value="Personal visit">Personal visit</option>
+              <option value="Family outing">Family outing</option>
+              <option value="Birthday">Birthday</option>
+              <option value="Wedding">Wedding</option>
+              <option value="Corporate">Corporate</option>
+              <option value="Team / Sports group">Team / Sports group</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div id="cateringSection" class="field full" style="display:none">
+            <label for="catering">
+              Catering / food and drinks
+            </label>
+            <textarea
+              id="catering"
+              name="catering"
+              maxlength="2000"
+              placeholder="Tell us about food, drinks, catering quantities or any dietary requirements."
+            ></textarea>
+          </div>
+
+          <div class="field full">
+            <label for="notes">Additional requirements</label>
+            <textarea
+              id="notes"
+              name="notes"
+              maxlength="3000"
+              placeholder="Anything else we should know about your booking?"
+            ></textarea>
+          </div>
+
+          <div class="field full">
+            <label for="paymentMethod">Preferred payment method</label>
+            <select id="paymentMethod" name="paymentMethod">
+              <option value="">Select if applicable</option>
+              <option value="Mobile Money">Mobile Money</option>
+              <option value="Cash">Cash</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div id="bookingSummary" class="booking-summary">
+          <strong>Booking summary</strong>
+
+          <div class="summary-row">
+            <span>Service</span>
+            <strong id="summaryService">—</strong>
+          </div>
+
+          <div class="summary-row">
+            <span>Date</span>
+            <strong id="summaryDate">—</strong>
+          </div>
+
+          <div class="summary-row">
+            <span>Time</span>
+            <strong id="summaryTime">—</strong>
+          </div>
+
+          <div class="summary-row">
+            <span>Guests</span>
+            <strong id="summaryGuests">—</strong>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" id="submitBooking" type="submit">
+            Submit Booking Request
+          </button>
+
+          <a
+            class="btn btn-dark"
+            data-site-whatsapp-link
+            href="https://wa.me/256709763803"
+            target="_blank"
+            rel="noopener"
+          >
+            WhatsApp Instead
+          </a>
+        </div>
+
+        <div id="bookingStatus" class="status" role="status" aria-live="polite"></div>
+
+      </form>
+
+    </div>
+
+  </div>
+</section>
+
+  </main>  <footer class="footer">
+    <div class="container footer-grid">  <div>
+    <h3 data-site-business-name>Kiteezi Recreational Center</h3>
+    <p data-site-tagline>Comfort • Dining • Recreation</p>
+    <p data-site-location>Kiteezi, Lusanjja, Kampala, Uganda</p>
+  </div>
+
+  <div>
+    <h3>Explore</h3>
+    <p><a href="swimming.html">Swimming</a></p>
+    <p><a href="sports.html">Sports</a></p>
+    <p><a href="menu.html">Dining</a></p>
+    <p><a href="events.html">Events</a></p>
+  </div>
+
+  <div>
+    <h3>Contact</h3>
+    <p>
+      <a data-site-phone-link href="tel:+256766529086">
+        <span data-site-phone>+256 766 529086</span>
+      </a>
+    </p>
+    <p>
+      <a
+        data-site-whatsapp-link
+        href="https://wa.me/256709763803"
+        target="_blank"
+        rel="noopener"
+      >
+        WhatsApp
+      </a>
+    </p>
+  </div>
+
+</div>
+
+<div class="container copyright">
+  © <span data-current-year>2026</span>
+  <span data-site-business-name>Kiteezi Recreational Center</span>.
+  All rights reserved.
+</div>
+
+  </footer>  <script src="config.js"></script>  <script src="content.js"></script>  <script src="site.js"></script>  <script>
+    (() => {
+      const form = document.getElementById('bookingForm');
+      const service = document.getElementById('service');
+      const cateringSection = document.getElementById('cateringSection');
+      const serviceInfo = document.getElementById('serviceInfo');
+      const serviceInfoTitle = document.getElementById('serviceInfoTitle');
+      const serviceInfoText = document.getElementById('serviceInfoText');
+      const status = document.getElementById('bookingStatus');
+      const submitButton = document.getElementById('submitBooking');
+
+      const summary = {
+        box: document.getElementById('bookingSummary'),
+        service: document.getElementById('summaryService'),
+        date: document.getElementById('summaryDate'),
+        time: document.getElementById('summaryTime'),
+        guests: document.getElementById('summaryGuests')
+      };
+
+      const dateInput = document.getElementById('bookingDate');
+
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      dateInput.min = `${yyyy}-${mm}-${dd}`;
+
+      const descriptions = {
+        'Swimming': 'Swimming bookings are handled according to pool availability and applicable swimming arrangements.',
+        'Football': 'Football bookings are subject to field availability and the selected time.',
+        'Sports': 'Sports bookings are subject to facility availability and the activity requested.',
+        'Restaurant / Dining': 'For dining and group visits, tell us the number of guests and any catering requirements.',
+        'Birthday / Private Event': 'Private events can include food and drinks. Tell us about your event requirements below.',
+        'Corporate / Group Event': 'Corporate and group bookings can include catering. Please provide as much detail as possible.',
+        'Other Event': 'Tell us about your event, expected guests and any catering or setup requirements.'
+      };
+
+      function showStatus(message, type) {
+        status.textContent = message;
+        status.className = `status show ${type}`;
+      }
+
+      function updateService() {
+        const value = service.value;
+        const eventLike = [
+          'Restaurant / Dining',
+          'Birthday / Private Event',
+          'Corporate / Group Event',
+          'Other Event'
+        ].includes(value);
+
+        cateringSection.style.display = eventLike ? 'flex' : 'none';
+
+        if (eventLike) {
+          document.getElementById('catering').placeholder =
+            'Tell us about food, drinks, catering quantities or any dietary requirements.';
+        }
+
+        if (value && descriptions[value]) {
+          serviceInfoTitle.textContent = value;
+          serviceInfoText.textContent = descriptions[value];
+          serviceInfo.classList.add('show');
+        } else {
+          serviceInfo.classList.remove('show');
+        }
+
+        updateSummary();
+      }
+
+      function updateSummary() {
+        const value = service.value;
+        const date = dateInput.value;
+        const time = document.getElementById('bookingTime').value;
+        const guests = document.getElementById('guests').value;
+
+        if (!value && !date && !time) {
+          summary.box.classList.remove('show');
+          return;
+        }
+
+        summary.box.classList.add('show');
+        summary.service.textContent = value || '—';
+        summary.date.textContent = date || '—';
+        summary.time.textContent = time || '—';
+        summary.guests.textContent = guests || '—';
+      }
+
+      service.addEventListener('change', updateService);
+      dateInput.addEventListener('change', updateSummary);
+      document.getElementById('bookingTime').addEventListener('change', updateSummary);
+      document.getElementById('guests').addEventListener('input', updateSummary);
+
+      form.addEventListener('input', () => {
+        if (status.classList.contains('show')) {
+          status.className = 'status';
+          status.textContent = '';
+        }
+      });
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        if (!form.checkValidity()) {
+          form.reportValidity();
+          return;
+        }
+
+        const cfg = window.KITEEZI_CONFIG || {};
+        const supabaseUrl = cfg.SUPABASE_URL;
+        const supabaseKey = cfg.SUPABASE_ANON_KEY;
+
+        if (!supabaseUrl || !supabaseKey) {
+          showStatus(
+            'The booking system is not configured yet. Please contact us directly on WhatsApp or phone.',
+            'error'
+          );
+          return;
+        }
+
+        const data = {
+          customer_name: document.getElementById('customerName').value.trim(),
+          phone: document.getElementById('phone').value.trim(),
+          email: document.getElementById('email').value.trim() || null,
+          booking_date: document.getElementById('bookingDate').value,
+          start_time: document.getElementById('bookingTime').value,
+          guests: Number(document.getElementById('guests').value),
+          notes: JSON.stringify({
+            service: service.value,
+            occasion: document.getElementById('occasion').value || null,
+            catering: document.getElementById('catering').value.trim() || null,
+            additional_requirements: document.getElementById('notes').value.trim() || null,
+            payment_method: document.getElementById('paymentMethod').value || null,
+            source: 'public_website'
+          }),
+          status: 'pending'
+        };
+
+        submitButton.disabled = true;
+        submitButton.textContent = 'Submitting…';
+        showStatus('Submitting your booking request…', 'info');
+
+        try {
+          const response = await fetch(`${supabaseUrl}/rest/v1/bookings`, {
+            method: 'POST',
+            headers: {
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify(data)
+          });
+
+          const result = await response.text();
+
+          if (!response.ok) {
+            let message = 'We could not submit the booking request.';
+            try {
+              const parsed = JSON.parse(result);
+              if (parsed.message) message = parsed.message;
+              else if (parsed.hint) message = parsed.hint;
+            } catch (_) {}
+
+            throw new Error(message);
+          }
+
+          showStatus(
+            'Your booking request has been received. Our team will contact you to confirm availability and the next steps.',
+            'success'
+          );
+
+          form.reset();
+          document.getElementById('guests').value = 1;
+          cateringSection.style.display = 'none';
+          serviceInfo.classList.remove('show');
+          summary.box.classList.remove('show');
+
+        } catch (error) {
+          console.error('Kiteezi booking error:', error);
+
+          showStatus(
+            error.message ||
+            'We could not submit your booking. Please contact us on WhatsApp so we can assist you.',
+            'error'
+          );
+        } finally {
+          submitButton.disabled = false;
+          submitButton.textContent = 'Submit Booking Request';
+        }
+      });
+
+      updateService();
+    })();
+  </script></body>
+</html>
