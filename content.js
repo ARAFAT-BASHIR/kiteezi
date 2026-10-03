@@ -1,29 +1,19 @@
 /* ============================================================
-   KITEEZI PUBLIC CONTENT FOUNDATION
-   ============================================================
-
-   Loads business/contact/social settings from Supabase.
-
-   IMPORTANT:
-   Existing hard-coded website content remains in the HTML.
-   If the database is unavailable, the existing website content
-   continues to display.
-
-   This means Phase 1 does not destroy the current design/content.
+   KITEEZI PUBLIC CONTENT
+   Database-backed settings with safe HTML fallbacks.
    ============================================================ */
 
 (function () {
+  'use strict';
 
   const C = window.KITEEZI_CONFIG || {};
-
-  const url = (C.SUPABASE_URL || '').replace(/\/$/, '');
-  const key = C.SUPABASE_ANON_KEY || '';
+  const url = String(C.SUPABASE_URL || '').replace(/\/+$/, '');
+  const key = String(C.SUPABASE_ANON_KEY || '');
 
   if (!url || !key) {
     console.warn('Kiteezi Supabase configuration is missing.');
     return;
   }
-
 
   const headers = {
     apikey: key,
@@ -31,13 +21,7 @@
     'Content-Type': 'application/json'
   };
 
-
-  /* ------------------------------------------------------------
-     GET SITE SETTINGS
-     ------------------------------------------------------------ */
-
   async function getSettings() {
-
     const response = await fetch(
       url + '/rest/v1/site_settings?select=key,value',
       {
@@ -48,315 +32,237 @@
 
     if (!response.ok) {
       throw new Error(
-        'Could not load Kiteezi site settings. HTTP ' +
-        response.status
+        'Could not load site settings. HTTP ' + response.status
       );
     }
 
     const rows = await response.json();
 
     return Object.fromEntries(
-      (rows || []).map(row => [
-        row.key,
-        row.value
+      (Array.isArray(rows) ? rows : []).map(row => [
+        String(row.key),
+        row.value ?? ''
       ])
     );
   }
 
+  function cleanPhone(value) {
+    return String(value || '').replace(/[^0-9+]/g, '');
+  }
 
-  /* ------------------------------------------------------------
-     APPLY SETTINGS TO PUBLIC WEBSITE
-     ------------------------------------------------------------ */
+  function cleanWhatsApp(value) {
+    return String(value || '')
+      .replace(/^https?:\/\/wa\.me\//i, '')
+      .replace(/[^0-9]/g, '');
+  }
+
+  function setText(selector, value) {
+    if (value === undefined || value === null || value === '') return;
+
+    document.querySelectorAll(selector).forEach(element => {
+      element.textContent = String(value);
+    });
+  }
 
   function applySettings(settings) {
-
-
     /*
-      Generic:
-
-      Any HTML element can use:
-
-      data-site-setting="business_name"
-
-      and its text will automatically be replaced.
+      Generic database settings.
     */
-
     document
       .querySelectorAll('[data-site-setting]')
       .forEach(element => {
-
         const setting = element.dataset.siteSetting;
 
-        if (!(setting in settings)) {
-          return;
-        }
+        if (!(setting in settings)) return;
 
         const value = settings[setting] ?? '';
 
         if (
-          element.matches(
-            'input, textarea, select'
-          )
+          element.matches('input, textarea, select')
         ) {
-
           element.value = value;
-
         } else if (
           element.dataset.settingHtml === 'true'
         ) {
-
           element.innerHTML = String(value);
-
         } else {
-
-          element.textContent = value;
-
+          element.textContent = String(value);
         }
-
       });
-
 
     /*
-      TOP BAR
+      BUSINESS NAME
     */
+    if (settings.business_name) {
+      document
+        .querySelectorAll('.brand-name')
+        .forEach(element => {
+          element.textContent = settings.business_name;
+        });
 
-    document
-      .querySelectorAll(
-        '.topbar .container span:first-child'
-      )
-      .forEach(element => {
+      document.title =
+        settings.business_name +
+        ' | ' +
+        (settings.business_tagline ||
+          'Comfort • Dining • Recreation');
+    }
 
-        if (settings.location) {
-          element.textContent = settings.location;
-        }
-
-      });
-
-
-    document
-      .querySelectorAll(
-        '.topbar .container span:last-child'
-      )
-      .forEach(element => {
-
-        if (settings.phone) {
+    /*
+      TAGLINE
+    */
+    if (settings.business_tagline) {
+      document
+        .querySelectorAll(
+          '[data-site-setting="business_tagline"]'
+        )
+        .forEach(element => {
           element.textContent =
-            'Daily enquiries: ' +
-            settings.phone;
-        }
-
-      });
-
-
-    /*
-      BRAND
-    */
-
-    document
-      .querySelectorAll(
-        '.brand span:not(.brand-mark)'
-      )
-      .forEach(element => {
-
-        if (!settings.business_name) {
-          return;
-        }
-
-        const small =
-          element.querySelector('small');
-
-
-        /*
-          Preserve the existing brand markup.
-        */
-
-        Array.from(element.childNodes)
-          .forEach(node => {
-
-            if (node.nodeType === 3) {
-              node.nodeValue =
-                settings.business_name + ' ';
-            }
-
-          });
-
-
-        if (
-          small &&
-          settings.business_tagline
-        ) {
-
-          small.textContent =
             settings.business_tagline;
-
-        }
-
-      });
-
+        });
+    }
 
     /*
-      FOOTER LOCATION
+      LOCATION
     */
-
-    document
-      .querySelectorAll(
-        '.footer .brand span:not(.brand-mark) small'
-      )
-      .forEach(element => {
-
-        if (settings.location) {
-          element.textContent =
-            settings.location;
-        }
-
-      });
-
+    if (settings.location) {
+      setText(
+        '[data-site-setting="location"]',
+        settings.location
+      );
+    }
 
     /*
       PHONE
     */
+    if (settings.phone) {
+      const phone = settings.phone;
+      const phoneLink =
+        settings.phone_link ||
+        'tel:' + cleanPhone(phone);
 
-    document
-      .querySelectorAll(
-        '.footer a[href^="tel:"]'
-      )
-      .forEach(element => {
+      document
+        .querySelectorAll(
+          '[data-site-setting="phone"]'
+        )
+        .forEach(element => {
+          element.textContent = phone;
 
-        if (!settings.phone) {
-          return;
-        }
+          if (
+            element.matches('a')
+          ) {
+            element.href = phoneLink;
+          }
+        });
 
-        const number =
-          settings.phone.replace(
-            /[^0-9+]/g,
-            ''
-          );
+      document
+        .querySelectorAll(
+          'a[href^="tel:"]'
+        )
+        .forEach(element => {
+          element.href = phoneLink;
 
-        element.href =
-          'tel:' + number;
-
-        element.textContent =
-          settings.phone;
-
-      });
-
+          if (
+            element.dataset.siteSetting === 'phone' ||
+            element.closest('.topbar') ||
+            element.closest('.footer')
+          ) {
+            element.textContent = phone;
+          }
+        });
+    }
 
     /*
       WHATSAPP
     */
+    const whatsappNumber =
+      settings.whatsapp_number ||
+      cleanWhatsApp(settings.whatsapp);
 
-    document
-      .querySelectorAll(
-        '.footer a[href*="wa.me/"]'
-      )
-      .forEach(element => {
+    const whatsappLink =
+      settings.whatsapp_link ||
+      (
+        whatsappNumber
+          ? 'https://wa.me/' + whatsappNumber
+          : ''
+      );
 
-        if (settings.whatsapp_link) {
+    if (whatsappLink) {
+      document
+        .querySelectorAll(
+          'a[href*="wa.me/"], [data-site-setting="whatsapp"]'
+        )
+        .forEach(element => {
+          if (element.matches('a')) {
+            element.href = whatsappLink;
+          }
 
-          element.href =
-            settings.whatsapp_link;
-
-        }
-
-        if (settings.whatsapp) {
-
-          element.textContent =
-            'WhatsApp: ' +
-            settings.whatsapp;
-
-        }
-
-      });
-
-
-    /*
-      FOOTER LOCATION LINK
-    */
-
-    document
-      .querySelectorAll(
-        '.footer a[href="contact.html"]'
-      )
-      .forEach(element => {
-
-        if (settings.location) {
-
-          element.textContent =
-            settings.location;
-
-        }
-
-      });
-
+          if (
+            element.dataset.siteSetting === 'whatsapp' &&
+            settings.whatsapp
+          ) {
+            element.textContent =
+              settings.whatsapp;
+          }
+        });
+    }
 
     /*
       SOCIAL MEDIA
-
-      The existing footer has:
-      Facebook
-      Instagram
-      YouTube
-
-      We connect those first.
     */
-
-    const socialKeys = [
-      'facebook',
-      'instagram',
-      'youtube'
-    ];
-
+    const socialMap = {
+      facebook: settings.facebook,
+      instagram: settings.instagram,
+      youtube: settings.youtube,
+      whatsapp: whatsappLink
+    };
 
     document
       .querySelectorAll(
-        '.footer .socials a'
+        '[data-social]'
       )
-      .forEach((element, index) => {
+      .forEach(element => {
+        const name = element.dataset.social;
+        const link = socialMap[name];
 
-        const setting =
-          socialKeys[index];
-
-        if (!setting) {
-          return;
-        }
-
-        if (settings[setting]) {
-
-          element.href =
-            settings[setting];
-
+        if (link) {
+          element.href = link;
           element.hidden = false;
-
         } else {
-
-          /*
-            Hide an empty social button rather
-            than leaving a dead "#".
-          */
-
           element.hidden = true;
-
         }
-
       });
 
+    /*
+      PAYMENT CONTACTS
+    */
+    setText(
+      '[data-site-setting="airtel_money"]',
+      settings.airtel_money
+    );
+
+    setText(
+      '[data-site-setting="mtn_money"]',
+      settings.mtn_money
+    );
+
+    /*
+      COPYRIGHT
+    */
+    document
+      .querySelectorAll('[data-year]')
+      .forEach(element => {
+        element.textContent =
+          new Date().getFullYear();
+      });
   }
 
-
-  /* ------------------------------------------------------------
-     PUBLIC API
-     ------------------------------------------------------------ */
-
   window.KiteeziContent = {
-
     settings: null,
 
     getSettings,
 
     refresh: async function () {
-
-      const settings =
-        await getSettings();
+      const settings = await getSettings();
 
       window.KiteeziContent.settings =
         settings;
@@ -364,42 +270,24 @@
       applySettings(settings);
 
       return settings;
+    },
 
-    }
-
+    applySettings
   };
 
-
-  /* ------------------------------------------------------------
-     INITIAL LOAD
-     ------------------------------------------------------------ */
-
   getSettings()
-
     .then(settings => {
-
       window.KiteeziContent.settings =
         settings;
 
       applySettings(settings);
-
     })
-
     .catch(error => {
-
-      /*
-        Important fallback:
-        Never break the existing website just because
-        the settings table is unavailable.
-      */
-
       console.warn(
         'Kiteezi site settings unavailable. ' +
-        'Existing website content will remain visible.',
+        'Existing website content remains active.',
         error
       );
-
     });
-
 
 })();
