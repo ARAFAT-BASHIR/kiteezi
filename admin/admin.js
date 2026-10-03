@@ -6,7 +6,37 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const money=v=>new Intl.NumberFormat('en-UG').format(Number(v)||0);
 async function api(path,opt={},token=session?.access_token||KEY){const h={apikey:KEY,Authorization:'Bearer '+token,'Content-Type':'application/json',...(opt.headers||{})};if(opt.method&&opt.method!=='GET')h.Prefer='return=representation';const r=await fetch(URL+path,{...opt,headers:h});const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw Error(d?.message||d?.msg||d?.error_description||d?.error||(typeof d==='string'?d:'Request failed'));return d}
 function msg(e){console.error(e);alert(e.message||'Something went wrong.')}
-async function login(e){e.preventDefault();const f=new FormData(e.currentTarget);try{session=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email:f.get('email'),password:f.get('password')})});const p=await api('/rest/v1/profiles?select=*&id=eq.'+encodeURIComponent(session.user.id)+'&limit=1');profile=p?.[0];if(!profile||!profile.active)throw Error('Active Kiteezi staff profile required.');sessionStorage.setItem('kiteezi_admin_session',JSON.stringify(session));show();}catch(e){$('#loginMsg').textContent=e.message;$('#loginMsg').hidden=false}}
+async function login(e){
+  e.preventDefault();
+  const f=new FormData(e.currentTarget);
+  const email=String(f.get('email')||'').trim();
+  const password=String(f.get('password')||'');
+  const msg=$('#loginMsg');
+  msg.hidden=true;
+  try{
+    if(!URL||!KEY) throw Error('Admin configuration is missing.');
+    const response=await fetch(URL+'/auth/v1/token?grant_type=password',{
+      method:'POST',
+      headers:{apikey:KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({email,password})
+    });
+    const raw=await response.text();
+    let data=null; try{data=raw?JSON.parse(raw):null}catch{}
+    if(!response.ok) throw Error(data?.msg||data?.message||data?.error_description||'Invalid email or password.');
+    if(!data?.access_token||!data?.user?.id) throw Error('Login succeeded but no valid session was returned.');
+    session=data;
+    const p=await api('/rest/v1/profiles?select=*&id=eq.'+encodeURIComponent(session.user.id)+'&limit=1');
+    profile=p?.[0];
+    if(!profile) throw Error('This account has no Kiteezi staff profile.');
+    if(!profile.active) throw Error('This Kiteezi staff profile is inactive.');
+    sessionStorage.setItem('kiteezi_admin_session',JSON.stringify(session));
+    show();
+  }catch(err){
+    session=null; profile=null;
+    msg.textContent=err?.message||'Sign in failed.';
+    msg.hidden=false;
+  }
+}
 async function restore(){try{session=JSON.parse(sessionStorage.getItem('kiteezi_admin_session')||'null');if(!session?.access_token)throw Error();const p=await api('/rest/v1/profiles?select=*&id=eq.'+encodeURIComponent(session.user.id)+'&limit=1');profile=p?.[0];if(!profile?.active)throw Error();show()}catch{session=null;$('#loginView').classList.remove('hide')}}
 function show(){$('#loginView').classList.add('hide');$('#app').classList.remove('hide');$('#who').textContent=(profile.full_name||'Staff')+' · '+profile.role;$('#rolePill').textContent=profile.role;route(location.hash.slice(1)||'dashboard')}
 function route(x){tab=x||'dashboard';$$('[data-tab]').forEach(a=>a.classList.toggle('active',a.dataset.tab===tab));$$('.tab').forEach(s=>s.classList.toggle('active',s.id===tab));const f={dashboard:loadDashboard,bookings:loadBookings,restaurant:loadOrders,inventory:loadInventory,menu:loadMenu,services:loadServices,content:loadContent,reviews:loadReviews,social:loadSocial,staff:loadStaff,reports:loadReport,settings:loadSettings};(f[tab]||loadDashboard)().catch(msg)}
