@@ -332,6 +332,17 @@
     });
   }
 
+
+  async function applySocialLinks() {
+    const response = await fetch(url + '/rest/v1/social_links?select=platform,label,url,icon,sort_order&active=eq.true&order=sort_order.asc', { headers });
+    if (!response.ok) throw new Error('Could not load social links.');
+    const rows = await response.json();
+    document.querySelectorAll('[data-social-links]').forEach(container => {
+      container.innerHTML = rows.map(row => '<a href="' + String(row.url).replace(/"/g,'&quot;') + '" target="_blank" rel="noopener noreferrer" aria-label="' + String(row.label).replace(/"/g,'&quot;') + '">' + String(row.icon || row.label).replace(/[<>]/g,'') + '</a>').join('');
+      container.hidden = rows.length === 0;
+    });
+  }
+
   window.KiteeziContent = {
     settings: null,
 
@@ -346,6 +357,8 @@
       applySettings(settings);
       await applyServicePrices();
       await applyMedia();
+      await applyCmsPage();
+      await applySocialLinks();
       return settings;
     },
 
@@ -360,6 +373,8 @@
       applySettings(settings);
       applyServicePrices().catch(error => console.warn('Service prices unavailable:', error));
       applyMedia().catch(error => console.warn('Media unavailable:', error));
+      applyCmsPage().catch(error => console.warn('CMS unavailable:', error));
+      applySocialLinks().catch(error => console.warn('Social links unavailable:', error));
     })
     .catch(error => {
       console.warn(
