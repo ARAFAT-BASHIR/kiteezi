@@ -2,14 +2,12 @@
   'use strict';
 
   const C = window.KITEEZI_CONFIG || {};
-
   const SUPABASE_URL = String(C.SUPABASE_URL || '').replace(/\/+$/, '');
   const SUPABASE_KEY = C.SUPABASE_ANON_KEY || '';
   const CART_KEY = 'kiteezi_cart_v2';
 
   const $ = (selector, root = document) => root.querySelector(selector);
-  const $$ = (selector, root = document) =>
-    Array.from(root.querySelectorAll(selector));
+  const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
   const money = value =>
     new Intl.NumberFormat('en-UG').format(
@@ -32,7 +30,6 @@
     });
 
     const text = await response.text();
-
     let data = null;
 
     try {
@@ -67,18 +64,13 @@
   }
 
   function saveCart(cart) {
-    localStorage.setItem(
-      CART_KEY,
-      JSON.stringify(cart)
-    );
-
+    localStorage.setItem(CART_KEY, JSON.stringify(cart));
     updateCartUI();
   }
 
   function cartQuantity() {
     return getCart().reduce(
-      (sum, item) =>
-        sum + Math.max(0, Number(item.qty) || 0),
+      (sum, item) => sum + Math.max(0, Number(item.qty) || 0),
       0
     );
   }
@@ -109,20 +101,17 @@
 
   function addToCart(item) {
     if (!item.id) {
-      throw new Error(
-        'The menu item has no database ID.'
-      );
+      throw new Error('The menu item has no database ID.');
     }
 
     const cart = getCart();
 
     const existing = cart.find(
-      entry =>
-        String(entry.id) === String(item.id)
+      entry => String(entry.id) === String(item.id)
     );
 
     if (existing) {
-      existing.qty += 1;
+      existing.qty = Math.max(1, Number(existing.qty) || 0) + 1;
     } else {
       cart.push({
         id: item.id,
@@ -139,8 +128,7 @@
   function removeFromCart(id) {
     saveCart(
       getCart().filter(
-        item =>
-          String(item.id) !== String(id)
+        item => String(item.id) !== String(id)
       )
     );
   }
@@ -149,13 +137,12 @@
     const cart = getCart();
 
     const item = cart.find(
-      entry =>
-        String(entry.id) === String(id)
+      entry => String(entry.id) === String(id)
     );
 
     if (!item) return;
 
-    item.qty += amount;
+    item.qty = (Number(item.qty) || 0) + Number(amount || 0);
 
     if (item.qty <= 0) {
       removeFromCart(id);
@@ -174,16 +161,11 @@
   }
 
   async function resolveMenuItem(button) {
-    const databaseId =
-      button.dataset.menuItemId;
-
+    const databaseId = button.dataset.menuItemId;
     const productName =
       button.dataset.productName ||
       button.dataset.menuName;
 
-    /*
-     * Prefer a real database UUID if the page provides one.
-     */
     if (databaseId) {
       const rows = await supabaseFetch(
         '/rest/v1/menu_items' +
@@ -195,10 +177,6 @@
       }
     }
 
-    /*
-     * Otherwise resolve the existing page's product name
-     * against the real Supabase menu.
-     */
     if (!productName) {
       throw new Error(
         'This menu button is missing its menu item name.'
@@ -222,20 +200,16 @@
   async function handleAddToCart(button) {
     if (button.disabled) return;
 
-    const original =
-      button.textContent;
+    const original = button.textContent;
 
     button.disabled = true;
     button.textContent = 'Adding…';
 
     try {
-      const item =
-        await resolveMenuItem(button);
+      const item = await resolveMenuItem(button);
 
       if (item.in_stock === false) {
-        throw new Error(
-          'This item is currently unavailable.'
-        );
+        throw new Error('This item is currently unavailable.');
       }
 
       addToCart({
@@ -266,9 +240,7 @@
 
   function bindMenuButtons() {
     $$('[data-add-to-cart]').forEach(button => {
-      if (button.dataset.cartBound === 'true') {
-        return;
-      }
+      if (button.dataset.cartBound === 'true') return;
 
       button.dataset.cartBound = 'true';
 
@@ -281,33 +253,24 @@
 
   function bindCartButtons() {
     $$('[data-cart-open]').forEach(button => {
-      if (button.dataset.cartBound === 'true') {
-        return;
-      }
+      if (button.dataset.cartBound === 'true') return;
 
       button.dataset.cartBound = 'true';
 
       button.addEventListener('click', () => {
-        window.location.href =
-          'checkout.html';
+        window.location.href = 'checkout.html';
       });
     });
   }
 
   function initMobileNavigation() {
-    const button =
-      $('[data-mobile]');
+    const button = $('[data-mobile]');
+    const nav = $('.links');
 
-    const nav =
-      $('.links');
-
-    if (!button || !nav) {
-      return;
-    }
+    if (!button || !nav) return;
 
     button.addEventListener('click', () => {
-      const open =
-        nav.classList.toggle('open');
+      const open = nav.classList.toggle('open');
 
       button.setAttribute(
         'aria-expanded',
@@ -318,30 +281,25 @@
 
   function initSiteYear() {
     $$('[data-year]').forEach(element => {
-      element.textContent =
-        new Date().getFullYear();
+      element.textContent = new Date().getFullYear();
     });
   }
 
   async function loadSiteSettings() {
     try {
-      const rows =
-        await supabaseFetch(
-          '/rest/v1/site_settings?select=key,value'
-        );
+      const rows = await supabaseFetch(
+        '/rest/v1/site_settings?select=key,value'
+      );
 
-      if (!Array.isArray(rows)) {
-        return;
-      }
+      if (!Array.isArray(rows)) return;
 
       rows.forEach(setting => {
+        const key = String(setting.key);
+
         $$(
-          `[data-site-setting="${CSS.escape(
-            String(setting.key)
-          )}"]`
+          `[data-site-setting="${CSS.escape(key)}"]`
         ).forEach(element => {
-          const value =
-            setting.value ?? '';
+          const value = setting.value ?? '';
 
           if (
             element.tagName === 'INPUT' ||
@@ -380,14 +338,10 @@
     bindCartButtons();
     initMobileNavigation();
     initSiteYear();
-
     loadSiteSettings();
   }
 
-  if (
-    document.readyState ===
-    'loading'
-  ) {
+  if (document.readyState === 'loading') {
     document.addEventListener(
       'DOMContentLoaded',
       init
