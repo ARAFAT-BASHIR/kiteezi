@@ -207,6 +207,17 @@
     }
 
     /*
+      DATABASE-DRIVEN LINK TARGETS
+    */
+    document
+      .querySelectorAll('[data-site-setting-href]')
+      .forEach(element => {
+        const setting = element.dataset.siteSettingHref;
+        const value = settings[setting] ?? '';
+        if (value) element.href = String(value);
+      });
+
+    /*
       SOCIAL MEDIA
     */
     const socialMap = {
