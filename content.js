@@ -257,6 +257,31 @@
   }
 
 
+
+  async function getMedia(pageSlug) {
+    const response = await fetch(
+      url + '/rest/v1/media?select=page_slug,sort_order,url,alt_text,title,active&active=eq.true&page_slug=eq.' + encodeURIComponent(pageSlug) + '&order=sort_order.asc',
+      { headers }
+    );
+    if (!response.ok) throw new Error('Could not load media.');
+    return response.json();
+  }
+
+  async function applyMedia() {
+    const pageSlug = (location.pathname.split('/').pop() || 'index.html').replace(/\.html$/i, '') || 'index';
+    const media = await getMedia(pageSlug);
+    document.querySelectorAll('[data-media-index]').forEach(element => {
+      const row = media[Number(element.dataset.mediaIndex) - 1];
+      if (!row) return;
+      element.src = row.url;
+      if (row.alt_text) element.alt = row.alt_text;
+    });
+    const hero = document.querySelector('[data-media-hero]');
+    if (hero && media[0]) {
+      hero.style.backgroundImage = 'linear-gradient(rgba(20,35,27,.64),rgba(20,35,27,.64)),url("' + media[0].url.replace(/"/g,'&quot;') + '")';
+    }
+  }
+
   async function getServices() {
     const response = await fetch(
       url + '/rest/v1/services?select=id,name,price,pricing_mode,team_threshold,small_group_price,full_team_price&active=eq.true',
@@ -292,6 +317,7 @@
 
       applySettings(settings);
       await applyServicePrices();
+      await applyMedia();
       return settings;
     },
 
@@ -305,6 +331,7 @@
 
       applySettings(settings);
       applyServicePrices().catch(error => console.warn('Service prices unavailable:', error));
+      applyMedia().catch(error => console.warn('Media unavailable:', error));
     })
     .catch(error => {
       console.warn(
