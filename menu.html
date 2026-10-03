@@ -8,496 +8,1608 @@
 <meta name="theme-color" content="#1b4332">
 <title>Menu | Kiteezi Recreational Center</title>
 <link rel="stylesheet" href="styles.css">
-</head><body><div class="topbar">
+
+<style>
+  .menu-order-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-top:12px;
+  }
+
+  .menu-add{
+    padding:8px 12px;
+    font-size:13px;
+    white-space:nowrap;
+  }
+
+  .cart-nav-button{
+    border:0;
+    cursor:pointer;
+  }
+
+  [data-cart-count]{
+    display:inline-grid;
+    place-items:center;
+    min-width:20px;
+    height:20px;
+    padding:0 5px;
+    margin-left:5px;
+    border-radius:999px;
+    background:#fff;
+    color:#1b4332;
+    font-size:11px;
+    font-weight:800;
+  }
+
+  @media(max-width:620px){
+    .menu-order-row{
+      align-items:flex-start;
+      flex-direction:column;
+    }
+
+    .menu-add{
+      width:100%;
+    }
+  }
+</style>
+</head>
+
+<body>
+
+<div class="topbar">
   <div class="container">
-    <span data-site-setting="location">Kiteezi, Lusanjja, Kampala</span>
+    <span data-site-setting="location">
+      Kiteezi, Lusanjja, Kampala
+    </span>
+
     <span>
       Orders & enquiries:
-      <a data-site-setting="phone" href="tel:+256766529086" style="color:#fff">+256 766 529086</a>
+      <a
+        data-site-setting="phone"
+        href="tel:+256766529086"
+        style="color:#fff"
+      >
+        +256 766 529086
+      </a>
     </span>
   </div>
-</div><header class="nav">
-  <div class="container navin"><a class="brand" href="index.html">
-  <span class="brand-mark">K</span>
-  <span>
-    <span class="brand-name">Kiteezi Recreational Center</span>
-    <small data-site-setting="business_tagline">Comfort • Dining • Recreation</small>
-  </span>
-</a>
+</div>
 
-<button class="mobile btn" data-mobile aria-label="Open navigation" type="button">☰</button>
+<header class="nav">
+  <div class="container navin">
 
-<nav class="links" aria-label="Main navigation">
-  <a href="index.html">Home</a>
-  <a href="swimming.html">Swimming</a>
-  <a href="menu.html" aria-current="page">Menu</a>
-  <a href="events.html">Events</a>
-  <a href="sports.html">Sports</a>
-  <a href="about.html">About</a>
-  <a href="contact.html">Contact</a>
-  <a class="btn btn-primary" href="booking.html?service=restaurant">Book Now</a>
-</nav>
+    <a class="brand" href="index.html">
+      <span class="brand-mark">K</span>
+
+      <span>
+        <span class="brand-name">
+          Kiteezi Recreational Center
+        </span>
+
+        <small data-site-setting="business_tagline">
+          Comfort • Dining • Recreation
+        </small>
+      </span>
+    </a>
+
+    <button
+      class="mobile btn"
+      data-mobile
+      aria-label="Open navigation"
+      aria-expanded="false"
+      type="button"
+    >
+      ☰
+    </button>
+
+    <nav class="links" aria-label="Main navigation">
+
+      <a href="index.html">Home</a>
+
+      <a href="swimming.html">
+        Swimming
+      </a>
+
+      <a
+        href="menu.html"
+        aria-current="page"
+      >
+        Menu
+      </a>
+
+      <a href="events.html">
+        Events
+      </a>
+
+      <a href="sports.html">
+        Sports
+      </a>
+
+      <a href="about.html">
+        About
+      </a>
+
+      <a href="contact.html">
+        Contact
+      </a>
+
+      <button
+        type="button"
+        class="btn btn-dark cart-nav-button"
+        data-cart-open
+        aria-label="Open shopping cart"
+      >
+        Cart
+        <span
+          data-cart-count
+          hidden
+        >
+          0
+        </span>
+      </button>
+
+      <a
+        class="btn btn-primary"
+        href="booking.html?service=restaurant"
+      >
+        Book Now
+      </a>
+
+    </nav>
 
   </div>
-</header><main><section class="hero" style="background-image:linear-gradient(rgba(20,35,27,.64),rgba(20,35,27,.64)),url('https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=1800&q=90');">
-  <div class="container hero-content"><div class="eyebrow">Restaurant • Bar • Catering</div>
+</header>
 
-<h1>Good food for good days.</h1>
+<main>
 
-<p>
-  Enjoy meals, snacks and refreshments at Kiteezi
-  Recreational Center, or ask our team about catering
-  for your next event.
-</p>
+<section
+  class="hero"
+  style="background-image:linear-gradient(rgba(20,35,27,.64),rgba(20,35,27,.64)),url('https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=1800&q=90');"
+>
 
-<div class="actions">
-  <a class="btn btn-primary" href="#menu">View Menu</a>
-  <a class="btn btn-light" href="booking.html?service=restaurant">Request Catering</a>
-  <a class="btn btn-light" href="https://wa.me/256709763803" target="_blank" rel="noopener">WhatsApp</a>
-</div>
+  <div class="container hero-content">
 
-  </div>
-</section><section class="container">  <div class="stats"><div class="stat">
-  <strong>Local</strong>
-  <span>Favourites</span>
-</div>
-
-<div class="stat">
-  <strong>Fresh</strong>
-  <span>Prepared meals</span>
-</div>
-
-<div class="stat">
-  <strong>Events</strong>
-  <span>Catering available</span>
-</div>
-
-<div class="stat">
-  <strong>Groups</strong>
-  <span>Advance orders</span>
-</div>
-
-  </div></section><section class="section" id="menu">  <div class="container"><div class="section-head">
-  <div class="eyebrow">Our menu</div>
-  <h2>Meals, light bites and refreshments.</h2>
-  <p>
-    Menu availability and prices may change. For large
-    groups and events, contact the team in advance so we
-    can prepare the appropriate catering package.
-  </p>
-</div>
-
-<div class="grid grid-3">
-
-  <article class="card">
-    <div class="card-body">
-
-      <span class="badge">Local Favourites</span>
-
-      <div class="menu-item">
-        <div>
-          <h4>Chicken & Chips</h4>
-          <p>Seasoned chicken, chips and fresh salad.</p>
-        </div>
-        <div class="menu-price">UGX 22,000</div>
-      </div>
-
-      <div class="menu-item">
-        <div>
-          <h4>Beef Stew & Rice</h4>
-          <p>Slow-cooked beef with rice and vegetables.</p>
-        </div>
-        <div class="menu-price">UGX 20,000</div>
-      </div>
-
-      <div class="menu-item">
-        <div>
-          <h4>Fish & Chips</h4>
-          <p>Fish served with chips and fresh salad.</p>
-        </div>
-        <div class="menu-price">UGX 24,000</div>
-      </div>
-
-      <div class="menu-item">
-        <div>
-          <h4>Matooke & Beef</h4>
-          <p>Traditional matooke served with beef.</p>
-        </div>
-        <div class="menu-price">UGX 20,000</div>
-      </div>
-
+    <div class="eyebrow">
+      Restaurant • Bar • Catering
     </div>
-  </article>
 
-  <article class="card">
-    <div class="card-body">
+    <h1>
+      Good food for good days.
+    </h1>
 
-      <span class="badge">Light Meals</span>
+    <p>
+      Enjoy meals, snacks and refreshments at Kiteezi
+      Recreational Center, or order food for pickup and
+      delivery where available.
+    </p>
 
-      <div class="menu-item">
-        <div>
-          <h4>Club Sandwich</h4>
-          <p>Chicken, egg, vegetables and chips.</p>
-        </div>
-        <div class="menu-price">UGX 18,000</div>
-      </div>
+    <div class="actions">
 
-      <div class="menu-item">
-        <div>
-          <h4>Beef Burger</h4>
-          <p>Beef patty, vegetables and chips.</p>
-        </div>
-        <div class="menu-price">UGX 18,000</div>
-      </div>
+      <a
+        class="btn btn-primary"
+        href="#menu"
+      >
+        View Menu
+      </a>
 
-      <div class="menu-item">
-        <div>
-          <h4>Chicken Burger</h4>
-          <p>Chicken fillet, vegetables and chips.</p>
-        </div>
-        <div class="menu-price">UGX 18,000</div>
-      </div>
+      <button
+        class="btn btn-light"
+        type="button"
+        data-cart-open
+      >
+        View Cart
+        <span
+          data-cart-count
+          hidden
+        >
+          0
+        </span>
+      </button>
 
-      <div class="menu-item">
-        <div>
-          <h4>Garden Salad</h4>
-          <p>Fresh seasonal vegetables and dressing.</p>
-        </div>
-        <div class="menu-price">UGX 12,000</div>
-      </div>
+      <a
+        class="btn btn-light"
+        href="booking.html?service=restaurant"
+      >
+        Request Catering
+      </a>
 
-    </div>
-  </article>
-
-  <article class="card">
-    <div class="card-body">
-
-      <span class="badge">Breakfast</span>
-
-      <div class="menu-item">
-        <div>
-          <h4>Full Breakfast</h4>
-          <p>Eggs, sausage, toast and accompaniments.</p>
-        </div>
-        <div class="menu-price">UGX 18,000</div>
-      </div>
-
-      <div class="menu-item">
-        <div>
-          <h4>Rolex</h4>
-          <p>Chapati with egg and fresh vegetables.</p>
-        </div>
-        <div class="menu-price">UGX 8,000</div>
-      </div>
-
-      <div class="menu-item">
-        <div>
-          <h4>Chapati & Eggs</h4>
-          <p>Fresh chapati served with eggs.</p>
-        </div>
-        <div class="menu-price">UGX 8,000</div>
-      </div>
-
-      <div class="menu-item">
-        <div>
-          <h4>Pancakes</h4>
-          <p>Fresh pancakes served with accompaniments.</p>
-        </div>
-        <div class="menu-price">UGX 10,000</div>
-      </div>
-
-    </div>
-  </article>
-
-</div>
-
-  </div></section><section class="section sand">  <div class="container"><div class="grid grid-3">
-
-  <article class="card">
-    <div class="card-body">
-
-      <span class="badge">Drinks</span>
-
-      <div class="menu-item">
-        <div>
-          <h4>Fresh Juice</h4>
-          <p>Seasonal fruit juice served chilled.</p>
-        </div>
-        <div class="menu-price">UGX 8,000</div>
-      </div>
-
-      <div class="menu-item">
-        <div>
-          <h4>Tea</h4>
-          <p>Freshly prepared hot tea.</p>
-        </div>
-        <div class="menu-price">UGX 5,000</div>
-      </div>
-
-      <div class="menu-item">
-        <div>
-          <h4>Coffee</h4>
-          <p>Hot coffee prepared to order.</p>
-        </div>
-        <div class="menu-price">UGX 5,000</div>
-      </div>
-
-      <div class="menu-item">
-        <div>
-          <h4>Soft Drinks</h4>
-          <p>Chilled bottled or canned refreshments.</p>
-        </div>
-        <div class="menu-price">Ask</div>
-      </div>
-
-    </div>
-  </article>
-
-  <article class="card">
-    <div class="card-body">
-
-      <span class="badge">Snacks</span>
-
-      <div class="menu-item">
-        <div>
-          <h4>Samosa</h4>
-          <p>Fresh savoury snack.</p>
-        </div>
-        <div class="menu-price">Ask</div>
-      </div>
-
-      <div class="menu-item">
-        <div>
-          <h4>Chips</h4>
-          <p>Crispy chips served fresh.</p>
-        </div>
-        <div class="menu-price">Ask</div>
-      </div>
-
-      <div class="menu-item">
-        <div>
-          <h4>Fruit Plate</h4>
-          <p>Fresh seasonal fruit.</p>
-        </div>
-        <div class="menu-price">Ask</div>
-      </div>
-
-      <div class="menu-item">
-        <div>
-          <h4>Ice Cream</h4>
-          <p>Ask about available flavours.</p>
-        </div>
-        <div class="menu-price">Ask</div>
-      </div>
-
-    </div>
-  </article>
-
-  <article class="card">
-    <div class="card-body">
-
-      <span class="badge">Catering</span>
-
-      <h3>Event Catering</h3>
-
-      <p>
-        Planning a birthday, corporate gathering,
-        school activity or private celebration?
-        We can arrange food and drinks for your group.
-      </p>
-
-      <ul class="list">
-        <li>Buffet options</li>
-        <li>Food and drinks</li>
-        <li>Group catering</li>
-        <li>Event packages by arrangement</li>
-      </ul>
-
-      <a class="btn btn-dark" href="booking.html?service=event">
-        Request event catering
+      <a
+        class="btn btn-light"
+        href="https://wa.me/256709763803"
+        target="_blank"
+        rel="noopener"
+      >
+        WhatsApp
       </a>
 
     </div>
-  </article>
 
-</div>
-
-  </div></section><section class="section">  <div class="container split"><div>
-
-  <div class="eyebrow">Catering for bookings</div>
-
-  <h2>Book the venue, then choose your food and drinks.</h2>
-
-  <p>
-    For applicable events and venue bookings, the space
-    itself may be available without a venue hire charge.
-    Customers pay for food and drinks supplied by Kiteezi.
-  </p>
-
-  <div class="notice" style="margin-top:25px">
-    <strong>Important:</strong>
-    Outside food and drinks are not permitted for applicable
-    catered Kiteezi bookings. Catering selections can be
-    discussed and confirmed with the booking team.
   </div>
 
-  <div class="actions" style="margin-top:25px">
-    <a class="btn btn-primary" href="booking.html?service=event">
-      Book an event
-    </a>
-    <a class="btn btn-dark" href="contact.html">
-      Contact the restaurant
-    </a>
+</section>
+
+<section class="container">
+
+  <div class="stats">
+
+    <div class="stat">
+      <strong>Local</strong>
+      <span>Favourites</span>
+    </div>
+
+    <div class="stat">
+      <strong>Fresh</strong>
+      <span>Prepared meals</span>
+    </div>
+
+    <div class="stat">
+      <strong>Events</strong>
+      <span>Catering available</span>
+    </div>
+
+    <div class="stat">
+      <strong>Groups</strong>
+      <span>Advance orders</span>
+    </div>
+
   </div>
 
-</div>
+</section>
 
-<img
-  src="https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=1200&q=90"
-  alt="Restaurant dining"
-  loading="lazy"
+<section
+  class="section"
+  id="menu"
 >
 
-  </div></section><section class="section sand">  <div class="container"><div class="section-head">
-  <div class="eyebrow">Dining at Kiteezi</div>
-  <h2>Enjoy food alongside the rest of your visit.</h2>
-  <p>
-    Swimming, sports and events can all be combined with
-    restaurant service where applicable.
-  </p>
-</div>
+  <div class="container">
 
-<div class="grid grid-3">
+    <div class="section-head">
 
-  <div class="card">
-    <div class="card-body">
-      <div class="iconbox">🏊</div>
-      <h3>After Swimming</h3>
+      <div class="eyebrow">
+        Our menu
+      </div>
+
+      <h2>
+        Meals, light bites and refreshments.
+      </h2>
+
       <p>
-        Relax with a meal or refreshing drink after your swim.
+        Select meals and drinks to add them to your
+        cart. You can change quantities or remove items
+        before checkout.
       </p>
-      <a class="btn btn-dark" href="swimming.html">Swimming</a>
+
     </div>
+
+    <div class="grid grid-3">
+
+      <!-- LOCAL FAVOURITES -->
+
+      <article class="card">
+
+        <div class="card-body">
+
+          <span class="badge">
+            Local Favourites
+          </span>
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Chicken & Chips
+              </h4>
+
+              <p>
+                Seasoned chicken, chips and fresh salad.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              UGX 22,000
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              UGX 22,000
+            </span>
+
+            <button
+              type="button"
+              class="btn btn-dark menu-add"
+              data-add-to-cart
+              data-product-id="chicken-chips"
+              data-product-name="Chicken & Chips"
+              data-product-price="22000"
+              data-product-category="Local Favourites"
+            >
+              Add to Cart
+            </button>
+
+          </div>
+
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Beef Stew & Rice
+              </h4>
+
+              <p>
+                Slow-cooked beef with rice and vegetables.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              UGX 20,000
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              UGX 20,000
+            </span>
+
+            <button
+              type="button"
+              class="btn btn-dark menu-add"
+              data-add-to-cart
+              data-product-id="beef-stew-rice"
+              data-product-name="Beef Stew & Rice"
+              data-product-price="20000"
+              data-product-category="Local Favourites"
+            >
+              Add to Cart
+            </button>
+
+          </div>
+
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Fish & Chips
+              </h4>
+
+              <p>
+                Fish served with chips and fresh salad.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              UGX 24,000
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              UGX 24,000
+            </span>
+
+            <button
+              type="button"
+              class="btn btn-dark menu-add"
+              data-add-to-cart
+              data-product-id="fish-chips"
+              data-product-name="Fish & Chips"
+              data-product-price="24000"
+              data-product-category="Local Favourites"
+            >
+              Add to Cart
+            </button>
+
+          </div>
+
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Matooke & Beef
+              </h4>
+
+              <p>
+                Traditional matooke served with beef.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              UGX 20,000
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              UGX 20,000
+            </span>
+
+            <button
+              type="button"
+              class="btn btn-dark menu-add"
+              data-add-to-cart
+              data-product-id="matooke-beef"
+              data-product-name="Matooke & Beef"
+              data-product-price="20000"
+              data-product-category="Local Favourites"
+            >
+              Add to Cart
+            </button>
+
+          </div>
+
+        </div>
+
+      </article>
+
+
+      <!-- LIGHT MEALS -->
+
+      <article class="card">
+
+        <div class="card-body">
+
+          <span class="badge">
+            Light Meals
+          </span>
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Club Sandwich
+              </h4>
+
+              <p>
+                Chicken, egg, vegetables and chips.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              UGX 18,000
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              UGX 18,000
+            </span>
+
+            <button
+              type="button"
+              class="btn btn-dark menu-add"
+              data-add-to-cart
+              data-product-id="club-sandwich"
+              data-product-name="Club Sandwich"
+              data-product-price="18000"
+              data-product-category="Light Meals"
+            >
+              Add to Cart
+            </button>
+
+          </div>
+
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Beef Burger
+              </h4>
+
+              <p>
+                Beef patty, vegetables and chips.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              UGX 18,000
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              UGX 18,000
+            </span>
+
+            <button
+              type="button"
+              class="btn btn-dark menu-add"
+              data-add-to-cart
+              data-product-id="beef-burger"
+              data-product-name="Beef Burger"
+              data-product-price="18000"
+              data-product-category="Light Meals"
+            >
+              Add to Cart
+            </button>
+
+          </div>
+
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Chicken Burger
+              </h4>
+
+              <p>
+                Chicken fillet, vegetables and chips.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              UGX 18,000
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              UGX 18,000
+            </span>
+
+            <button
+              type="button"
+              class="btn btn-dark menu-add"
+              data-add-to-cart
+              data-product-id="chicken-burger"
+              data-product-name="Chicken Burger"
+              data-product-price="18000"
+              data-product-category="Light Meals"
+            >
+              Add to Cart
+            </button>
+
+          </div>
+
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Garden Salad
+              </h4>
+
+              <p>
+                Fresh seasonal vegetables and dressing.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              UGX 12,000
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              UGX 12,000
+            </span>
+
+            <button
+              type="button"
+              class="btn btn-dark menu-add"
+              data-add-to-cart
+              data-product-id="garden-salad"
+              data-product-name="Garden Salad"
+              data-product-price="12000"
+              data-product-category="Light Meals"
+            >
+              Add to Cart
+            </button>
+
+          </div>
+
+        </div>
+
+      </article>
+
+
+      <!-- BREAKFAST -->
+
+      <article class="card">
+
+        <div class="card-body">
+
+          <span class="badge">
+            Breakfast
+          </span>
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Full Breakfast
+              </h4>
+
+              <p>
+                Eggs, sausage, toast and accompaniments.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              UGX 18,000
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              UGX 18,000
+            </span>
+
+            <button
+              type="button"
+              class="btn btn-dark menu-add"
+              data-add-to-cart
+              data-product-id="full-breakfast"
+              data-product-name="Full Breakfast"
+              data-product-price="18000"
+              data-product-category="Breakfast"
+            >
+              Add to Cart
+            </button>
+
+          </div>
+
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Rolex
+              </h4>
+
+              <p>
+                Chapati with egg and fresh vegetables.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              UGX 8,000
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              UGX 8,000
+            </span>
+
+            <button
+              type="button"
+              class="btn btn-dark menu-add"
+              data-add-to-cart
+              data-product-id="rolex"
+              data-product-name="Rolex"
+              data-product-price="8000"
+              data-product-category="Breakfast"
+            >
+              Add to Cart
+            </button>
+
+          </div>
+
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Chapati & Eggs
+              </h4>
+
+              <p>
+                Fresh chapati served with eggs.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              UGX 8,000
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              UGX 8,000
+            </span>
+
+            <button
+              type="button"
+              class="btn btn-dark menu-add"
+              data-add-to-cart
+              data-product-id="chapati-eggs"
+              data-product-name="Chapati & Eggs"
+              data-product-price="8000"
+              data-product-category="Breakfast"
+            >
+              Add to Cart
+            </button>
+
+          </div>
+
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Pancakes
+              </h4>
+
+              <p>
+                Fresh pancakes served with accompaniments.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              UGX 10,000
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              UGX 10,000
+            </span>
+
+            <button
+              type="button"
+              class="btn btn-dark menu-add"
+              data-add-to-cart
+              data-product-id="pancakes"
+              data-product-name="Pancakes"
+              data-product-price="10000"
+              data-product-category="Breakfast"
+            >
+              Add to Cart
+            </button>
+
+          </div>
+
+        </div>
+
+      </article>
+
+    </div>
+
   </div>
 
-  <div class="card">
-    <div class="card-body">
-      <div class="iconbox">🏀</div>
-      <h3>Sports Groups</h3>
+</section>
+
+
+<section class="section sand">
+
+  <div class="container">
+
+    <div class="grid grid-3">
+
+
+      <!-- DRINKS -->
+
+      <article class="card">
+
+        <div class="card-body">
+
+          <span class="badge">
+            Drinks
+          </span>
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Fresh Juice
+              </h4>
+
+              <p>
+                Seasonal fruit juice served chilled.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              UGX 8,000
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              UGX 8,000
+            </span>
+
+            <button
+              type="button"
+              class="btn btn-dark menu-add"
+              data-add-to-cart
+              data-product-id="fresh-juice"
+              data-product-name="Fresh Juice"
+              data-product-price="8000"
+              data-product-category="Drinks"
+            >
+              Add to Cart
+            </button>
+
+          </div>
+
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Tea
+              </h4>
+
+              <p>
+                Freshly prepared hot tea.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              UGX 5,000
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              UGX 5,000
+            </span>
+
+            <button
+              type="button"
+              class="btn btn-dark menu-add"
+              data-add-to-cart
+              data-product-id="tea"
+              data-product-name="Tea"
+              data-product-price="5000"
+              data-product-category="Drinks"
+            >
+              Add to Cart
+            </button>
+
+          </div>
+
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Coffee
+              </h4>
+
+              <p>
+                Hot coffee prepared to order.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              UGX 5,000
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              UGX 5,000
+            </span>
+
+            <button
+              type="button"
+              class="btn btn-dark menu-add"
+              data-add-to-cart
+              data-product-id="coffee"
+              data-product-name="Coffee"
+              data-product-price="5000"
+              data-product-category="Drinks"
+            >
+              Add to Cart
+            </button>
+
+          </div>
+
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Soft Drinks
+              </h4>
+
+              <p>
+                Chilled bottled or canned refreshments.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              Ask
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              Price on request
+            </span>
+
+            <a
+              class="btn btn-dark menu-add"
+              href="contact.html"
+            >
+              Ask Price
+            </a>
+          </div>
+
+        </div>
+
+      </article>
+
+
+      <!-- SNACKS -->
+
+      <article class="card">
+
+        <div class="card-body">
+
+          <span class="badge">
+            Snacks
+          </span>
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Samosa
+              </h4>
+
+              <p>
+                Fresh savoury snack.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              Ask
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              Price on request
+            </span>
+
+            <a
+              class="btn btn-dark menu-add"
+              href="contact.html"
+            >
+              Ask Price
+            </a>
+
+          </div>
+
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Chips
+              </h4>
+
+              <p>
+                Crispy chips served fresh.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              Ask
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              Price on request
+            </span>
+
+            <a
+              class="btn btn-dark menu-add"
+              href="contact.html"
+            >
+              Ask Price
+            </a>
+
+          </div>
+
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Fruit Plate
+              </h4>
+
+              <p>
+                Fresh seasonal fruit.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              Ask
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              Price on request
+            </span>
+
+            <a
+              class="btn btn-dark menu-add"
+              href="contact.html"
+            >
+              Ask Price
+            </a>
+
+          </div>
+
+
+          <div class="menu-item">
+
+            <div>
+              <h4>
+                Ice Cream
+              </h4>
+
+              <p>
+                Ask about available flavours.
+              </p>
+            </div>
+
+            <div class="menu-price">
+              Ask
+            </div>
+
+          </div>
+
+          <div class="menu-order-row">
+
+            <span class="muted">
+              Price on request
+            </span>
+
+            <a
+              class="btn btn-dark menu-add"
+              href="contact.html"
+            >
+              Ask Price
+            </a>
+
+          </div>
+
+        </div>
+
+      </article>
+
+
+      <!-- CATERING -->
+
+      <article class="card">
+
+        <div class="card-body">
+
+          <span class="badge">
+            Catering
+          </span>
+
+          <h3>
+            Event Catering
+          </h3>
+
+          <p>
+            Planning a birthday, corporate gathering,
+            school activity or private celebration?
+            We can arrange food and drinks for your group.
+          </p>
+
+          <ul class="list">
+            <li>
+              Buffet options
+            </li>
+
+            <li>
+              Food and drinks
+            </li>
+
+            <li>
+              Group catering
+            </li>
+
+            <li>
+              Event packages by arrangement
+            </li>
+          </ul>
+
+          <a
+            class="btn btn-dark"
+            href="booking.html?service=event"
+          >
+            Request event catering
+          </a>
+
+        </div>
+
+      </article>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<section class="section">
+
+  <div class="container split">
+
+    <div>
+
+      <div class="eyebrow">
+        Catering for bookings
+      </div>
+
+      <h2>
+        Book the venue, then choose your food and drinks.
+      </h2>
+
       <p>
-        Ask about food and drinks for teams and recreational groups.
+        For applicable events and venue bookings, the space
+        itself may be available without a venue hire charge.
+        Customers pay for food and drinks supplied by Kiteezi.
       </p>
-      <a class="btn btn-dark" href="sports.html">Sports</a>
+
+      <div
+        class="notice"
+        style="margin-top:25px"
+      >
+        <strong>Important:</strong>
+        Outside food and drinks are not permitted for applicable
+        catered Kiteezi bookings. Catering selections can be
+        discussed and confirmed with the booking team.
+      </div>
+
+      <div
+        class="actions"
+        style="margin-top:25px"
+      >
+
+        <a
+          class="btn btn-primary"
+          href="booking.html?service=event"
+        >
+          Book an event
+        </a>
+
+        <a
+          class="btn btn-dark"
+          href="contact.html"
+        >
+          Contact the restaurant
+        </a>
+
+      </div>
+
     </div>
-  </div>
 
-  <div class="card">
-    <div class="card-body">
-      <div class="iconbox">🎉</div>
-      <h3>Events</h3>
-      <p>
-        Build catering into your birthday, corporate or private event.
-      </p>
-      <a class="btn btn-dark" href="events.html">Events</a>
-    </div>
-  </div>
-
-</div>
-
-  </div></section><section class="section">  <div class="container"><div class="cta">
-
-  <div>
-    <div class="eyebrow">Order & enquiries</div>
-    <h2>Need catering for a group?</h2>
-    <p>
-      Contact Kiteezi with your date, group size,
-      preferred meals and drinks so the team can help
-      plan your order.
-    </p>
-  </div>
-
-  <div class="actions">
-    <a class="btn btn-primary" href="booking.html?service=event">
-      Request Catering
-    </a>
-
-    <a
-      class="btn btn-light"
-      data-site-setting="whatsapp_link"
-      href="https://wa.me/256709763803"
-      target="_blank"
-      rel="noopener"
+    <img
+      src="https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=1200&q=90"
+      alt="Restaurant dining"
+      loading="lazy"
     >
-      WhatsApp
-    </a>
+
   </div>
 
-</div>
+</section>
 
-  </div></section></main><footer class="footer">  <div class="container footer-grid"><div>
 
-  <div class="brand" style="color:#fff">
-    <span class="brand-mark">K</span>
-    <span>
-      <span class="brand-name">Kiteezi Recreational Center</span>
-      <small style="color:#bfcfc5">
-        <span data-site-setting="location">Kiteezi • Lusanjja • Kampala</span>
-      </small>
-    </span>
+<section class="section sand">
+
+  <div class="container">
+
+    <div class="section-head">
+
+      <div class="eyebrow">
+        Dining at Kiteezi
+      </div>
+
+      <h2>
+        Enjoy food alongside the rest of your visit.
+      </h2>
+
+      <p>
+        Swimming, sports and events can all be combined with
+        restaurant service where applicable.
+      </p>
+
+    </div>
+
+    <div class="grid grid-3">
+
+
+      <div class="card">
+
+        <div class="card-body">
+
+          <div class="iconbox">
+            🏊
+          </div>
+
+          <h3>
+            After Swimming
+          </h3>
+
+          <p>
+            Relax with a meal or refreshing drink after your swim.
+          </p>
+
+          <a
+            class="btn btn-dark"
+            href="swimming.html"
+          >
+            Swimming
+          </a>
+
+        </div>
+
+      </div>
+
+
+      <div class="card">
+
+        <div class="card-body">
+
+          <div class="iconbox">
+            🏀
+          </div>
+
+          <h3>
+            Sports Groups
+          </h3>
+
+          <p>
+            Ask about food and drinks for teams and recreational groups.
+          </p>
+
+          <a
+            class="btn btn-dark"
+            href="sports.html"
+          >
+            Sports
+          </a>
+
+        </div>
+
+      </div>
+
+
+      <div class="card">
+
+        <div class="card-body">
+
+          <div class="iconbox">
+            🎉
+          </div>
+
+          <h3>
+            Events
+          </h3>
+
+          <p>
+            Build catering into your birthday, corporate or private event.
+          </p>
+
+          <a
+            class="btn btn-dark"
+            href="events.html"
+          >
+            Events
+          </a>
+
+        </div>
+
+      </div>
+
+    </div>
+
   </div>
 
-  <p>
-    Swimming, dining, sports, gardens, celebrations
-    and everyday relaxation in Kiteezi.
-  </p>
+</section>
 
-  <div class="socials">
-    <a data-social="facebook" href="#" aria-label="Facebook">f</a>
-    <a data-social="instagram" href="#" aria-label="Instagram">◎</a>
-    <a data-social="youtube" href="#" aria-label="YouTube">▶</a>
-    <a data-social="whatsapp" href="https://wa.me/256709763803" aria-label="WhatsApp">W</a>
+
+<section class="section">
+
+  <div class="container">
+
+    <div class="cta">
+
+      <div>
+
+        <div class="eyebrow">
+          Order & enquiries
+        </div>
+
+        <h2>
+          Need catering for a group?
+        </h2>
+
+        <p>
+          Contact Kiteezi with your date, group size,
+          preferred meals and drinks so the team can help
+          plan your order.
+        </p>
+
+      </div>
+
+      <div class="actions">
+
+        <a
+          class="btn btn-primary"
+          href="booking.html?service=event"
+        >
+          Request Catering
+        </a>
+
+        <button
+          class="btn btn-light"
+          type="button"
+          data-cart-open
+        >
+          Open Cart
+          <span
+            data-cart-count
+            hidden
+          >
+            0
+          </span>
+        </button>
+
+        <a
+          class="btn btn-light"
+          data-site-setting="whatsapp_link"
+          href="https://wa.me/256709763803"
+          target="_blank"
+          rel="noopener"
+        >
+          WhatsApp
+        </a>
+
+      </div>
+
+    </div>
+
   </div>
 
-</div>
+</section>
 
-<div>
-  <h4>Explore</h4>
-  <a href="index.html">Home</a>
-  <a href="swimming.html">Swimming</a>
-  <a href="events.html">Events & Catering</a>
-  <a href="sports.html">Sports</a>
-  <a href="about.html">About Kiteezi</a>
-</div>
+</main>
 
-<div>
-  <h4>Menu</h4>
-  <a href="#menu">Meals</a>
-  <a href="#menu">Breakfast</a>
-  <a href="#menu">Drinks</a>
-  <a href="#menu">Snacks</a>
-  <a href="booking.html?service=event">Event Catering</a>
-</div>
 
-<div>
-  <h4>Contact</h4>
-  <a data-site-setting="phone" href="tel:+256766529086">
-    +256 766 529086
-  </a>
+<footer class="footer">
 
-  <a data-site-setting="whatsapp" href="https://wa.me/256709763803">
-    WhatsApp: +256 709 763803
-  </a>
+  <div class="container footer-grid">
 
-  <a data-site-setting="location" href="contact.html">
-    Kiteezi, Lusanjja, Kampala
-  </a>
 
-  <a href="contact.html">Contact page</a>
-</div>
+    <div>
 
-  </div>  <div class="container copyright">
+      <div
+        class="brand"
+        style="color:#fff"
+      >
+
+        <span class="brand-mark">
+          K
+        </span>
+
+        <span>
+
+          <span class="brand-name">
+            Kiteezi Recreational Center
+          </span>
+
+          <small style="color:#bfcfc5">
+
+            <span data-site-setting="location">
+              Kiteezi • Lusanjja • Kampala
+            </span>
+
+          </small>
+
+        </span>
+
+      </div>
+
+      <p>
+        Swimming, dining, sports, gardens, celebrations
+        and everyday relaxation in Kiteezi.
+      </p>
+
+      <div class="socials">
+
+        <a
+          data-social="facebook"
+          href="#"
+          aria-label="Facebook"
+        >
+          f
+        </a>
+
+        <a
+          data-social="instagram"
+          href="#"
+          aria-label="Instagram"
+        >
+          ◎
+        </a>
+
+        <a
+          data-social="youtube"
+          href="#"
+          aria-label="YouTube"
+        >
+          ▶
+        </a>
+
+        <a
+          data-social="whatsapp"
+          href="https://wa.me/256709763803"
+          aria-label="WhatsApp"
+        >
+          W
+        </a>
+
+      </div>
+
+    </div>
+
+
+    <div>
+
+      <h4>
+        Explore
+      </h4>
+
+      <a href="index.html">
+        Home
+      </a>
+
+      <a href="swimming.html">
+        Swimming
+      </a>
+
+      <a href="events.html">
+        Events & Catering
+      </a>
+
+      <a href="sports.html">
+        Sports
+      </a>
+
+      <a href="about.html">
+        About Kiteezi
+      </a>
+
+    </div>
+
+
+    <div>
+
+      <h4>
+        Menu
+      </h4>
+
+      <a href="#menu">
+        Meals
+      </a>
+
+      <a href="#menu">
+        Breakfast
+      </a>
+
+      <a href="#menu">
+        Drinks
+      </a>
+
+      <a href="#menu">
+        Snacks
+      </a>
+
+      <a href="booking.html?service=event">
+        Event Catering
+      </a>
+
+    </div>
+
+
+    <div>
+
+      <h4>
+        Contact
+      </h4>
+
+      <a
+        data-site-setting="phone"
+        href="tel:+256766529086"
+      >
+        +256 766 529086
+      </a>
+
+      <a
+        data-site-setting="whatsapp"
+        href="https://wa.me/256709763803"
+      >
+        WhatsApp: +256 709 763803
+      </a>
+
+      <a
+        data-site-setting="location"
+        href="contact.html"
+      >
+        Kiteezi, Lusanjja, Kampala
+      </a>
+
+      <a href="contact.html">
+        Contact page
+      </a>
+
+    </div>
+
+  </div>
+
+
+  <div class="container copyright">
+
     © <span data-year></span>
     Kiteezi Recreational Center.
     All rights reserved.
-  </div></footer><script src="config.js"></script><script src="content.js"></script><script src="site.js"></script></body>
+
+  </div>
+
+</footer>
+
+
+<script src="config.js"></script>
+<script src="content.js"></script>
+<script src="site.js"></script>
+
+</body>
 </html>
