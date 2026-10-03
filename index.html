@@ -1441,7 +1441,14 @@
 
 <script src="config.js"></script>
 <script src="content.js"></script>
-<script src="site.js"></script>
+<script src="site.js"></script><script>
+(async function(){
+const C=window.KITEEZI_CONFIG||{},u=String(C.SUPABASE_URL||'').replace(/\\/+$/,''),k=C.SUPABASE_ANON_KEY;
+const esc=v=>String(v??'').replace(/[&<>"]/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[x]));
+try{const r=await fetch(u+'/rest/v1/reviews?select=customer_name,rating,message,created_at&approved=eq.true&order=created_at.desc&limit=9',{headers:{apikey:k,Authorization:'Bearer '+k}});const rows=await r.json();document.getElementById('public-reviews').innerHTML=rows.length?rows.map(x=>'<article class="review"><div class="stars">'+('★'.repeat(Number(x.rating||0)))+'</div><h3>'+esc(x.customer_name)+'</h3><p>'+esc(x.message)+'</p><small>'+new Date(x.created_at).toLocaleDateString()+'</small></article>').join(''):'<p class="muted">No published reviews yet.</p>'}catch(e){document.getElementById('public-reviews').textContent='Reviews are temporarily unavailable.'}
+const f=document.getElementById('reviewForm'); if(!f)return; f.addEventListener('submit',async e=>{e.preventDefault();const s=document.getElementById('reviewStatus'),d=Object.fromEntries(new FormData(f));try{const r=await fetch(u+'/rest/v1/reviews',{method:'POST',headers:{apikey:k,Authorization:'Bearer '+k,'Content-Type':'application/json'},body:JSON.stringify({customer_name:d.customer_name,rating:Number(d.rating),message:d.message,approved:false})});if(!r.ok)throw Error('Review could not be submitted.');f.reset();s.hidden=false;s.textContent='Thank you. Your review was submitted for moderation.'}catch(e){s.hidden=false;s.textContent=e.message}})
+})();
+</script>
 
 </body>
 </html>
