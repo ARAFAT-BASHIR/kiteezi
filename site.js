@@ -465,3 +465,33 @@
   }
 
 })();
+function calculateSportsPrice(sportName, players) {
+  const name =
+    String(sportName || '')
+      .trim()
+      .toLowerCase();
+
+  const count =
+    Math.max(
+      0,
+      Number(players) || 0
+    );
+
+  if (count <= 0) {
+    return 0;
+  }
+
+  if (name === 'basketball') {
+    return count >= 7
+      ? count * 3000
+      : count * 5000;
+  }
+
+  if (name === 'football') {
+    return count >= 11
+      ? count * 3000
+      : count * 5000;
+  }
+
+  return 0;
+}
