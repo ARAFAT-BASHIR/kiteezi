@@ -222,6 +222,27 @@
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[char]));
 
+
+  async function renderHomeMenu() {
+    const target = $('#home-menu-catalog');
+    if (!target) return;
+    try {
+      const items = await getMenuItems();
+      const rows = (items || []).slice(0, 9);
+      target.innerHTML = rows.map(item => {
+        const onRequest = item.price_on_request === true || Number(item.price || 0) === 0;
+        const price = onRequest ? 'Ask' : 'UGX ' + money(item.price);
+        return '<article class="card"><div class="card-body"><span class="badge">' +
+          escapeHtml(item.menu_categories?.name || 'Menu') + '</span><h4>' +
+          escapeHtml(item.name) + '</h4><p>' + escapeHtml(item.description || '') +
+          '</p><div class="menu-price">' + price + '</div></div></article>';
+      }).join('');
+    } catch (error) {
+      console.error(error);
+      target.innerHTML = '<p class="muted">Unable to load menu information.</p>';
+    }
+  }
+
   async function renderMenuCatalog() {
     const target = $('#menu-catalog');
     if (!target) return;
@@ -469,6 +490,7 @@
     bindMenuButtons();
     bindCartButtons();
     renderMenuCatalog();
+    renderHomeMenu();
     initMobileNavigation();
     initSiteYear();
 
