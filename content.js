@@ -330,6 +330,23 @@
     return response.json();
   }
 
+  async function applyTeamPositions() {
+    const response = await fetch(url + '/rest/v1/team_positions?select=department,position,person_name,sort_order,active&active=eq.true&order=sort_order.asc', { headers });
+    if (!response.ok) throw new Error('Could not load team positions.');
+    const rows = await response.json();
+    document.querySelectorAll('#public-team-positions').forEach(container => {
+      const icons = ['GM','R','SC','FC','BD','GG','P'];
+      container.innerHTML = rows.map((row, i) =>
+        '<div class="card"><div class="card-body"><div class="iconbox">' + icons[i % icons.length] + '</div>' +
+        '<div class="eyebrow">' + String(row.department || '').replace(/[<>]/g,'') + '</div>' +
+        '<h3>' + String(row.position || '').replace(/[<>]/g,'') + '</h3>' +
+        (row.person_name ? '<p class="team-name">' + String(row.person_name).replace(/[<>]/g,'') + '</p>' : '') +
+        '</div></div>'
+      ).join('');
+      container.hidden = rows.length === 0;
+    });
+  }
+
   async function applyServicePrices() {
     const services = await getServices();
     const byName = Object.fromEntries(services.map(item => [String(item.name).toLowerCase(), item]));
@@ -366,7 +383,8 @@
         settings;
 
       applySettings(settings);
-      await applyServicePrices();
+      await applyTeamPositions().catch(error => console.warn('Team positions unavailable:', error));
+      applyServicePrices();
       await applyMedia();
       await applyCmsPage();
       await applySocialLinks();
