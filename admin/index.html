@@ -1,64 +1,278 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow,noarchive">
-<title>Kiteezi Admin Portal</title>
-<link rel="stylesheet" href="stylez.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>Kiteezi Admin Portal</title>
+  <link rel="stylesheet" href="stylez.css">
 
-<style>
-body{background:#f3f6f3}
-.admin-shell{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
-.side{background:#10251c;color:#fff;padding:22px;position:sticky;top:0;height:100vh;overflow:auto}
-.side a{display:block;padding:11px;border-radius:9px;color:#cbd8d0;margin:3px 0;text-decoration:none}
-.side a:hover,.side a.active{background:#2d6a4f;color:#fff}
-.main{padding:30px;min-width:0}
-.top{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:22px}
-.panel{background:#fff;border:1px solid #e0e6e1;border-radius:16px;padding:20px;margin-bottom:18px;overflow:auto}
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.metric{background:#fff;padding:18px;border-radius:14px;border:1px solid #e0e6e1}
-.metric b{font-size:27px;color:#1b4332;display:block}
-.tab{display:none}
-.tab.active{display:block}
-.admin table{width:100%;border-collapse:collapse}
-.admin th,.admin td{padding:11px;border-bottom:1px solid #e7ebe8;text-align:left;font-size:13px;vertical-align:top}
-.pill{display:inline-block;padding:4px 8px;border-radius:99px;background:#edf4ef;color:#1b4332;font-size:11px;font-weight:800}
-.login{min-height:100vh;display:grid;place-items:center;padding:20px}
-.login-card{max-width:430px;width:100%;background:#fff;border:1px solid #e0e6e1;border-radius:20px;padding:28px;box-shadow:0 12px 35px #00000012}
-.hide{display:none!important}
-.admin .form label{margin-bottom:12px}
-.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:15px}
-.toolbar input,.toolbar select{padding:10px;border:1px solid #d9e1dc;border-radius:9px}
-.mini{font-size:12px}
-.right{margin-left:auto}
-.actions{display:flex;gap:6px;flex-wrap:wrap}
-.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:20px;z-index:20}
-.modal.open{display:flex}
-.modal-card{background:#fff;border-radius:18px;padding:22px;max-width:700px;width:100%;max-height:90vh;overflow:auto}
-.setting-help{font-size:12px;color:#66756d;margin-top:5px}
-.social-status{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-@media(max-width:850px){
-  .admin-shell{grid-template-columns:1fr}
-  .side{height:auto;position:static}
-  .side nav{display:flex;overflow:auto;gap:4px}
-  .side a{white-space:nowrap}
-  .metrics{grid-template-columns:1fr 1fr}
-  .main{padding:18px}
-}
-@media(max-width:500px){
-  .metrics{grid-template-columns:1fr}
-}
-</style>
+  <style>
+    body{background:#f3f6f3}
+
+    .admin-shell{
+      display:grid;
+      grid-template-columns:250px 1fr;
+      min-height:100vh
+    }
+
+    .side{
+      background:#10251c;
+      color:#fff;
+      padding:22px;
+      position:sticky;
+      top:0;
+      height:100vh;
+      overflow:auto
+    }
+
+    .side a{
+      display:block;
+      padding:11px;
+      border-radius:9px;
+      color:#cbd8d0;
+      margin:3px 0;
+      text-decoration:none
+    }
+
+    .side a:hover,
+    .side a.active{
+      background:#2d6a4f;
+      color:#fff
+    }
+
+    .main{
+      padding:30px;
+      min-width:0
+    }
+
+    .top{
+      display:flex;
+      justify-content:space-between;
+      gap:15px;
+      align-items:center;
+      margin-bottom:22px
+    }
+
+    .panel{
+      background:#fff;
+      border:1px solid #e0e6e1;
+      border-radius:16px;
+      padding:20px;
+      margin-bottom:18px;
+      overflow:auto
+    }
+
+    .metrics{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:14px
+    }
+
+    .metric{
+      background:#fff;
+      padding:18px;
+      border-radius:14px;
+      border:1px solid #e0e6e1
+    }
+
+    .metric b{
+      font-size:27px;
+      color:#1b4332;
+      display:block
+    }
+
+    .tab{display:none}
+    .tab.active{display:block}
+
+    .admin table{
+      width:100%;
+      border-collapse:collapse
+    }
+
+    .admin th,
+    .admin td{
+      padding:11px;
+      border-bottom:1px solid #e7ebe8;
+      text-align:left;
+      font-size:13px;
+      vertical-align:top
+    }
+
+    .pill{
+      display:inline-block;
+      padding:4px 8px;
+      border-radius:99px;
+      background:#edf4ef;
+      color:#1b4332;
+      font-size:11px;
+      font-weight:800
+    }
+
+    .login{
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      padding:20px
+    }
+
+    .login-card{
+      max-width:430px;
+      width:100%;
+      background:#fff;
+      border:1px solid #e0e6e1;
+      border-radius:20px;
+      padding:28px;
+      box-shadow:0 12px 35px #00000012
+    }
+
+    .hide{display:none!important}
+
+    .admin .form label{
+      margin-bottom:12px
+    }
+
+    .toolbar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-bottom:15px
+    }
+
+    .toolbar input,
+    .toolbar select{
+      padding:10px;
+      border:1px solid #d9e1dc;
+      border-radius:9px
+    }
+
+    .mini{
+      font-size:12px
+    }
+
+    .right{
+      margin-left:auto
+    }
+
+    .actions{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap
+    }
+
+    .modal{
+      position:fixed;
+      inset:0;
+      background:#0008;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      z-index:20
+    }
+
+    .modal.open{
+      display:flex
+    }
+
+    .modal-card{
+      background:#fff;
+      border-radius:18px;
+      padding:22px;
+      max-width:700px;
+      width:100%;
+      max-height:90vh;
+      overflow:auto
+    }
+
+    .setting-help{
+      font-size:12px;
+      color:#66756d;
+      margin-top:5px
+    }
+
+    .admin-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:18px
+    }
+
+    .form-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px
+    }
+
+    .form-grid .full{
+      grid-column:1/-1
+    }
+
+    .data-state{
+      padding:18px;
+      text-align:center;
+      color:#66756d
+    }
+
+    .danger{
+      color:#9b2226
+    }
+
+    @media(max-width:850px){
+      .admin-shell{
+        grid-template-columns:1fr
+      }
+
+      .side{
+        height:auto;
+        position:static
+      }
+
+      .side nav{
+        display:flex;
+        overflow:auto;
+        gap:4px
+      }
+
+      .side a{
+        white-space:nowrap
+      }
+
+      .metrics{
+        grid-template-columns:1fr 1fr
+      }
+
+      .admin-grid,
+      .form-grid{
+        grid-template-columns:1fr
+      }
+
+      .main{
+        padding:18px
+      }
+    }
+
+    @media(max-width:500px){
+      .metrics{
+        grid-template-columns:1fr
+      }
+    }
+  </style>
 </head>
 
 <body class="admin">
 
+<!-- =========================================================
+     LOGIN
+========================================================= -->
+
 <div id="loginView" class="login">
+
   <div class="login-card">
 
     <div class="brand">
       <span class="brand-mark">K</span>
+
       <span>
         Kiteezi Admin
         <small>Private Management Portal</small>
@@ -76,6 +290,7 @@ body{background:#f3f6f3}
 
       <label>
         Email
+
         <input
           type="email"
           name="email"
@@ -86,6 +301,7 @@ body{background:#f3f6f3}
 
       <label>
         Password
+
         <input
           type="password"
           name="password"
@@ -94,18 +310,36 @@ body{background:#f3f6f3}
         >
       </label>
 
-      <button class="btn btn-dark" type="submit">
+      <button
+        class="btn btn-dark"
+        type="submit"
+      >
         Sign in
       </button>
 
-      <div id="loginMsg" class="notice" hidden></div>
+      <div
+        id="loginMsg"
+        class="notice"
+        hidden
+      ></div>
 
     </form>
+
   </div>
+
 </div>
 
 
-<div id="app" class="admin-shell hide">
+<!-- =========================================================
+     ADMIN APPLICATION
+========================================================= -->
+
+<div
+  id="app"
+  class="admin-shell hide"
+>
+
+  <!-- SIDEBAR -->
 
   <aside class="side">
 
@@ -113,52 +347,86 @@ body{background:#f3f6f3}
       class="brand"
       style="color:#fff;margin-bottom:20px"
     >
+
       <span class="brand-mark">K</span>
+
       <span>
         Kiteezi Admin
         <small style="color:#bfcfc5">
           Private Operations
         </small>
       </span>
+
     </div>
 
+
     <nav>
-      <a href="#dashboard" data-tab="dashboard">
+
+      <a
+        href="#dashboard"
+        data-tab="dashboard"
+      >
         Dashboard
       </a>
 
-      <a href="#bookings" data-tab="bookings">
+      <a
+        href="#bookings"
+        data-tab="bookings"
+      >
         Bookings
       </a>
 
-      <a href="#restaurant" data-tab="restaurant">
+      <a
+        href="#restaurant"
+        data-tab="restaurant"
+      >
         Restaurant / POS
       </a>
 
-      <a href="#inventory" data-tab="inventory">
+      <a
+        href="#inventory"
+        data-tab="inventory"
+      >
         Inventory
       </a>
 
-      <a href="#swimming" data-tab="swimming">
+      <a
+        href="#swimming"
+        data-tab="swimming"
+      >
         Swimming
       </a>
 
-      <a href="#events" data-tab="events">
+      <a
+        href="#events"
+        data-tab="events"
+      >
         Events
       </a>
 
-      <a href="#sports" data-tab="sports">
+      <a
+        href="#sports"
+        data-tab="sports"
+      >
         Sports
       </a>
 
-      <a href="#reports" data-tab="reports">
+      <a
+        href="#reports"
+        data-tab="reports"
+      >
         Reports
       </a>
 
-      <a href="#settings" data-tab="settings">
+      <a
+        href="#settings"
+        data-tab="settings"
+      >
         Settings
       </a>
+
     </nav>
+
 
     <button
       id="logout"
@@ -171,30 +439,47 @@ body{background:#f3f6f3}
   </aside>
 
 
+  <!-- MAIN -->
+
   <main class="main">
 
     <div class="top">
 
       <div>
+
         <div class="eyebrow">
           Operations
         </div>
 
-        <h1 style="margin:3px 0;color:#1b4332">
+        <h1
+          style="margin:3px 0;color:#1b4332"
+        >
           Kiteezi Management System
         </h1>
 
-        <div id="who" class="muted mini"></div>
+        <div
+          id="who"
+          class="muted mini"
+        ></div>
+
       </div>
 
-      <span id="rolePill" class="pill"></span>
+      <span
+        id="rolePill"
+        class="pill"
+      ></span>
 
     </div>
 
 
-    <!-- DASHBOARD -->
+    <!-- =====================================================
+         DASHBOARD
+    ====================================================== -->
 
-    <section id="dashboard" class="tab">
+    <section
+      id="dashboard"
+      class="tab"
+    >
 
       <div class="metrics">
 
@@ -234,27 +519,51 @@ body{background:#f3f6f3}
       </div>
 
 
-      <div class="panel">
+      <div class="admin-grid">
 
-        <h2>
-          Payment controls
-        </h2>
+        <div class="panel">
 
-        <p>
-          Cash, Airtel Money and MTN Mobile Money
-          are supported.
-          Mobile Money references remain pending
-          until staff verify them.
-        </p>
+          <h2>Payment controls</h2>
+
+          <p>
+            Cash, Airtel Money and MTN Mobile Money
+            are supported.
+          </p>
+
+          <p class="setting-help">
+            Mobile Money references remain pending
+            until staff verify them.
+          </p>
+
+        </div>
+
+
+        <div class="panel">
+
+          <h2>System status</h2>
+
+          <div
+            id="systemStatus"
+            class="data-state"
+          >
+            Checking…
+          </div>
+
+        </div>
 
       </div>
 
     </section>
 
 
-    <!-- BOOKINGS -->
+    <!-- =====================================================
+         BOOKINGS
+    ====================================================== -->
 
-    <section id="bookings" class="tab">
+    <section
+      id="bookings"
+      class="tab"
+    >
 
       <div class="panel">
 
@@ -265,16 +574,33 @@ body{background:#f3f6f3}
           </h2>
 
           <select id="bookingFilter">
-            <option value="all">All</option>
-            <option value="pending">Pending</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="completed">Completed</option>
+
+            <option value="all">
+              All
+            </option>
+
+            <option value="pending">
+              Pending
+            </option>
+
+            <option value="confirmed">
+              Confirmed
+            </option>
+
+            <option value="cancelled">
+              Cancelled
+            </option>
+
+            <option value="completed">
+              Completed
+            </option>
+
           </select>
 
           <button
             class="btn btn-dark"
             id="refreshBookings"
+            type="button"
           >
             Refresh
           </button>
@@ -290,4 +616,913 @@ body{background:#f3f6f3}
     </section>
 
 
-    <!--
+    <!-- =====================================================
+         RESTAURANT / POS
+    ====================================================== -->
+
+    <section
+      id="restaurant"
+      class="tab"
+    >
+
+      <div class="panel">
+
+        <div class="toolbar">
+
+          <h2 style="margin-right:auto">
+            Restaurant / POS
+          </h2>
+
+          <select id="orderStatusFilter">
+
+            <option value="all">
+              All orders
+            </option>
+
+            <option value="open">
+              Open
+            </option>
+
+            <option value="pending">
+              Pending
+            </option>
+
+            <option value="paid">
+              Paid
+            </option>
+
+            <option value="completed">
+              Completed
+            </option>
+
+            <option value="cancelled">
+              Cancelled
+            </option>
+
+          </select>
+
+          <button
+            id="refreshOrders"
+            class="btn btn-dark"
+            type="button"
+          >
+            Refresh
+          </button>
+
+          <button
+            id="newOrder"
+            class="btn"
+            type="button"
+          >
+            New order
+          </button>
+
+        </div>
+
+
+        <div
+          id="ordersTable"
+          class="data-state"
+        >
+          Loading…
+        </div>
+
+      </div>
+
+
+      <div class="panel">
+
+        <h2>Order items</h2>
+
+        <div
+          id="orderItemsTable"
+          class="data-state"
+        >
+          Select an order to view its items.
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         INVENTORY
+    ====================================================== -->
+
+    <section
+      id="inventory"
+      class="tab"
+    >
+
+      <div class="panel">
+
+        <div class="toolbar">
+
+          <h2 style="margin-right:auto">
+            Inventory
+          </h2>
+
+          <input
+            id="inventorySearch"
+            type="search"
+            placeholder="Search inventory"
+          >
+
+          <select id="inventoryFilter">
+
+            <option value="all">
+              All items
+            </option>
+
+            <option value="low">
+              Low stock
+            </option>
+
+            <option value="active">
+              Active
+            </option>
+
+            <option value="inactive">
+              Inactive
+            </option>
+
+          </select>
+
+          <button
+            id="refreshInventory"
+            class="btn btn-dark"
+            type="button"
+          >
+            Refresh
+          </button>
+
+          <button
+            id="newInventoryItem"
+            class="btn"
+            type="button"
+          >
+            Add item
+          </button>
+
+        </div>
+
+
+        <div
+          id="inventoryTable"
+          class="data-state"
+        >
+          Loading…
+        </div>
+
+      </div>
+
+
+      <div class="panel">
+
+        <h2>Stock movements</h2>
+
+        <div
+          id="stockMovementsTable"
+          class="data-state"
+        >
+          Select an inventory item to view stock movements.
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         SWIMMING
+    ====================================================== -->
+
+    <section
+      id="swimming"
+      class="tab"
+    >
+
+      <div class="panel">
+
+        <div class="toolbar">
+
+          <h2 style="margin-right:auto">
+            Swimming
+          </h2>
+
+          <select id="swimmingFilter">
+
+            <option value="all">
+              All sessions
+            </option>
+
+            <option value="individual">
+              Individual
+            </option>
+
+            <option value="school">
+              School
+            </option>
+
+            <option value="group">
+              Group
+            </option>
+
+          </select>
+
+          <button
+            id="refreshSwimming"
+            class="btn btn-dark"
+            type="button"
+          >
+            Refresh
+          </button>
+
+        </div>
+
+
+        <div
+          id="swimmingTable"
+          class="data-state"
+        >
+          Loading…
+        </div>
+
+      </div>
+
+
+      <div class="panel">
+
+        <h2>Attendance</h2>
+
+        <div
+          id="swimmingAttendance"
+          class="data-state"
+        >
+          Select a swimming session.
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         EVENTS
+    ====================================================== -->
+
+    <section
+      id="events"
+      class="tab"
+    >
+
+      <div class="panel">
+
+        <div class="toolbar">
+
+          <h2 style="margin-right:auto">
+            Events
+          </h2>
+
+          <select id="eventStatusFilter">
+
+            <option value="all">
+              All events
+            </option>
+
+            <option value="pending">
+              Pending
+            </option>
+
+            <option value="confirmed">
+              Confirmed
+            </option>
+
+            <option value="completed">
+              Completed
+            </option>
+
+            <option value="cancelled">
+              Cancelled
+            </option>
+
+          </select>
+
+          <button
+            id="refreshEvents"
+            class="btn btn-dark"
+            type="button"
+          >
+            Refresh
+          </button>
+
+        </div>
+
+
+        <div
+          id="eventsTable"
+          class="data-state"
+        >
+          Loading…
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         SPORTS
+    ====================================================== -->
+
+    <section
+      id="sports"
+      class="tab"
+    >
+
+      <div class="panel">
+
+        <div class="toolbar">
+
+          <h2 style="margin-right:auto">
+            Sports
+          </h2>
+
+          <select id="sportsFilter">
+
+            <option value="all">
+              All
+            </option>
+
+            <option value="active">
+              Active
+            </option>
+
+            <option value="inactive">
+              Inactive
+            </option>
+
+          </select>
+
+          <button
+            id="refreshSports"
+            class="btn btn-dark"
+            type="button"
+          >
+            Refresh
+          </button>
+
+        </div>
+
+
+        <div
+          id="sportsTable"
+          class="data-state"
+        >
+          Loading…
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         REPORTS
+    ====================================================== -->
+
+    <section
+      id="reports"
+      class="tab"
+    >
+
+      <div class="panel">
+
+        <div class="toolbar">
+
+          <h2 style="margin-right:auto">
+            Reports
+          </h2>
+
+          <input
+            id="reportFrom"
+            type="date"
+          >
+
+          <input
+            id="reportTo"
+            type="date"
+          >
+
+          <button
+            id="generateReport"
+            class="btn btn-dark"
+            type="button"
+          >
+            Generate
+          </button>
+
+        </div>
+
+
+        <div
+          id="reportSummary"
+          class="metrics"
+        >
+
+          <div class="metric">
+            <b id="reportBookings">
+              0
+            </b>
+            Bookings
+          </div>
+
+          <div class="metric">
+            <b id="reportOrders">
+              0
+            </b>
+            Orders
+          </div>
+
+          <div class="metric">
+            <b id="reportEvents">
+              0
+            </b>
+            Events
+          </div>
+
+          <div class="metric">
+            <b id="reportRevenue">
+              UGX 0
+            </b>
+            Recorded value
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="panel">
+
+        <h2>Report details</h2>
+
+        <div
+          id="reportTable"
+          class="data-state"
+        >
+          Generate a report to view details.
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         SETTINGS
+    ====================================================== -->
+
+    <section
+      id="settings"
+      class="tab"
+    >
+
+      <div class="panel">
+
+        <div class="toolbar">
+
+          <h2 style="margin-right:auto">
+            Site settings
+          </h2>
+
+          <button
+            id="refreshSettings"
+            class="btn"
+            type="button"
+          >
+            Refresh
+          </button>
+
+          <button
+            id="saveSettings"
+            class="btn btn-dark"
+            type="button"
+          >
+            Save changes
+          </button>
+
+        </div>
+
+
+        <form
+          id="settingsForm"
+          class="form"
+        >
+
+          <div class="form-grid">
+
+            <label>
+              Site name
+
+              <input
+                type="text"
+                id="settingSiteName"
+                data-setting="site_name"
+              >
+            </label>
+
+
+            <label>
+              Contact phone
+
+              <input
+                type="text"
+                id="settingPhone"
+                data-setting="contact_phone"
+              >
+            </label>
+
+
+            <label>
+              Contact email
+
+              <input
+                type="email"
+                id="settingEmail"
+                data-setting="contact_email"
+              >
+            </label>
+
+
+            <label>
+              Currency
+
+              <input
+                type="text"
+                id="settingCurrency"
+                data-setting="currency"
+                value="UGX"
+              >
+            </label>
+
+
+            <label class="full">
+              Address
+
+              <input
+                type="text"
+                id="settingAddress"
+                data-setting="address"
+              >
+            </label>
+
+
+            <label class="full">
+              Business description
+
+              <textarea
+                id="settingDescription"
+                data-setting="description"
+                rows="4"
+              ></textarea>
+            </label>
+
+          </div>
+
+        </form>
+
+      </div>
+
+
+      <div class="panel">
+
+        <h2>Account</h2>
+
+        <div
+          id="accountDetails"
+          class="mini"
+        ></div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+</div>
+
+
+<!-- =========================================================
+     ORDER MODAL
+========================================================= -->
+
+<div
+  id="orderModal"
+  class="modal"
+  aria-hidden="true"
+>
+
+  <div class="modal-card">
+
+    <div class="toolbar">
+
+      <h2 style="margin-right:auto">
+        New order
+      </h2>
+
+      <button
+        type="button"
+        class="btn"
+        data-close-modal="orderModal"
+      >
+        Close
+      </button>
+
+    </div>
+
+
+    <form
+      id="orderForm"
+      class="form"
+    >
+
+      <div class="form-grid">
+
+        <label>
+          Customer ID
+
+          <input
+            type="text"
+            name="customer_id"
+          >
+        </label>
+
+
+        <label>
+          Booking ID
+
+          <input
+            type="text"
+            name="booking_id"
+          >
+        </label>
+
+
+        <label>
+          Source
+
+          <select name="source">
+
+            <option value="admin">
+              Admin
+            </option>
+
+            <option value="restaurant">
+              Restaurant
+            </option>
+
+            <option value="website">
+              Website
+            </option>
+
+          </select>
+        </label>
+
+
+        <label>
+          Fulfilment
+
+          <select name="fulfillment_method">
+
+            <option value="counter">
+              Counter
+            </option>
+
+            <option value="table">
+              Table
+            </option>
+
+            <option value="takeaway">
+              Takeaway
+            </option>
+
+          </select>
+        </label>
+
+
+        <label class="full">
+          Customer notes
+
+          <textarea
+            name="customer_notes"
+            rows="4"
+          ></textarea>
+        </label>
+
+      </div>
+
+
+      <div class="actions">
+
+        <button
+          type="submit"
+          class="btn btn-dark"
+        >
+          Create order
+        </button>
+
+        <button
+          type="button"
+          class="btn"
+          data-close-modal="orderModal"
+        >
+          Cancel
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+<!-- =========================================================
+     INVENTORY MODAL
+========================================================= -->
+
+<div
+  id="inventoryModal"
+  class="modal"
+  aria-hidden="true"
+>
+
+  <div class="modal-card">
+
+    <div class="toolbar">
+
+      <h2 style="margin-right:auto">
+        Inventory item
+      </h2>
+
+      <button
+        type="button"
+        class="btn"
+        data-close-modal="inventoryModal"
+      >
+        Close
+      </button>
+
+    </div>
+
+
+    <form
+      id="inventoryForm"
+      class="form"
+    >
+
+      <input
+        type="hidden"
+        name="id"
+      >
+
+      <div class="form-grid">
+
+        <label>
+          Name
+
+          <input
+            type="text"
+            name="name"
+            required
+          >
+        </label>
+
+
+        <label>
+          Unit
+
+          <input
+            type="text"
+            name="unit"
+            required
+          >
+        </label>
+
+
+        <label>
+          Category
+
+          <input
+            type="text"
+            name="category"
+          >
+        </label>
+
+
+        <label>
+          Reorder level
+
+          <input
+            type="number"
+            name="reorder_level"
+            min="0"
+            step="1"
+            value="0"
+          >
+        </label>
+
+
+        <label>
+          Active
+
+          <select name="active">
+
+            <option value="true">
+              Active
+            </option>
+
+            <option value="false">
+              Inactive
+            </option>
+
+          </select>
+        </label>
+
+      </div>
+
+
+      <div class="actions">
+
+        <button
+          type="submit"
+          class="btn btn-dark"
+        >
+          Save item
+        </button>
+
+        <button
+          type="button"
+          class="btn"
+          data-close-modal="inventoryModal"
+        >
+          Cancel
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+<!-- =========================================================
+     BOOKING MODAL
+========================================================= -->
+
+<div
+  id="bookingModal"
+  class="modal"
+  aria-hidden="true"
+>
+
+  <div class="modal-card">
+
+    <div class="toolbar">
+
+      <h2 style="margin-right:auto">
+        Booking
+      </h2>
+
+      <button
+        type="button"
+        class="btn"
+        data-close-modal="bookingModal"
+      >
+        Close
+      </button>
+
+    </div>
+
+
+    <div
+      id="bookingDetails"
+      class="data-state"
+    >
+      Select a booking.
+    </div>
+
+  </div>
+
+</div>
+
+
+<script src="admin.js"></script>
+
+</body>
+</html>
