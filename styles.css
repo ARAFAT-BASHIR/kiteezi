@@ -58,3 +58,6 @@
     text-align: center;
   }
 }
+
+.form-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 12px 35px rgba(0,0,0,.06)}
+[data-social-links]{display:flex;gap:10px;flex-wrap:wrap}[data-social-links] a{padding:8px 12px;border-radius:999px;background:#edf4ef;color:var(--green);font-weight:700}
