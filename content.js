@@ -189,19 +189,22 @@
     if (whatsappLink) {
       document
         .querySelectorAll(
-          'a[href*="wa.me/"], [data-site-setting="whatsapp"]'
+          'a[href*="wa.me/"], [data-site-setting="whatsapp"], a[data-site-setting="whatsapp_link"], a[data-site-whatsapp-link], a[data-social="whatsapp"]'
         )
         .forEach(element => {
           if (element.matches('a')) {
             element.href = whatsappLink;
+            element.target = '_blank';
+            element.rel = 'noopener';
+            element.setAttribute('aria-label', 'WhatsApp');
+            element.title = 'WhatsApp';
           }
 
-          if (
-            element.dataset.siteSetting === 'whatsapp' &&
-            settings.whatsapp
-          ) {
-            element.textContent =
-              settings.whatsapp;
+          /* Never expose the wa.me URL as visible public text. */
+          if (element.dataset.social === 'whatsapp' || element.classList.contains('whatsapp-icon')) {
+            element.textContent = '◉';
+          } else {
+            element.textContent = whatsappNumber || cleanWhatsApp(settings.whatsapp);
           }
         });
     }
