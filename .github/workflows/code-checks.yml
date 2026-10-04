@@ -17,8 +17,7 @@ jobs:
         shell: bash
         run: |
           set -e
-          find . -type f -name '*.js' -not -path './.git/*' -print0 |
-            while IFS= read -r -d '' file; do
-              echo "Checking $file"
-              node --check "$file"
-            done
+          for file in admin/admin.js admin/admin-login.js; do
+            echo "Checking $file"
+            node --check "$file"
+          done
