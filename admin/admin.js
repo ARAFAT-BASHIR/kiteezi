@@ -131,32 +131,81 @@ async function manageRecipe(existingId=null){
       existing=rows?.[0];
       if(!existing)throw Error('The ingredient mapping could not be found.');
     }
-    modal(existing?'Edit ingredient mapping':'Add ingredient mapping',
+
+    const menuOptions=m.map(x=>'<option value="'+x.id+'" '+(existing?.menu_item_id===x.id?'selected':'')+'>'+esc(x.name)+'</option>').join('');
+    const ingredientOptions=i.map(x=>'<option value="'+x.id+'" '+(existing?.inventory_item_id===x.id?'selected':'')+'>'+esc(x.name)+' ('+esc(x.unit)+')</option>').join('');
+    const row=(inv='',qty='')=>'<div class="recipe-row" style="display:grid;grid-template-columns:minmax(0,1fr) 130px auto;gap:8px;align-items:end;margin-bottom:8px">'+
+      '<label>Ingredient<select class="recipe-inv" required>'+i.map(x=>'<option value="'+x.id+'" '+(inv===x.id?'selected':'')+'>'+esc(x.name)+' ('+esc(x.unit)+')</option>').join('')+'</select></label>'+
+      '<label>Qty per meal<input class="recipe-qty" type="number" step="0.001" min="0.001" value="'+esc(qty)+'" placeholder="0.250" required></label>'+
+      '<button type="button" class="btn recipe-remove">Remove</button></div>';
+
+    modal(existing?'Edit ingredient mapping':'Build meal ingredients',
       '<form id="recipe" class="form">'+
-      '<label>Menu item<select name="menu" required>'+m.map(x=>'<option value="'+x.id+'" '+(existing?.menu_item_id===x.id?'selected':'')+'>'+esc(x.name)+'</option>').join('')+'</select></label>'+
-      '<label>Ingredient<select name="inv" required>'+i.map(x=>'<option value="'+x.id+'" '+(existing?.inventory_item_id===x.id?'selected':'')+'>'+esc(x.name)+' ('+esc(x.unit)+')</option>').join('')+'</select></label>'+
-      '<label>Quantity used per one menu item<input name="qty" type="number" step="0.001" min="0.001" value="'+(existing?.quantity||'')+'" placeholder="e.g. 0.250" required></label>'+
-      '<p class="muted">Example: if one meal uses 0.25 kg of rice, enter 0.250. This quantity is multiplied by the ordered quantity when stock is deducted.</p>'+
-      '<div id="recipeError" class="state" style="display:none"></div><button class="btn btn-dark" type="submit">Save ingredient mapping</button></form>');
+      '<label>Menu item<select name="menu" required>'+menuOptions+'</select></label>'+
+      (existing?row(existing.inventory_item_id,existing.quantity):'<div id="recipeRows">'+row()+'</div><button type="button" class="btn" id="addRecipeIngredient">+ Add another ingredient</button>')+
+      '<p class="muted">Add every ingredient used to make this meal. Quantity means the amount used for ONE menu item. Example: Rice 0.250 kg, chicken 0.150 kg, oil 0.020 litre. When an order is completed, each quantity is multiplied by the number of meals ordered for automatic stock deduction.</p>'+
+      '<div id="recipeError" class="state" style="display:none"></div><button class="btn btn-dark" type="submit">'+(existing?'Save ingredient mapping':'Save all ingredients')+'</button></form>');
+
+    if(!existing){
+      $('#addRecipeIngredient').onclick=()=>{
+        $('#recipeRows').insertAdjacentHTML('beforeend',row());
+        bindRecipeRemove();
+      };
+      bindRecipeRemove();
+    }
+
+    function bindRecipeRemove(){
+      $$('.recipe-remove','#recipe').forEach(btn=>btn.onclick=()=>{
+        const rows=$$('.recipe-row','#recipe');
+        if(rows.length===1){alert('A meal needs at least one ingredient.');return}
+        btn.closest('.recipe-row')?.remove();
+      });
+    }
+
     $('#recipe').onsubmit=async e=>{
       e.preventDefault();
       const form=e.currentTarget;
-      const f=new FormData(form);
-      const menu=String(f.get('menu')||'');
-      const inv=String(f.get('inv')||'');
-      const qty=Number(f.get('qty')||0);
+      const menu=String(new FormData(form).get('menu')||'');
       const errorEl=$('#recipeError');
-      if(!menu||!inv||!(qty>0)){if(errorEl){errorEl.textContent='Select a menu item, select an ingredient, and enter a quantity greater than zero.';errorEl.style.display='block'}return}
-      const duplicate=await api('/rest/v1/menu_recipes?select=id&menu_item_id=eq.'+encodeURIComponent(menu)+'&inventory_item_id=eq.'+encodeURIComponent(inv)+(existingId?'&id=neq.'+encodeURIComponent(existingId):''));
-      if(duplicate?.length){if(errorEl){errorEl.textContent='This ingredient is already mapped to this menu item. Edit the existing mapping instead.';errorEl.style.display='block'}return}
+      const rows=existing?$$('.recipe-row','#recipe'):$$('.recipe-row','#recipe');
+      const entries=rows.map(r=>({inventory_item_id:String($('.recipe-inv',r)?.value||''),quantity:Number($('.recipe-qty',r)?.value||0)}));
+      if(!menu||!entries.length||entries.some(x=>!x.inventory_item_id||!(x.quantity>0))){
+        errorEl.textContent='Select the menu item, select every ingredient, and enter a quantity greater than zero.';
+        errorEl.style.display='block';return;
+      }
+      const ids=entries.map(x=>x.inventory_item_id);
+      if(new Set(ids).size!==ids.length){
+        errorEl.textContent='The same ingredient was selected more than once. Combine its quantity into one row.';
+        errorEl.style.display='block';return;
+      }
       try{
-        const body={menu_item_id:menu,inventory_item_id:inv,quantity:qty};
-        await api(existingId?'/rest/v1/menu_recipes?id=eq.'+encodeURIComponent(existingId):'/rest/v1/menu_recipes',{method:existingId?'PATCH':'POST',body:JSON.stringify(body)});
+        if(existing){
+          await api('/rest/v1/menu_recipes?id=eq.'+encodeURIComponent(existingId),{method:'PATCH',body:JSON.stringify({menu_item_id:menu,inventory_item_id:entries[0].inventory_item_id,quantity:entries[0].quantity})});
+        }else{
+          const old=await api('/rest/v1/menu_recipes?select=id,inventory_item_id&menu_item_id=eq.'+encodeURIComponent(menu));
+          const oldIds=new Set((old||[]).map(x=>x.inventory_item_id));
+          const duplicates=entries.filter(x=>oldIds.has(x.inventory_item_id));
+          if(duplicates.length){
+            errorEl.textContent='One or more selected ingredients are already mapped to this meal. Edit the existing mapping or remove that ingredient from this list.';
+            errorEl.style.display='block';return;
+          }
+          const created=[];
+          try{
+            for(const entry of entries){
+              const result=await api('/rest/v1/menu_recipes',{method:'POST',body:JSON.stringify({menu_item_id:menu,inventory_item_id:entry.inventory_item_id,quantity:entry.quantity})});
+              const id=result?.[0]?.id||result?.id;
+              if(id)created.push(id);
+            }
+          }catch(saveErr){
+            if(created.length)await api('/rest/v1/menu_recipes?id=in.('+created.join(',')+')',{method:'DELETE'}).catch(()=>{});
+            throw saveErr;
+          }
+        }
         closeModal();
         await loadRecipeMappings();
       }catch(err){
-        if(errorEl){errorEl.textContent=err.message||'The ingredient mapping could not be saved.';errorEl.style.display='block'}
-        else msg(err);
+        errorEl.textContent=err.message||'The ingredient mappings could not be saved.';
+        errorEl.style.display='block';
       }
     };
   }catch(e){msg(e)}
