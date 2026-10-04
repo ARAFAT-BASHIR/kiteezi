@@ -1,6 +1,22 @@
 'use strict';
 const C=window.KITEEZI_CONFIG||{}, URL=String(C.SUPABASE_URL||'').replace(/\/+$/,''), KEY=String(C.SUPABASE_ANON_KEY||'');
-let session=null,profile=null,tab='dashboard';
+let session=null,profile=null,tab='dashboard',permissions=new Set();
+const TAB_PERMISSIONS={
+  dashboard:'dashboard.view',
+  bookings:'bookings.manage',
+  restaurant:'orders.manage',
+  inventory:'inventory.manage',
+  menu:'menu.manage',
+  services:'services.manage',
+  content:'content.manage',
+  reviews:'reviews.moderate',
+  social:'social.manage',
+  staff:'staff.manage',
+  reports:'reports.view',
+  settings:'site_settings.manage'
+};
+const hasPermission=code=>profile?.role==='owner'||permissions.has(code);
+
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>new Intl.NumberFormat('en-UG').format(Number(v)||0);
@@ -45,8 +61,32 @@ async function login(e){
 }
 async function restore(){try{session=JSON.parse(sessionStorage.getItem('kiteezi_admin_session')||'null');if(!session?.access_token)throw Error();const p=await api('/rest/v1/profiles?select=*&id=eq.'+encodeURIComponent(session.user.id)+'&limit=1');profile=p?.[0];if(!profile?.active)throw Error();show()}catch{session=null;$('#loginView').classList.remove('hide')}}
 async function loadAdminLogo(){try{const r=await api('/rest/v1/site_settings?select=value&key=eq.logo_url&limit=1');const v=r?.[0]?.value||'';document.querySelectorAll('.brand-mark').forEach(el=>{if(!v){el.textContent='K';return;}const img=document.createElement('img');img.src=v.startsWith('http')?v:'../'+v.replace(/^\/+/, '');img.alt='Kiteezi Recreational Center';img.loading='eager';el.textContent='';el.appendChild(img);});const p=$('#logoPreview');if(p){p.src=v?(v.startsWith('http')?v:'../'+v.replace(/^\/+/,'')):'';p.hidden=!v;}}catch{}}
-function show(){loadAdminLogo();loadNotifications().catch(()=>{});startNotificationPolling();$('#loginView').classList.add('hide');$('#app').classList.remove('hide');$('#who').textContent=(profile.full_name||'Staff')+' · '+profile.role;$('#rolePill').textContent=profile.role;applyRoleNavigation();route(location.hash.slice(1)||'dashboard')}
-function applyRoleNavigation(){const r=String(profile?.role||'').toLowerCase();const map={dashboard:true,bookings:['owner','general_manager','reception_manager'].includes(r),restaurant:['owner','general_manager','reception_manager','chef','barista'].includes(r),inventory:['owner','general_manager','chef','barista','grounds_cleaning'].includes(r),menu:['owner','general_manager','chef','barista'].includes(r),services:['owner','general_manager','reception_manager','head_swimming_coach','swimming_coach'].includes(r),content:['owner','general_manager','website_manager'].includes(r),reviews:['owner','general_manager','reception_manager','website_manager'].includes(r),social:['owner','general_manager','website_manager'].includes(r),staff:['owner'].includes(r),reports:['owner','general_manager','reception_manager'].includes(r),settings:['owner'].includes(r)};document.querySelectorAll('[data-tab]').forEach(a=>{const k=a.dataset.tab;a.style.display=map[k]===true||map[k]?.includes(r)?'block':'none'});if(map.staff!==true)$('#staffHelp').textContent='Staff accounts are managed by the owner.'}
+async function show(){
+  loadAdminLogo();loadNotifications().catch(()=>{});startNotificationPolling();
+  $('#loginView').classList.add('hide');$('#app').classList.remove('hide');
+  $('#who').textContent=(profile.full_name||'Staff')+' · '+profile.role;
+  $('#rolePill').textContent=profile.role;
+  await loadPermissions();
+  applyRoleNavigation();
+  route(location.hash.slice(1)||'dashboard');
+}
+async function loadPermissions(){
+  permissions=new Set();
+  if(profile?.role==='owner') return;
+  const roleRows=await api('/rest/v1/roles?select=id&name=eq.'+encodeURIComponent(profile.role)+'&limit=1');
+  const roleId=roleRows?.[0]?.id;
+  if(!roleId) return;
+  const rows=await api('/rest/v1/role_permissions?select=permissions(code)&role_id=eq.'+encodeURIComponent(roleId));
+  rows.forEach(x=>{const code=x?.permissions?.code;if(code)permissions.add(code);});
+}
+function applyRoleNavigation(){
+  document.querySelectorAll('[data-tab]').forEach(a=>{
+    const required=TAB_PERMISSIONS[a.dataset.tab];
+    a.style.display=hasPermission(required)?'block':'none';
+  });
+  if(!hasPermission(TAB_PERMISSIONS.staff)) $('#staffHelp').textContent='Staff accounts are managed by the owner.';
+}
+function canOpenTab(name){return hasPermission(TAB_PERMISSIONS[name]);}
 let notificationInitialized=false;let notificationIds=new Set();let notificationCache=new Map();let notificationPoll=null;function showAdminToast(title,message){let t=document.getElementById('adminToast');if(!t){t=document.createElement('div');t.id='adminToast';t.style.cssText='position:fixed;right:18px;bottom:18px;z-index:200;background:#1b4332;color:#fff;padding:14px 16px;border-radius:12px;box-shadow:0 8px 30px #0003;max-width:360px';document.body.appendChild(t)}t.innerHTML='<strong>'+esc(title)+'</strong><div style="margin-top:4px">'+esc(message||'')+'</div>';setTimeout(()=>t.remove(),7000);}function notificationTarget(n){const t=String(n.reference_type||'').toLowerCase();if(t==='booking'||t==='bookings')return 'bookings';if(t==='order'||t==='orders')return 'restaurant';if(t==='review'||t==='reviews')return 'reviews';return 'dashboard'}
 async function openNotification(n){const target=notificationTarget(n);if(n.id){await api('/rest/v1/notifications?id=eq.'+encodeURIComponent(n.id),{method:'PATCH',body:JSON.stringify({is_read:true})});await loadNotifications();}if(n.reference_id&&target==='bookings'){history.replaceState(null,'','#bookings');route('bookings');setTimeout(()=>{const row=document.querySelector('[data-b="'+CSS.escape(n.reference_id)+'"]');if(row){row.scrollIntoView({behavior:'smooth',block:'center'});row.closest('tr')?.classList.add('highlight')}} ,100);return}history.replaceState(null,'','#'+target);route(target)}
 async function loadNotifications(){if(!session?.user?.id)return;const rows=await api('/rest/v1/notifications?select=id,title,message,is_read,created_at,reference_type,reference_id&recipient_user_id=eq.'+session.user.id+'&is_read=eq.false&order=created_at.desc&limit=30');if(notificationInitialized){rows.filter(x=>!notificationIds.has(x.id)).reverse().forEach(x=>showAdminToast(x.title,x.message));}notificationIds=new Set(rows.map(x=>x.id));notificationCache=new Map(rows.map(x=>[x.id,x]));notificationInitialized=true;bindNotificationClicks();const unread=rows.filter(x=>!x.is_read).length;$('#notificationCount').textContent=String(unread);$('#notificationList').innerHTML=rows.length?rows.map(x=>'<div class="cardx notification-item" data-notification="'+esc(x.id)+'" style="margin-bottom:8px;cursor:pointer;opacity:'+(x.is_read?'0.7':'1')+'"><strong>'+esc(x.title)+'</strong><div>'+esc(x.message||'')+'</div><small class="muted">'+esc(new Date(x.created_at).toLocaleString())+'</small></div>').join(''):'<div class="state">No notifications.</div>';}
@@ -54,7 +94,14 @@ function toggleNotifications(){const p=$('#notificationPanel');p.style.display=p
 function startNotificationPolling(){if(notificationPoll)clearInterval(notificationPoll);notificationPoll=setInterval(()=>{if(!document.hidden)loadNotifications().catch(()=>{});},30000);}
 function bindNotificationClicks(){document.querySelectorAll('.notification-item').forEach(el=>el.onclick=async()=>{try{const n=notificationCache.get(el.dataset.notification);if(n)await openNotification(n);}catch(e){msg(e)}})}
 async function markNotificationsRead(){await api('/rest/v1/notifications?recipient_user_id=eq.'+session.user.id+'&is_read=eq.false',{method:'PATCH',body:JSON.stringify({is_read:true})});await loadNotifications()}
-function route(x){tab=x||'dashboard';document.querySelectorAll('[data-tab]').forEach(a=>a.classList.toggle('active',a.dataset.tab===tab));document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('active',s.id===tab));const f={dashboard:loadDashboard,bookings:loadBookings,restaurant:loadOrders,inventory:loadInventory,menu:loadMenu,services:loadServices,content:loadContent,reviews:loadReviews,social:loadSocial,staff:loadStaff,reports:loadReport,settings:loadSettings};(f[tab]||loadDashboard)().catch(msg)}
+function route(x){
+  const requested=x||'dashboard';
+  tab=canOpenTab(requested)?requested:(canOpenTab('dashboard')?'dashboard':Object.keys(TAB_PERMISSIONS).find(canOpenTab)||'dashboard');
+  document.querySelectorAll('[data-tab]').forEach(a=>a.classList.toggle('active',a.dataset.tab===tab));
+  document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('active',s.id===tab));
+  const f={dashboard:loadDashboard,bookings:loadBookings,restaurant:loadOrders,inventory:loadInventory,menu:loadMenu,services:loadServices,content:loadContent,reviews:loadReviews,social:loadSocial,staff:loadStaff,reports:loadReport,settings:loadSettings};
+  (f[tab]||loadDashboard)().catch(msg);
+}
 async function loadDashboard(){const d=today();const [b,o,i,sm]=await Promise.all([api('/rest/v1/bookings?select=id,status&booking_date=eq.'+d),api('/rest/v1/orders?select=id,status&status=not.eq.completed&status=not.eq.cancelled'),api('/rest/v1/inventory_items?select=id,reorder_level'),api('/rest/v1/stock_movements?select=item_id,quantity,movement_type')]);const stock={};sm.forEach(x=>stock[x.item_id]=(stock[x.item_id]||0)+(String(x.movement_type).toLowerCase()==='out'?-1:1)*Number(x.quantity||0));$('#mBookings').textContent=b.length;$('#mPending').textContent=b.filter(x=>x.status==='pending').length;$('#mOrders').textContent=o.length;$('#mLow').textContent=i.filter(x=>(stock[x.id]||0)<=Number(x.reorder_level||0)).length;$('#todayOps').textContent='Live data connected.'}
 function today(){return new Date().toISOString().slice(0,10)}
 async function cancelBooking(id){modal('Cancel booking','<form id="cancelBookingForm" class="form"><p class="muted">Please enter why this booking cannot be accepted.</p><textarea name="reason" rows="4" required maxlength="500" placeholder="Cancellation reason"></textarea><button type="submit" class="btn btn-dark">Cancel booking</button></form>');$('#cancelBookingForm').onsubmit=async e=>{e.preventDefault();const reason=String(new FormData(e.currentTarget).get('reason')||'').trim();if(!reason)return;await api('/rest/v1/bookings?id=eq.'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({status:'cancelled',cancellation_reason:reason})});closeModal();await loadBookings()}}
