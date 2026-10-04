@@ -255,37 +255,78 @@
       if ($('[data-menu-title]')) $('[data-menu-title]').textContent = content.hero_title || pages?.[0]?.title || 'Menu';
       if ($('[data-menu-description]')) $('[data-menu-description]').textContent = content.intro || 'Browse the current Kiteezi menu.';
       if ($('[data-menu-intro]')) $('[data-menu-intro]').textContent = content.intro || 'Select meals and drinks to add them to your cart.';
+
+      const search = $('#publicMenuSearch');
+      const category = $('#publicMenuCategory');
+      const summary = $('#menuResultSummary');
+      const clear = $('#clearMenuFilters');
+
       const groups = new Map();
       (items || []).forEach(item => {
-        const category = item.menu_categories?.name || 'Other';
-        if (!groups.has(category)) groups.set(category, []);
-        groups.get(category).push(item);
+        const cat = item.menu_categories?.name || 'Other';
+        if (!groups.has(cat)) groups.set(cat, item.menu_categories || {name: cat, sort_order: 999});
       });
-      if (!groups.size) {
-        target.innerHTML = '<p class="muted">No menu items are currently published.</p>';
-        return;
+      if (category) {
+        category.innerHTML = '<option value="">All categories</option>' +
+          Array.from(groups.values())
+            .sort((a,b)=>(Number(a.sort_order??999)-Number(b.sort_order??999)) || String(a.name).localeCompare(String(b.name)))
+            .map(x => '<option value="' + escapeHtml(x.name) + '">' + escapeHtml(x.name) + '</option>').join('');
       }
-      target.innerHTML = Array.from(groups.entries()).sort((a,b)=>Number(a[1][0]?.menu_categories?.sort_order||999)-Number(b[1][0]?.menu_categories?.sort_order||999)).map(([category, rows]) => {
-        const card = rows.map(item => {
-          const unavailable = item.in_stock === false;
-          const onRequest = item.price_on_request === true || Number(item.price || 0) === 0;
-          const price = onRequest ? 'Ask' : 'UGX ' + money(item.price); const serving = item.serving_unit ? ' / ' + escapeHtml(item.serving_unit) : '';
-          const image = item.img_url
-            ? '<div class="menu-item-image"><img src="' + escapeHtml(item.img_url) + '" alt="' + escapeHtml(item.alt_text || item.name) + '" loading="lazy"></div>'
-            : '';
-          return '<div class="menu-item">' + image +
-            '<div><h4>' + escapeHtml(item.name) + '</h4><p>' + escapeHtml(item.description || '') + '</p></div>' +
-            '<div class="menu-price">' + price + serving + '</div></div>' +
-            '<div class="menu-order-row"><span class="muted">' + price + '</span>' +
-            '<button type="button" class="btn btn-dark menu-add" data-add-to-cart data-menu-item-id="' + escapeHtml(item.id) + '"' +
-            ((unavailable || onRequest) ? ' disabled' : '') + '>' +
-            (unavailable ? 'Unavailable' : onRequest ? 'Price on request' : 'Add to Cart') + '</button></div>';
+
+      const render = () => {
+        const q = String(search?.value || '').trim().toLowerCase();
+        const cat = String(category?.value || '');
+        const filtered = (items || []).filter(item => {
+          const itemCat = item.menu_categories?.name || 'Other';
+          const haystack = [item.name, item.description, itemCat, item.serving_unit].map(v => String(v || '').toLowerCase()).join(' ');
+          return (!q || haystack.includes(q)) && (!cat || itemCat === cat);
+        });
+
+        if (summary) summary.textContent = filtered.length + ' menu item' + (filtered.length === 1 ? '' : 's') + ' shown';
+
+        if (!filtered.length) {
+          target.innerHTML = '<p class="muted">No menu items match your search or category. Try another search or choose All categories.</p>';
+          return;
+        }
+
+        const grouped = new Map();
+        filtered.forEach(item => {
+          const itemCat = item.menu_categories?.name || 'Other';
+          if (!grouped.has(itemCat)) grouped.set(itemCat, []);
+          grouped.get(itemCat).push(item);
+        });
+
+        target.innerHTML = Array.from(grouped.entries()).map(([catName, rows]) => {
+          const card = rows.map(item => {
+            const unavailable = item.in_stock === false;
+            const onRequest = item.price_on_request === true || Number(item.price || 0) === 0;
+            const price = onRequest ? 'Ask' : 'UGX ' + money(item.price);
+            const serving = item.serving_unit ? ' / ' + escapeHtml(item.serving_unit) : '';
+            const image = item.img_url
+              ? '<div class="menu-item-image"><img src="' + escapeHtml(item.img_url) + '" alt="' + escapeHtml(item.alt_text || item.name) + '" loading="lazy"></div>'
+              : '';
+            return '<div class="menu-item">' + image +
+              '<div><h4>' + escapeHtml(item.name) + '</h4><p>' + escapeHtml(item.description || '') + '</p></div>' +
+              '<div class="menu-price">' + price + serving + '</div></div>' +
+              '<div class="menu-order-row"><span class="muted">' + price + '</span>' +
+              '<button type="button" class="btn btn-dark menu-add" data-add-to-cart data-menu-item-id="' + escapeHtml(item.id) + '"' +
+              ((unavailable || onRequest) ? ' disabled' : '') + '>' +
+              (unavailable ? 'Unavailable' : onRequest ? 'Price on request' : 'Add to Cart') + '</button></div>';
+          }).join('');
+          return '<article class="card"><div class="card-body"><span class="badge">' + escapeHtml(catName) + '</span>' + card + '</div></article>';
         }).join('');
-        return '<article class="card"><div class="card-body"><span class="badge">' +
-          escapeHtml(category) + '</span>' + card + '</div></article>';
-      }).join('');
-      bindMenuButtons();
-      bindCartButtons();
+        bindMenuButtons();
+        bindCartButtons();
+      };
+
+      search?.addEventListener('input', render);
+      category?.addEventListener('change', render);
+      clear?.addEventListener('click', () => {
+        if (search) search.value = '';
+        if (category) category.value = '';
+        render();
+      });
+      render();
     } catch (error) {
       console.error(error);
       target.innerHTML = '<p class="muted">Unable to load the menu right now. Please try again later.</p>';
