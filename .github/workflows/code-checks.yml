@@ -13,11 +13,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Check JavaScript syntax
+      - name: Check all JavaScript files
         shell: bash
         run: |
           set -e
-          for file in admin/admin.js admin/admin-login.js; do
+          files=$(find . -type f -name "*.js" -not -path "./node_modules/*" | sort)
+          test -n "$files"
+          while IFS= read -r file; do
             echo "Checking $file"
             node --check "$file"
-          done
+          done <<< "$files"
