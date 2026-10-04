@@ -214,7 +214,7 @@
 
   async function getMenuItems() {
     return supabaseFetch(
-      '/rest/v1/menu_items?select=id,name,description,price,price_on_request,in_stock,img_url,alt_text,category_id,menu_categories(name,sort_order)&order=name.asc'
+      '/rest/v1/menu_items?select=id,name,description,price,price_on_request,in_stock,img_url,alt_text,category_id,serving_unit,menu_categories(name,sort_order)&order=name.asc'
     );
   }
 
@@ -231,11 +231,11 @@
       const rows = (items || []).slice(0, 9);
       target.innerHTML = rows.map(item => {
         const onRequest = item.price_on_request === true || Number(item.price || 0) === 0;
-        const price = onRequest ? 'Ask' : 'UGX ' + money(item.price);
+        const price = onRequest ? 'Ask' : 'UGX ' + money(item.price); const serving = item.serving_unit ? ' / ' + escapeHtml(item.serving_unit) : ''; const serving = item.serving_unit ? ' / ' + escapeHtml(item.serving_unit) : '';
         return '<article class="card"><div class="card-body"><span class="badge">' +
           escapeHtml(item.menu_categories?.name || 'Menu') + '</span><h4>' +
           escapeHtml(item.name) + '</h4><p>' + escapeHtml(item.description || '') +
-          '</p><div class="menu-price">' + price + '</div></div></article>';
+          '</p><div class="menu-price">' + price + serving + '</div></div></article>';
       }).join('');
     } catch (error) {
       console.error(error);
@@ -275,7 +275,7 @@
             : '';
           return '<div class="menu-item">' + image +
             '<div><h4>' + escapeHtml(item.name) + '</h4><p>' + escapeHtml(item.description || '') + '</p></div>' +
-            '<div class="menu-price">' + price + '</div></div>' +
+            '<div class="menu-price">' + price + serving + '</div></div>' +
             '<div class="menu-order-row"><span class="muted">' + price + '</span>' +
             '<button type="button" class="btn btn-dark menu-add" data-add-to-cart data-menu-item-id="' + escapeHtml(item.id) + '"' +
             ((unavailable || onRequest) ? ' disabled' : '') + '>' +
