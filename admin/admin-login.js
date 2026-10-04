@@ -61,7 +61,12 @@
       if(!profile.active)throw Error('This Kiteezi staff profile is inactive.');
       saveSession(data);
       status('Signed in. Opening admin…');
-      window.location.replace(window.location.pathname);
+      if(typeof window.KITEEZI_ADMIN_BOOT==='function'){
+        const opened=await window.KITEEZI_ADMIN_BOOT(data);
+        if(!opened)throw Error('Login succeeded, but the admin dashboard could not be opened.');
+      }else{
+        window.location.replace(window.location.pathname);
+      }
     }catch(err){
       status(err?.message||'Sign in failed. Please try again.','error');
     }finally{
