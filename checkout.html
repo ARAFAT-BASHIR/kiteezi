@@ -426,7 +426,7 @@
           </h2>
 
           <p>
-            Your order has been submitted successfully.
+            Your order has been submitted — wait for confirmation.
           </p>
 
           <p id="success-detail"></p>
@@ -1153,18 +1153,15 @@
           true;
 
 
-        successDetail.textContent =
-          'Order reference: ' +
-          result.order_id +
-          ' • Total: ' +
-          money(
-            result.order_total
-          );
+        successDetail.innerHTML =
+          'Order reference: <strong>' +
+          escapeHtml(result.order_id) +
+          '</strong><br>' +
+          '<a class="btn btn-primary" style="margin-top:12px" href="tracking.html?type=order&id=' +
+          encodeURIComponent(result.order_id) +
+          '">Check order status</a>';
 
-
-        successBox.classList.add(
-          'show'
-        );
+        successBox.classList.add('show');
 
 
       } catch (error) {
