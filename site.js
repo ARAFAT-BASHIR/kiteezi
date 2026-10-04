@@ -477,6 +477,26 @@
     );
   }
 
+  function initInquiryAccess() {
+    if (document.body.dataset.inquiryAccess === 'true') return;
+    document.body.dataset.inquiryAccess = 'true';
+    const path = (location.pathname || '').toLowerCase();
+    let type = 'general';
+    if (path.includes('swimming')) type = 'swimming';
+    else if (path.includes('menu') || path.includes('checkout')) type = 'chef';
+    else if (path.includes('sports')) type = 'sports';
+    else if (path.includes('events')) type = 'events';
+    else if (path.includes('booking')) type = 'general';
+    if (path.endsWith('/inquiry.html') || path.includes('/admin/')) return;
+    const link = document.createElement('a');
+    link.href = 'inquiry.html?type=' + encodeURIComponent(type);
+    link.className = 'kiteezi-inquiry-float';
+    link.textContent = 'Ask a question';
+    link.setAttribute('aria-label', 'Ask Kiteezi a question');
+    link.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:9999;background:#d9b534;color:#10261c;padding:12px 18px;border-radius:999px;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.18);text-decoration:none;';
+    document.body.appendChild(link);
+  }
+
   function initSiteYear() {
     $$('[data-year]')
       .forEach(element => {
@@ -493,6 +513,7 @@
     renderHomeMenu();
     initMobileNavigation();
     initSiteYear();
+    initInquiryAccess();
 
     /*
       content.js is the single owner
