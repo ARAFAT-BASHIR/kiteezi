@@ -231,7 +231,7 @@
       const rows = (items || []).slice(0, 9);
       target.innerHTML = rows.map(item => {
         const onRequest = item.price_on_request === true || Number(item.price || 0) === 0;
-        const price = onRequest ? 'Ask' : 'UGX ' + money(item.price); const serving = item.serving_unit ? ' / ' + escapeHtml(item.serving_unit) : ''; const serving = item.serving_unit ? ' / ' + escapeHtml(item.serving_unit) : '';
+        const price = onRequest ? 'Ask' : 'UGX ' + money(item.price); const serving = item.serving_unit ? ' / ' + escapeHtml(item.serving_unit) : '';
         return '<article class="card"><div class="card-body"><span class="badge">' +
           escapeHtml(item.menu_categories?.name || 'Menu') + '</span><h4>' +
           escapeHtml(item.name) + '</h4><p>' + escapeHtml(item.description || '') +
@@ -269,7 +269,7 @@
         const card = rows.map(item => {
           const unavailable = item.in_stock === false;
           const onRequest = item.price_on_request === true || Number(item.price || 0) === 0;
-          const price = onRequest ? 'Ask' : 'UGX ' + money(item.price);
+          const price = onRequest ? 'Ask' : 'UGX ' + money(item.price); const serving = item.serving_unit ? ' / ' + escapeHtml(item.serving_unit) : '';
           const image = item.img_url
             ? '<div class="menu-item-image"><img src="' + escapeHtml(item.img_url) + '" alt="' + escapeHtml(item.alt_text || item.name) + '" loading="lazy"></div>'
             : '';
