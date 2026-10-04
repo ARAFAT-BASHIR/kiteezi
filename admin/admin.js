@@ -155,8 +155,8 @@ async function manageRecipe(existingId=null){
     }
 
     function bindRecipeRemove(){
-      $$('.recipe-remove','#recipe').forEach(btn=>btn.onclick=()=>{
-        const rows=$$('.recipe-row','#recipe');
+      $('.recipe-remove',$('#recipe')).forEach(btn=>btn.onclick=()=>{
+        const rows=$('.recipe-row',$('#recipe'));
         if(rows.length===1){alert('A meal needs at least one ingredient.');return}
         btn.closest('.recipe-row')?.remove();
       });
@@ -167,7 +167,7 @@ async function manageRecipe(existingId=null){
       const form=e.currentTarget;
       const menu=String(new FormData(form).get('menu')||'');
       const errorEl=$('#recipeError');
-      const rows=existing?$$('.recipe-row','#recipe'):$$('.recipe-row','#recipe');
+      const rows=existing?$('.recipe-row',$('#recipe')):$('.recipe-row',$('#recipe'));
       const entries=rows.map(r=>({inventory_item_id:String($('.recipe-inv',r)?.value||''),quantity:Number($('.recipe-qty',r)?.value||0)}));
       if(!menu||!entries.length||entries.some(x=>!x.inventory_item_id||!(x.quantity>0))){
         errorEl.textContent='Select the menu item, select every ingredient, and enter a quantity greater than zero.';
