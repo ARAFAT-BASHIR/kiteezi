@@ -108,7 +108,7 @@ daySelect.addEventListener('change',updateAvailability);
 slotEl.addEventListener('change',function(){go.disabled=!slotEl.value;});
 go.addEventListener('click',function(){
 if(!daySelect.value||!slotEl.value)return;
-location.href='booking.html?service=school-swimming&day='+encodeURIComponent(daySelect.value)+'&time='+encodeURIComponent(slotEl.value);
+location.href='school-swimming-booking.html?day='+encodeURIComponent(daySelect.value)+'&time='+encodeURIComponent(slotEl.value);
 });
 load();
 })();
