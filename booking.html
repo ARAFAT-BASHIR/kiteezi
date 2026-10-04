@@ -485,6 +485,11 @@ Submit Booking Request
 <script>
 (function(){
 'use strict';
+const requestedService=new URLSearchParams(location.search).get('service');
+if(requestedService==='training'){
+  location.replace('inquiry.html?type=coaching');
+  return;
+}
 const C=window.KITEEZI_CONFIG||{},URL=String(C.SUPABASE_URL||'').replace(/\/+$/,''),KEY=String(C.SUPABASE_ANON_KEY||'');
 const $=s=>document.querySelector(s), form=$('#bookingForm'), service=$('#service'), guests=$('#guests'), cateringBox=$('#cateringBox'), buffetBox=$('#buffetBox'), menuBox=$('#menuBox'), menuItems=$('#menuItems'), buffet=$('#buffet'), cateringType=$('#cateringType'), status=$('#bookingStatus'), submit=$('#submitBooking'); let services=[],menus=[],buffets=[];
 const esc=v=>String(v??'').replace(/[&<>"]/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[x])); const money=v=>'UGX '+new Intl.NumberFormat('en-UG').format(Number(v)||0);
