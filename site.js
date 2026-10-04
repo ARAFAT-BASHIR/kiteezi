@@ -477,6 +477,18 @@
     );
   }
 
+  function preventDeadHashLinks() {
+    document.addEventListener('click', event => {
+      const link = event.target.closest && event.target.closest('a[href="#"]');
+      if (!link) return;
+      if (!link.dataset.siteSetting && !link.dataset.social) event.preventDefault();
+      else if (link.getAttribute('href') === '#') {
+        event.preventDefault();
+        window.location.href = 'contact.html';
+      }
+    });
+  }
+
   function initInquiryAccess() {
     if (document.body.dataset.inquiryAccess === 'true') return;
     document.body.dataset.inquiryAccess = 'true';
@@ -514,6 +526,7 @@
     initMobileNavigation();
     initSiteYear();
     initInquiryAccess();
+    preventDeadHashLinks();
 
     /*
       content.js is the single owner
