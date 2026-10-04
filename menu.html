@@ -10,6 +10,21 @@
 <link rel="stylesheet" href="styles.css">
 
 <style>
+  .menu-tools{
+    display:grid;
+    grid-template-columns:minmax(0,1.7fr) minmax(180px,1fr) auto;
+    gap:12px;
+    align-items:end;
+    margin:0 0 18px;
+  }
+  .menu-tools label{display:grid;gap:6px;font-weight:700}
+  .menu-tools input,.menu-tools select{width:100%;padding:11px 12px;border:1px solid #cfd8d2;border-radius:10px;background:#fff;color:#173126}
+  #menuResultSummary{margin:0 0 14px}
+  @media(max-width:700px){
+    .menu-tools{grid-template-columns:1fr}
+    .menu-tools .btn{width:100%}
+  }
+
   .menu-order-row{
     display:flex;
     align-items:center;
@@ -165,6 +180,20 @@
         <h2 data-menu-intro-title>Meals, light bites and refreshments.</h2>
         <p data-menu-intro>Select meals and drinks to add them to your cart. Prices and availability are loaded from the Kiteezi menu database.</p>
       </div>
+      <div class="menu-tools" aria-label="Menu search and filters">
+        <label class="menu-search">
+          <span>Search the menu</span>
+          <input id="publicMenuSearch" type="search" placeholder="Search meals, drinks, snacks…" autocomplete="off">
+        </label>
+        <label class="menu-category">
+          <span>Category</span>
+          <select id="publicMenuCategory" aria-label="Filter menu by category">
+            <option value="">All categories</option>
+          </select>
+        </label>
+        <button type="button" class="btn btn-dark" id="clearMenuFilters">Clear</button>
+      </div>
+      <div id="menuResultSummary" class="muted" aria-live="polite"></div>
       <div id="menu-catalog" class="grid grid-3" aria-live="polite">Browse our menu below.</div>
     </div>
   </section>
