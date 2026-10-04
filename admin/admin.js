@@ -7,6 +7,7 @@ const money=v=>new Intl.NumberFormat('en-UG').format(Number(v)||0);
 async function api(path,opt={},token=session?.access_token||KEY){const h={apikey:KEY,Authorization:'Bearer '+token,'Content-Type':'application/json',...(opt.headers||{})};if(opt.method&&opt.method!=='GET')h.Prefer='return=representation';const r=await fetch(URL+path,{...opt,headers:h});const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw Error(d?.message||d?.msg||d?.error_description||d?.error||(typeof d==='string'?d:'Request failed'));return d}
 function msg(e){console.error(e);alert(e.message||'Something went wrong.')}
 async function login(e){
+  if(window.__KITEEZI_ADMIN_LOGIN_BOUND__)return;
   e.preventDefault();
   const f=new FormData(e.currentTarget);
   const email=String(f.get('email')||'').trim();
