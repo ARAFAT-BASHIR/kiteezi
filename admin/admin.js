@@ -94,6 +94,19 @@ function inquiryTypesForRole(){
   if(profile?.role==='chef'||profile?.role==='barista') return ['chef','catering'];
   return [];
 }
+async function loadSwimmingTimetable(){
+  const rows=await api('/rest/v1/swimming_timetable?select=*&order=day_of_week.asc,start_time.asc');
+  const days=['','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  $('#swimmingTimetableTable').innerHTML='<table><tr><th>Day</th><th>Start</th><th>End</th><th>Public display</th><th>Action</th></tr>'+
+    rows.map(x=>'<tr><td>'+days[x.day_of_week]+'</td><td>'+String(x.start_time).slice(0,5)+'</td><td>'+String(x.end_time).slice(0,5)+'</td><td><span class="pill">Occupied</span></td><td><button class="btn" data-edit-swim="'+x.id+'">Edit</button> <button class="btn danger" data-delete-swim="'+x.id+'">Remove</button></td></tr>').join('')+'</table>';
+  $$('[data-edit-swim]').forEach(b=>b.onclick=()=>editSwimmingSlot(rows.find(x=>x.id===b.dataset.editSwim)));
+  $$('[data-delete-swim]').forEach(b=>b.onclick=async()=>{if(!confirm('Remove this occupied swimming period?'))return;await api('/rest/v1/swimming_timetable?id=eq.'+encodeURIComponent(b.dataset.deleteSwim),{method:'DELETE'});loadSwimmingTimetable();});
+}
+function editSwimmingSlot(row){
+  modal(row?'Edit occupied swimming period':'Add occupied swimming period', '<form id="swimSlotForm" class="form"><label>Day<select name="day" required>'+['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map((d,i)=>'<option value="'+(i+1)+'" '+(row&&row.day_of_week===i+1?'selected':'')+'>'+d+'</option>').join('')+'</select></label><label>Start time<input name="start" type="time" required value="'+(row?String(row.start_time).slice(0,5):'09:00')+'"></label><label>End time<input name="end" type="time" required value="'+(row?String(row.end_time).slice(0,5):'10:00')+'"></label><button class="btn btn-dark" type="submit">Save</button></form>');
+  $('#swimSlotForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const body={day_of_week:Number(f.get('day')),start_time:f.get('start'),end_time:f.get('end'),active:true,updated_at:new Date().toISOString()};try{if(row)await api('/rest/v1/swimming_timetable?id=eq.'+encodeURIComponent(row.id),{method:'PATCH',body:JSON.stringify(body)});else await api('/rest/v1/swimming_timetable',{method:'POST',body:JSON.stringify(body)});$('#modal').classList.remove('open');await loadSwimmingTimetable();}catch(err){msg(err)}};
+  $('#modal').classList.add('open');
+}
 async function loadInquiries(){
   const rows=await api('/rest/v1/inquiries?select=*&order=created_at.desc');
   const allowed=inquiryTypesForRole();
@@ -119,7 +132,7 @@ function route(x){
   tab=canOpenTab(requested)?requested:(canOpenTab('dashboard')?'dashboard':Object.keys(TAB_PERMISSIONS).find(canOpenTab)||'dashboard');
   document.querySelectorAll('[data-tab]').forEach(a=>a.classList.toggle('active',a.dataset.tab===tab));
   document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('active',s.id===tab));
-  const f={dashboard:loadDashboard,bookings:loadBookings,restaurant:loadOrders,inventory:loadInventory,menu:loadMenu,services:loadServices,inquiries:loadInquiries,content:loadContent,reviews:loadReviews,social:loadSocial,staff:loadStaff,reports:loadReport,settings:loadSettings};
+  const f={dashboard:loadDashboard,bookings:loadBookings,restaurant:loadOrders,inventory:loadInventory,menu:loadMenu,services:loadServices,inquiries:loadInquiries,swimming_timetable:loadSwimmingTimetable,content:loadContent,reviews:loadReviews,social:loadSocial,staff:loadStaff,reports:loadReport,settings:loadSettings};
   (f[tab]||loadDashboard)().catch(msg);
 }
 async function loadDashboard(){const d=today();const [b,o,i,sm]=await Promise.all([api('/rest/v1/bookings?select=id,status&booking_date=eq.'+d),api('/rest/v1/orders?select=id,status&status=not.eq.completed&status=not.eq.cancelled'),api('/rest/v1/inventory_items?select=id,reorder_level'),api('/rest/v1/stock_movements?select=item_id,quantity,movement_type')]);const stock={};sm.forEach(x=>stock[x.item_id]=(stock[x.item_id]||0)+(String(x.movement_type).toLowerCase()==='out'?-1:1)*Number(x.quantity||0));$('#mBookings').textContent=b.length;$('#mPending').textContent=b.filter(x=>x.status==='pending').length;$('#mOrders').textContent=o.length;$('#mLow').textContent=i.filter(x=>(stock[x.id]||0)<=Number(x.reorder_level||0)).length;$('#todayOps').textContent='Live data connected.'}
