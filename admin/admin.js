@@ -9,6 +9,7 @@ const TAB_PERMISSIONS={
   menu:'menu.manage',
   services:'services.manage',
   inquiries:'inquiries.view',
+  swimming_timetable:'swimming.manage',
   content:'content.manage',
   reviews:'reviews.moderate',
   social:'social.manage',
