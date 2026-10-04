@@ -214,7 +214,7 @@
 
   async function getMenuItems() {
     return supabaseFetch(
-      '/rest/v1/menu_items?select=id,name,description,price,price_on_request,in_stock,img_url,alt_text,category_id,serving_unit,menu_categories(name,sort_order)&order=name.asc'
+      '/rest/v1/menu_items?select=id,name,description,price,price_on_request,in_stock,img_url,alt_text,category_id,serving_unit,menu_categories(name,sort_order)&in_stock=eq.true&order=name.asc'
     );
   }
 
@@ -265,7 +265,7 @@
         target.innerHTML = '<p class="muted">No menu items are currently published.</p>';
         return;
       }
-      target.innerHTML = Array.from(groups.entries()).map(([category, rows]) => {
+      target.innerHTML = Array.from(groups.entries()).sort((a,b)=>Number(a[1][0]?.menu_categories?.sort_order||999)-Number(b[1][0]?.menu_categories?.sort_order||999)).map(([category, rows]) => {
         const card = rows.map(item => {
           const unavailable = item.in_stock === false;
           const onRequest = item.price_on_request === true || Number(item.price || 0) === 0;
