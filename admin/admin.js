@@ -34,14 +34,26 @@ async function bootAdmin(authSession){
     const p=await api('/rest/v1/profiles?select=*&id=eq.'+encodeURIComponent(session.user.id)+'&limit=1');
     profile=p?.[0];
     if(!profile?.active)throw Error('This Kiteezi staff profile is inactive.');
-    await show();
+    try{await show()}catch(e){
+      console.error('Kiteezi admin display initialization error:',e);
+      $('#loginView')?.classList.add('hide');
+      $('#app')?.classList.remove('hide');
+      if($('#who'))$('#who').textContent=(profile.full_name||'Staff')+' · '+(profile.role||'staff');
+      if($('#rolePill'))$('#rolePill').textContent=profile.role||'staff';
+      const dash=$('#dashboard'); if(dash)dash.classList.add('active');
+      document.querySelectorAll('.tab').forEach(x=>{if(x.id!=='dashboard')x.classList.remove('active')});
+      if($('#todayOps'))$('#todayOps').textContent='Dashboard opened. Some live data could not be loaded yet.';
+    }
     return true;
   }catch(e){
     console.error('Kiteezi admin boot failed:',e);
-    session=null;
-    sessionStorage.removeItem('kiteezi_admin_session');
-    $('#app').classList.add('hide');
-    $('#loginView').classList.remove('hide');
+    const authFailure=!session?.user?.id;
+    if(authFailure){
+      session=null;
+      sessionStorage.removeItem('kiteezi_admin_session');
+    }
+    $('#app')?.classList.add('hide');
+    $('#loginView')?.classList.remove('hide');
     const el=$('#loginMsg'); if(el){el.hidden=false;el.textContent=e.message||'Unable to open the admin dashboard.';el.className='notice danger'}
     return false;
   }
@@ -50,13 +62,20 @@ window.KITEEZI_ADMIN_BOOT=bootAdmin;
 async function restore(){const raw=sessionStorage.getItem('kiteezi_admin_session');if(!raw){$('#loginView').classList.remove('hide');return}let saved;try{saved=JSON.parse(raw)}catch{saved=null}if(!saved?.access_token){$('#loginView').classList.remove('hide');return}await bootAdmin(saved)}
 async function loadAdminLogo(){try{const r=await api('/rest/v1/site_settings?select=value&key=eq.logo_url&limit=1');const v=r?.[0]?.value||'';document.querySelectorAll('.brand-mark').forEach(el=>{if(!v){el.textContent='K';return;}const img=document.createElement('img');img.src=v.startsWith('http')?v:'../'+v.replace(/^\/+/, '');img.alt='Kiteezi Recreational Center';img.loading='eager';el.textContent='';el.appendChild(img);});const p=$('#logoPreview');if(p){p.src=v?(v.startsWith('http')?v:'../'+v.replace(/^\/+/,'')):'';p.hidden=!v;}}catch{}}
 async function show(){
-  loadAdminLogo();loadNotifications().catch(()=>{});startNotificationPolling();
-  $('#loginView').classList.add('hide');$('#app').classList.remove('hide');
-  $('#who').textContent=(profile.full_name||'Staff')+' · '+profile.role;
-  $('#rolePill').textContent=profile.role;
-  await loadPermissions();
-  applyRoleNavigation();
-  route(location.hash.slice(1)||'dashboard');
+  $('#loginView')?.classList.add('hide');
+  $('#app')?.classList.remove('hide');
+  if($('#who'))$('#who').textContent=(profile?.full_name||'Staff')+' · '+(profile?.role||'staff');
+  if($('#rolePill'))$('#rolePill').textContent=profile?.role||'staff';
+  try{loadAdminLogo()}catch(e){console.warn('Admin logo load failed',e)}
+  try{loadNotifications().catch(()=>{});startNotificationPolling()}catch(e){console.warn('Admin notifications unavailable',e)}
+  try{await loadPermissions()}catch(e){console.warn('Admin permissions load failed',e);permissions=new Set()}
+  try{applyRoleNavigation()}catch(e){console.warn('Admin navigation setup failed',e)}
+  try{route(location.hash.slice(1)||'dashboard')}catch(e){
+    console.error('Admin route initialization failed:',e);
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    $('#dashboard')?.classList.add('active');
+    if($('#todayOps'))$('#todayOps').textContent='Dashboard opened. Live data is still loading.';
+  }
 }
 async function loadPermissions(){
   permissions=new Set();
