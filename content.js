@@ -257,6 +257,27 @@
     );
 
     /*
+      LOGO
+      The logo is stored as a site setting so the owner can change it
+      without editing the public pages. Relative paths are resolved from
+      the public site root.
+    */
+    if (settings.logo_url) {
+      document
+        .querySelectorAll('.brand-mark')
+        .forEach(element => {
+          const img = document.createElement('img');
+          img.src = String(settings.logo_url);
+          img.alt = settings.business_name || 'Kiteezi Recreational Center';
+          img.loading = 'eager';
+          img.decoding = 'async';
+          element.textContent = '';
+          element.appendChild(img);
+          element.setAttribute('aria-hidden', 'true');
+        });
+    }
+
+    /*
       COPYRIGHT
     */
     document
