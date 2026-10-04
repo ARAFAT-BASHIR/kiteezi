@@ -25,9 +25,9 @@
 <div class="availability-box">
 <h2>Choose your school swimming date</h2>
 <div class="school-note">School swimming runs Monday to Friday. Occupied periods are shown without displaying the school names.</div>
-<label for="schoolDate">Date</label>
-<input id="schoolDate" type="date">
-<div id="dayAvailability" class="loading">Loading availability…</div>
+<label for="schoolDay">Day of the week</label>
+<select id="schoolDay"><option value="">Choose a day</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option></select>
+<div id="dayAvailability" class="loading">Choose a weekday to see availability.</div>
 <label for="schoolSlot">Available one-hour session</label>
 <select id="schoolSlot" disabled><option value="">Choose an available time</option></select>
 <button id="continueSchoolBooking" class="btn btn-primary" type="button" disabled>Continue to booking</button>
@@ -50,7 +50,7 @@ const C=window.KITEEZI_CONFIG||{};
 const U=String(C.SUPABASE_URL||'').replace(/\/+$/,'');
 const K=String(C.SUPABASE_ANON_KEY||'');
 const timetable=document.getElementById('timetable');
-const dateEl=document.getElementById('schoolDate');
+const daySelect=document.getElementById('schoolDay');
 const slotEl=document.getElementById('schoolSlot');
 const dayEl=document.getElementById('dayAvailability');
 const go=document.getElementById('continueSchoolBooking');
@@ -61,9 +61,7 @@ const timeText=m=>{const h=Math.floor(m/60),mi=m%60;return (h%12||12)+':'+pad(mi
 let rows=[];
 
 document.getElementById('year').textContent=new Date().getFullYear();
-const localToday=new Date();
-dateEl.min=new Date(localToday-localToday.getTimezoneOffset()*60000).toISOString().slice(0,10);
-dateEl.value=dateEl.min;
+
 
 function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
@@ -74,15 +72,14 @@ timetable.innerHTML=groups.map(g=>'<article class="card"><div class="card-body">
 }
 
 function updateAvailability(){
-if(!dateEl.value)return;
-const d=new Date(dateEl.value+'T12:00:00').getDay()||7;
-const occupied=rows.filter(r=>Number(r.day_of_week)===d).map(r=>({s:minutes(r.start_time),e:minutes(r.end_time)}));
-if(d>5){
-dayEl.innerHTML='<strong>'+days[d]+'</strong><p>School swimming is scheduled Monday to Friday. Please choose a weekday.</p>';
-slotEl.innerHTML='<option value="">Choose a weekday first</option>';slotEl.disabled=true;go.disabled=true;return;
+const d=Number(daySelect.value);
+if(!d){
+dayEl.innerHTML='Choose a weekday to see its occupied and available one-hour periods.';
+slotEl.innerHTML='<option value="">Choose an available time</option>';slotEl.disabled=true;go.disabled=true;return;
 }
+const occupied=rows.filter(r=>Number(r.day_of_week)===d).map(r=>({s:minutes(r.start_time),e:minutes(r.end_time)}));
 const free=[];
-for(let t=9*60;t<16*60;t+=60){
+for(let t=9*60;t<17*60;t+=60){
 if(!occupied.some(o=>t<o.e&&t+60>o.s))free.push(t);
 }
 dayEl.innerHTML='<strong>'+days[d]+'</strong><p>'+(occupied.length?occupied.map(o=>timeText(o.s)+' – '+timeText(o.e)+' — <span class="occupied">Occupied</span>').join('<br>'):'No occupied periods listed for this day.')+'</p><p><strong>'+free.length+'</strong> one-hour periods are currently available.</p>';
@@ -107,11 +104,11 @@ dayEl.innerHTML='<div class="errorbox">Availability could not be loaded right no
 }
 }
 
-dateEl.addEventListener('change',updateAvailability);
+daySelect.addEventListener('change',updateAvailability);
 slotEl.addEventListener('change',function(){go.disabled=!slotEl.value;});
 go.addEventListener('click',function(){
-if(!dateEl.value||!slotEl.value)return;
-location.href='booking.html?service=school-swimming&date='+encodeURIComponent(dateEl.value)+'&time='+encodeURIComponent(slotEl.value);
+if(!daySelect.value||!slotEl.value)return;
+location.href='booking.html?service=school-swimming&day='+encodeURIComponent(daySelect.value)+'&time='+encodeURIComponent(slotEl.value);
 });
 load();
 })();
