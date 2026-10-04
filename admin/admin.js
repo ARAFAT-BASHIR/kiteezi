@@ -26,7 +26,28 @@ async function api(path,opt={},token=session?.access_token||KEY){const h={apikey
 function msg(e){console.error(e);alert(e.message||'Something went wrong.')}
 // Login is handled exclusively by admin-login.js to avoid duplicate submit handlers. 
 async function loadStations(){return api('/rest/v1/service_stations?select=id,name,description,active,sort_order&order=sort_order.asc,name.asc')}
-async function restore(){try{session=JSON.parse(sessionStorage.getItem('kiteezi_admin_session')||'null');if(!session?.access_token)throw Error();const p=await api('/rest/v1/profiles?select=*&id=eq.'+encodeURIComponent(session.user.id)+'&limit=1');profile=p?.[0];if(!profile?.active)throw Error();show()}catch{session=null;$('#loginView').classList.remove('hide')}}
+async function bootAdmin(authSession){
+  try{
+    session=authSession||JSON.parse(sessionStorage.getItem('kiteezi_admin_session')||'null');
+    if(!session?.access_token||!session?.user?.id)throw Error('No valid admin session.');
+    sessionStorage.setItem('kiteezi_admin_session',JSON.stringify(session));
+    const p=await api('/rest/v1/profiles?select=*&id=eq.'+encodeURIComponent(session.user.id)+'&limit=1');
+    profile=p?.[0];
+    if(!profile?.active)throw Error('This Kiteezi staff profile is inactive.');
+    await show();
+    return true;
+  }catch(e){
+    console.error('Kiteezi admin boot failed:',e);
+    session=null;
+    sessionStorage.removeItem('kiteezi_admin_session');
+    $('#app').classList.add('hide');
+    $('#loginView').classList.remove('hide');
+    const el=$('#loginMsg'); if(el){el.hidden=false;el.textContent=e.message||'Unable to open the admin dashboard.';el.className='notice danger'}
+    return false;
+  }
+}
+window.KITEEZI_ADMIN_BOOT=bootAdmin;
+async function restore(){const raw=sessionStorage.getItem('kiteezi_admin_session');if(!raw){$('#loginView').classList.remove('hide');return}let saved;try{saved=JSON.parse(raw)}catch{saved=null}if(!saved?.access_token){$('#loginView').classList.remove('hide');return}await bootAdmin(saved)}
 async function loadAdminLogo(){try{const r=await api('/rest/v1/site_settings?select=value&key=eq.logo_url&limit=1');const v=r?.[0]?.value||'';document.querySelectorAll('.brand-mark').forEach(el=>{if(!v){el.textContent='K';return;}const img=document.createElement('img');img.src=v.startsWith('http')?v:'../'+v.replace(/^\/+/, '');img.alt='Kiteezi Recreational Center';img.loading='eager';el.textContent='';el.appendChild(img);});const p=$('#logoPreview');if(p){p.src=v?(v.startsWith('http')?v:'../'+v.replace(/^\/+/,'')):'';p.hidden=!v;}}catch{}}
 async function show(){
   loadAdminLogo();loadNotifications().catch(()=>{});startNotificationPolling();
