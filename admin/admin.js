@@ -157,8 +157,14 @@ async function setBookingAndWhatsApp(id,status,payment,wa,textMessage){
   if(!digits.startsWith('256')&&digits.length===9)digits='256'+digits;
   if(!/^2567\\d{8}$/.test(digits)){msg(new Error('This booking does not have a valid Uganda WhatsApp number.'));return}
   const url='https://wa.me/'+digits+'?text='+textMessage;
-  const popup=window.open(url,'_blank','noopener,noreferrer');
-  if(!popup){msg(new Error('WhatsApp could not be opened. Please allow pop-ups for the admin page.'));return}
+  const link=document.createElement('a');
+  link.href=url;
+  link.target='_blank';
+  link.rel='noopener noreferrer';
+  link.style.display='none';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
   try{await setBookingStatus(id,status,payment)}catch(e){msg(e)}
 }
 async function loadBuffets(){const [b,items]=await Promise.all([api('/rest/v1/booking_bundles?select=*&order=sort_order.asc'),api('/rest/v1/booking_bundle_items?select=*&order=sort_order.asc')]);$('#buffetTable').innerHTML='<table><tr><th>Name</th><th>Price/person</th><th>Contents</th><th>Active</th><th></th></tr>'+b.map(x=>'<tr><td>'+esc(x.name)+'</td><td>UGX '+money(x.price_per_person)+'</td><td>'+items.filter(i=>i.bundle_id===x.id&&i.active).map(i=>esc(i.name)+(i.description?' — '+esc(i.description):'')).join('<br>')+'</td><td>'+x.active+'</td><td><button class="btn" data-buffet="'+x.id+'">Edit</button></td></tr>').join('')+'</table>';document.querySelectorAll('[data-buffet]').forEach(x=>x.onclick=()=>editBuffet(x.dataset.buffet))}
