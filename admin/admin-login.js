@@ -64,7 +64,7 @@
 
       sessionStorage.setItem('kiteezi_admin_session',JSON.stringify(data));
       status('Signed in. Opening admin…');
-      window.location.replace(window.location.href.split('#')[0]);
+      window.location.href=window.location.pathname;
     }catch(err){
       status(err?.message||'Sign in failed. Please try again.','error');
     }finally{
