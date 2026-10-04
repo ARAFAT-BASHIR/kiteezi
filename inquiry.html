@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Send an Inquiry | Kiteezi Recreational Center</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="nav"><div class="container navin">
+<a class="brand" href="index.html"><span class="brand-mark">K</span><span><span class="brand-name">Kiteezi Recreational Center</span><small data-site-setting="business_tagline">Comfort • Dining • Recreation</small></span></a>
+<nav class="links"><a href="index.html">Home</a><a href="swimming.html">Swimming</a><a href="sports.html">Sports</a><a href="menu.html">Menu</a><a href="events.html">Events</a><a href="contact.html">Contact</a></nav>
+</div></header>
+<main><section class="section"><div class="container" style="max-width:760px">
+<div class="eyebrow">Questions & enquiries</div>
+<h1>How can we help?</h1>
+<p>For questions, please leave a WhatsApp or phone number where our team can contact you. You do not need an email address.</p>
+<div class="card"><div class="card-body">
+<form id="inquiryForm" class="form">
+<label>Your name<input name="customer_name" required maxlength="120" autocomplete="name"></label>
+<label>WhatsApp or phone number<input name="contact_number" required maxlength="40" inputmode="tel" placeholder="+256..." autocomplete="tel"></label>
+<label>How should we contact you?
+<select name="contact_method"><option value="whatsapp">WhatsApp</option><option value="phone">Phone call</option></select></label>
+<label>What is your question about?
+<select name="inquiry_type">
+<option value="general">General question</option><option value="swimming">Swimming</option><option value="coaching">Swimming coaching</option><option value="chef">Ask about food / chef</option><option value="catering">Catering</option><option value="sports">Sports</option><option value="events">Events</option>
+</select></label>
+<label>Your question<textarea name="message" required minlength="2" maxlength="4000" rows="7" placeholder="Tell us what you would like to know."></textarea></label>
+<button id="sendInquiry" class="btn btn-primary" type="submit">Send Inquiry</button>
+<div id="inquiryStatus" class="status" aria-live="polite"></div>
+</form>
+</div></div>
+</div></section></main>
+<footer class="footer"><div class="container copyright">© <span data-year></span> Kiteezi Recreational Center. All rights reserved.</div></footer>
+<script src="config.js"></script><script src="content.js"></script><script src="site.js"></script>
+<script>
+const form=document.getElementById('inquiryForm'), status=document.getElementById('inquiryStatus'), btn=document.getElementById('sendInquiry');
+const params=new URLSearchParams(location.search), initial=params.get('type');
+if(initial && [...form.elements.inquiry_type.options].some(o=>o.value===initial)) form.elements.inquiry_type.value=initial;
+form.addEventListener('submit',async e=>{
+ e.preventDefault(); if(!form.checkValidity()) return form.reportValidity();
+ btn.disabled=true;btn.textContent='Sending…';status.textContent='';
+ try{
+  const d=new FormData(form), C=window.KITEEZI_CONFIG||{}, URL=String(C.SUPABASE_URL||'').replace(/\/+$/,''), KEY=String(C.SUPABASE_ANON_KEY||'');
+  const r=await fetch(URL+'/rest/v1/inquiries',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({customer_name:String(d.get('customer_name')).trim(),contact_number:String(d.get('contact_number')).trim(),contact_method:d.get('contact_method'),inquiry_type:d.get('inquiry_type'),message:String(d.get('message')).trim()})});
+  const t=await r.text();if(!r.ok)throw Error(t||'Unable to send inquiry.');
+  form.reset();status.textContent='Inquiry sent. Our team will contact you on the number you provided.';
+  status.className='status show success';
+ }catch(err){status.textContent=err.message||'Unable to send inquiry. Please try again.';status.className='status show error'}
+ finally{btn.disabled=false;btn.textContent='Send Inquiry'}
+});
+</script>
+</body></html>
