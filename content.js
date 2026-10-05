@@ -216,8 +216,15 @@
       .querySelectorAll('[data-site-setting-href]')
       .forEach(element => {
         const setting = element.dataset.siteSettingHref;
-        const value = settings[setting] ?? '';
-        if (value) element.href = String(value);
+        const value = String(settings[setting] ?? '').trim();
+        if (!value) return;
+        element.href = setting.endsWith('_email')
+          ? 'mailto:' + value
+          : value;
+        if (setting === 'location_url') {
+          element.target = '_blank';
+          element.rel = 'noopener noreferrer';
+        }
       });
 
     /*
