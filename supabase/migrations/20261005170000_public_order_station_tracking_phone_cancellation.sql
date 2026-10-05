@@ -316,3 +316,11 @@ begin
 end; $$;
 revoke all on function public.submit_school_swimming_booking(text,text,text,integer,time,integer,text) from public,authenticated;
 grant execute on function public.submit_school_swimming_booking(text,text,text,integer,time,integer,text) to anon;
+
+
+-- Cover foreign keys used by the reservation/shared-pool workflow.
+create index if not exists idx_order_inventory_reservation_lines_order_item on public.order_inventory_reservation_lines(order_item_id);
+create index if not exists idx_pool_allocations_inventory_item on public.pool_allocations(inventory_item_id);
+create index if not exists idx_pool_allocations_menu_item on public.pool_allocations(menu_item_id);
+create index if not exists idx_pool_allocations_order on public.pool_allocations(order_id);
+create index if not exists idx_shared_pool_menu_rules_inventory_item on public.shared_pool_menu_rules(inventory_item_id);
