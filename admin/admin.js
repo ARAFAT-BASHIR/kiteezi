@@ -312,7 +312,7 @@ async function loadMenu(){
       const q=String(search?.value||'').trim().toLowerCase(),cat=String(catSelect?.value||'');
       const rows=r.filter(x=>(!cat||x.category_id===cat)&&(!q||[x.name,x.description,x.menu_categories?.name,x.service_stations?.name,x.serving_unit].some(v=>String(v||'').toLowerCase().includes(q))));
       box.innerHTML=rows.length?'<table><thead><tr><th>Name</th><th>Category</th><th>Station</th><th>Serving</th><th>Price</th><th>Stock</th><th></th></tr></thead><tbody>'+
-        rows0.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.menu_categories?.name||'')+'</td><td><span class="pill">'+esc(x.service_stations?.name||'Unassigned')+'</span></td><td>'+esc(x.serving_unit||'portion')+'</td><td>'+((x.price_on_request)?'Ask':'UGX '+money(x.price))+'</td><td>'+esc(x.in_stock?'Yes':'No')+'</td><td><button class="btn" data-menu="'+x.id+'">Edit</button></td></tr>').join('')+
+        rows.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.menu_categories?.name||'')+'</td><td><span class="pill">'+esc(x.service_stations?.name||'Unassigned')+'</span></td><td>'+esc(x.serving_unit||'portion')+'</td><td>'+((x.price_on_request)?'Ask':'UGX '+money(x.price))+'</td><td>'+esc(x.in_stock?'Yes':'No')+'</td><td><button class="btn" data-menu="'+x.id+'">Edit</button></td></tr>').join('')+
         '</tbody></table>':'<div class="state">No menu items match your search.</div>';
       $$('[data-menu]').forEach(x=>x.onclick=()=>editMenu(x.dataset.menu));
     };
