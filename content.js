@@ -226,11 +226,11 @@
     const socialMap = {
       facebook: settings.facebook,
       instagram: settings.instagram,
-      youtube: settings.youtube,
+      youtube: settings.youtube || (settings.youtube_link || ''),
       whatsapp: whatsappLink,
-      tiktok: settings.tiktok,
-      x: settings.x,
-      twitter: settings.twitter || settings.x
+      tiktok: settings.tiktok || (settings.tiktok_link || ''),
+      x: settings.x || (settings.twitter_link || ''),
+      twitter: settings.twitter || settings.x || (settings.twitter_link || '')
     };
 
     document.querySelectorAll('[data-social]').forEach(element => {
