@@ -7,41 +7,13 @@
 <title>School Swimming Availability | Kiteezi Recreational Center</title>
 <link rel="stylesheet" href="styles.css">
 <style>
-.school-swim{padding:50px 0}.availability-box{background:#fff;border:1px solid #e5e8e4;border-radius:18px;padding:24px;box-shadow:0 8px 25px rgba(17,35,27,.06);margin-bottom:28px}
-.availability-box h2{color:#1b4332;margin-top:0}.availability-box label{display:block;font-weight:700;margin:14px 0 6px}.availability-box input,.availability-box select{width:100%;padding:13px;border:1px solid #d7ddd8;border-radius:10px;font:inherit;background:#fff}.availability-box button{margin-top:16px}.availability-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.period{padding:9px 0;border-bottom:1px solid #e5e8e4}.occupied{color:#8b2222;font-weight:700}.available{color:#1b4332;font-weight:700}.loading{padding:20px;background:#f4f1de;border-radius:12px}.errorbox{padding:18px;background:#fff1f1;border:1px solid #e0a0a0;border-radius:12px;color:#8b2222}.school-note{background:#edf4ef;border-radius:12px;padding:16px;margin:16px 0}.ask-question{margin-top:25px}
-@media(max-width:700px){.availability-grid{grid-template-columns:1fr}.school-swim{padding:30px 0}}
+.school-swim{padding:50px 0}.availability-box{background:#fff;border:1px solid #e5e8e4;border-radius:18px;padding:24px;box-shadow:0 8px 25px rgba(17,35,27,.06);margin-bottom:28px}.availability-box h2{color:#1b4332;margin-top:0}.availability-box label{display:block;font-weight:700;margin:14px 0 6px}.availability-box input,.availability-box select{width:100%;padding:13px;border:1px solid #d7ddd8;border-radius:10px;font:inherit;background:#fff}.availability-box button{margin-top:16px}.availability-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.period{padding:9px 0;border-bottom:1px solid #e5e8e4}.occupied{color:#8b2222;font-weight:700}.available{color:#1b4332;font-weight:700}.loading{padding:20px;background:#f4f1de;border-radius:12px}.errorbox{padding:18px;background:#fff1f1;border:1px solid #e0a0a0;border-radius:12px;color:#8b2222}.school-note{background:#edf4ef;border-radius:12px;padding:16px;margin:16px 0}.ask-question{margin-top:25px}@media(max-width:700px){.availability-grid{grid-template-columns:1fr}.school-swim{padding:30px 0}}
 </style>
 </head>
 <body>
-<header class="nav"><div class="container navin">
-<a class="brand" href="index.html"><span class="brand-mark">K</span><span><span class="brand-name">Kiteezi Recreational Center</span><small>Comfort • Dining • Recreation</small></span></a>
-<nav class="links" aria-label="Main navigation"><a href="index.html">Home</a><a href="swimming.html">Swimming</a><a href="menu.html">Menu</a><a href="events.html">Events</a><a href="sports.html">Sports</a><a href="contact.html">Contact</a></nav>
-</div></header>
-
-<main>
-<section class="page-hero"><div class="container"><div class="eyebrow">School swimming</div><h1>Check swimming availability</h1><p>School swimming sessions are one hour. See occupied periods first, then choose an available period for your request.</p></div></section>
-
-<section class="school-swim"><div class="container">
-<div class="availability-box">
-<h2>Choose your school swimming date</h2>
-<div class="school-note">School swimming runs Monday to Friday. Occupied periods are shown without displaying the school names.</div>
-<label for="schoolDay">Day of the week</label>
-<select id="schoolDay"><option value="">Choose a day</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option></select>
-<div id="dayAvailability" class="loading">Choose a weekday to see availability.</div>
-<label for="schoolSlot">Available one-hour session</label>
-<select id="schoolSlot" disabled><option value="">Choose an available time</option></select>
-<button id="continueSchoolBooking" class="btn btn-primary" type="button" disabled>Continue to booking</button>
-<a class="btn btn-dark ask-question" href="inquiry.html?type=swimming">Ask a question</a>
-</div>
-
-<h2>Weekly occupied timetable</h2>
-<p>Only occupied periods are shown. School names are private.</p>
-<div id="timetable" class="availability-grid"><div class="loading">Loading current timetable…</div></div>
-</div></section>
-</main>
-
+<header class="nav"><div class="container navin"><a class="brand" href="index.html"><span class="brand-mark">K</span><span><span class="brand-name">Kiteezi Recreational Center</span><small>Comfort • Dining • Recreation</small></span></a><nav class="links" aria-label="Main navigation"><a href="index.html">Home</a><a href="swimming.html">Swimming</a><a href="menu.html">Menu</a><a href="events.html">Events</a><a href="sports.html">Sports</a><a href="contact.html">Contact</a></nav></div></header>
+<main><section class="page-hero"><div class="container"><div class="eyebrow">School swimming</div><h1>Check swimming availability</h1><p>School swimming sessions are one hour. See occupied periods first, then choose an available period for your request.</p></div></section><section class="school-swim"><div class="container"><div class="availability-box"><h2>Choose your school swimming date</h2><div class="school-note">School swimming runs Monday to Friday. Occupied periods are shown without displaying the school names.</div><label for="schoolDay">Day of the week</label><select id="schoolDay"><option value="">Choose a day</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option></select><div id="dayAvailability" class="loading">Choose a weekday to see availability.</div><label for="schoolSlot">Available one-hour session</label><select id="schoolSlot" disabled><option value="">Choose an available time</option></select><button id="continueSchoolBooking" class="btn btn-primary" type="button" disabled>Continue to booking</button><a class="btn btn-dark ask-question" href="inquiry.html?type=swimming">Ask a question</a></div><h2>Weekly occupied timetable</h2><p>Only occupied periods are shown. School names are private.</p><div id="timetable" class="availability-grid"><div class="loading">Loading current timetable…</div></div></div></section></main>
 <footer class="footer"><div class="container copyright">© <span id="year"></span> Kiteezi Recreational Center. All rights reserved.</div></footer>
-
 <script src="config.js"></script>
 <script>
 (function(){
@@ -54,62 +26,18 @@ const daySelect=document.getElementById('schoolDay');
 const slotEl=document.getElementById('schoolSlot');
 const dayEl=document.getElementById('dayAvailability');
 const go=document.getElementById('continueSchoolBooking');
+const year=document.getElementById('year');
 const days=['','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const pad=n=>String(n).padStart(2,'0');
 const minutes=t=>{const p=String(t).slice(0,5).split(':');return Number(p[0])*60+Number(p[1]);};
 const timeText=m=>{const h=Math.floor(m/60),mi=m%60;return (h%12||12)+':'+pad(mi)+(h<12?' AM':' PM');};
 let rows=[];
-
-document.getElementById('year').textContent=new Date().getFullYear();
-
-
+if(year)year.textContent=new Date().getFullYear();
 function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-
-function renderWeekly(){
-const groups=days.slice(1).map((day,i)=>({day,items:rows.filter(r=>Number(r.day_of_week)===i+1)})).filter(g=>g.items.length);
-if(!groups.length){timetable.innerHTML='<div class="loading">No occupied school swimming periods are currently configured.</div>';return;}
-timetable.innerHTML=groups.map(g=>'<article class="card"><div class="card-body"><span class="badge">'+g.day+'</span><h3>Occupied periods</h3>'+g.items.map(r=>'<div class="period"><span class="occupied">'+escapeHtml(String(r.start_time).slice(0,5))+' – '+escapeHtml(String(r.end_time).slice(0,5))+' — Occupied</span></div>').join('')+'</div></article>').join('');
-}
-
-function updateAvailability(){
-const d=Number(daySelect.value);
-if(!d){
-dayEl.innerHTML='Choose a weekday to see its occupied and available one-hour periods.';
-slotEl.innerHTML='<option value="">Choose an available time</option>';slotEl.disabled=true;go.disabled=true;return;
-}
-const occupied=rows.filter(r=>Number(r.day_of_week)===d).map(r=>({s:minutes(r.start_time),e:minutes(r.end_time)}));
-const free=[];
-for(let t=9*60;t<17*60;t+=60){
-if(!occupied.some(o=>t<o.e&&t+60>o.s))free.push(t);
-}
-dayEl.innerHTML='<strong>'+days[d]+'</strong><p>'+(occupied.length?occupied.map(o=>timeText(o.s)+' – '+timeText(o.e)+' — <span class="occupied">Occupied</span>').join('<br>'):'No occupied periods listed for this day.')+'</p><p><strong>'+free.length+'</strong> one-hour periods are currently available.</p>';
-slotEl.innerHTML='<option value="">Choose an available time</option>'+free.map(t=>'<option value="'+pad(Math.floor(t/60))+':'+pad(t%60)+'">'+timeText(t)+' – '+timeText(t+60)+'</option>').join('');
-slotEl.disabled=free.length===0;go.disabled=true;
-}
-
-async function load(){
-if(!U||!K){timetable.innerHTML='<div class="errorbox">The public Supabase configuration is missing.</div>';return;}
-try{
-const url=U+'/rest/v1/swimming_timetable?select=day_of_week,start_time,end_time&active=eq.true&order=day_of_week.asc,start_time.asc';
-const response=await fetch(url,{headers:{apikey:K,Authorization:'Bearer '+K}});
-const body=await response.text();
-if(!response.ok)throw new Error(body||('HTTP '+response.status));
-rows=body?JSON.parse(body):[];
-if(!Array.isArray(rows))throw new Error('Unexpected timetable response.');
-renderWeekly();updateAvailability();
-}catch(error){
-console.error('School swimming timetable:',error);
-timetable.innerHTML='<div class="errorbox"><strong>We could not load the school swimming timetable.</strong><br>Please refresh the page. If the problem continues, contact Kiteezi.</div>';
-dayEl.innerHTML='<div class="errorbox">Availability could not be loaded right now.</div>';
-}
-}
-
-daySelect.addEventListener('change',updateAvailability);
-slotEl.addEventListener('change',function(){go.disabled=!slotEl.value;});
-go.addEventListener('click',function(){
-if(!daySelect.value||!slotEl.value)return;
-location.href='school-swimming-booking.html?day='+encodeURIComponent(daySelect.value)+'&time='+encodeURIComponent(slotEl.value);
-});
+function renderWeekly(){const groups=days.slice(1).map((day,i)=>({day,items:rows.filter(r=>Number(r.day_of_week)===i+1)})).filter(g=>g.items.length);if(!groups.length){if(timetable)timetable.innerHTML='<div class="loading">No occupied school swimming periods are currently configured.</div>';return;}if(timetable)timetable.innerHTML=groups.map(g=>'<article class="card"><div class="card-body"><span class="badge">'+g.day+'</span><h3>Occupied periods</h3>'+g.items.map(r=>'<div class="period"><span class="occupied">'+escapeHtml(String(r.start_time).slice(0,5))+' – '+escapeHtml(String(r.end_time).slice(0,5))+' — Occupied</span></div>').join('')+'</div></article>').join('');}
+function updateAvailability(){const d=Number(daySelect?.value);if(!d){if(dayEl)dayEl.innerHTML='Choose a weekday to see its occupied and available one-hour periods.';if(slotEl){slotEl.innerHTML='<option value="">Choose an available time</option>';slotEl.disabled=true;}if(go)go.disabled=true;return;}const occupied=rows.filter(r=>Number(r.day_of_week)===d).map(r=>({s:minutes(r.start_time),e:minutes(r.end_time)}));const free=[];for(let t=9*60;t<17*60;t+=60){if(!occupied.some(o=>t<o.e&&t+60>o.s))free.push(t);}if(dayEl)dayEl.innerHTML='<strong>'+days[d]+'</strong><p>'+(occupied.length?occupied.map(o=>timeText(o.s)+' – '+timeText(o.e)+' — <span class="occupied">Occupied</span>').join('<br>'):'No occupied periods listed for this day.')+'</p><p><strong>'+free.length+'</strong> one-hour periods are currently available.</p>';if(slotEl){slotEl.innerHTML='<option value="">Choose an available time</option>'+free.map(t=>'<option value="'+pad(Math.floor(t/60))+':'+pad(t%60)+'">'+timeText(t)+' – '+timeText(t+60)+'</option>').join('');slotEl.disabled=free.length===0;}if(go)go.disabled=true;}
+async function load(){if(!timetable)return;if(!U||!K){timetable.innerHTML='<div class="errorbox">The public Supabase configuration is missing.</div>';return;}try{const response=await fetch(U+'/rest/v1/swimming_timetable?select=day_of_week,start_time,end_time&active=eq.true&order=day_of_week.asc,start_time.asc',{headers:{apikey:K,Authorization:'Bearer '+K}});const body=await response.text();if(!response.ok)throw new Error(body||('HTTP '+response.status));rows=body?JSON.parse(body):[];if(!Array.isArray(rows))throw new Error('Unexpected timetable response.');renderWeekly();updateAvailability();}catch(error){console.error('School swimming timetable:',error);timetable.innerHTML='<div class="errorbox"><strong>We could not load the school swimming timetable.</strong><br>Please refresh the page. If the problem continues, contact Kiteezi.</div>';if(dayEl)dayEl.innerHTML='<div class="errorbox">Availability could not be loaded right now.</div>';}}
+daySelect?.addEventListener('change',updateAvailability);slotEl?.addEventListener('change',function(){if(go)go.disabled=!slotEl.value;});go?.addEventListener('click',function(){if(!daySelect?.value||!slotEl?.value)return;location.href='school-swimming-booking.html?day='+encodeURIComponent(daySelect.value)+'&time='+encodeURIComponent(slotEl.value);});
 load();
 })();
 </script>
