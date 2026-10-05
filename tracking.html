@@ -20,4 +20,4 @@ form.addEventListener('submit',async e=>{e.preventDefault();try{await track();}c
 const saved=localStorage.getItem(PHONE_KEY);if(saved){phone.value=saved;track().catch(()=>{});}
 if(type==='booking'){document.title='Booking Status | Kiteezi Recreational Center';document.querySelector('h1').textContent='Check your booking';document.querySelector('.section-head p').textContent='Enter the phone number used when booking. You can cancel an eligible booking here without sending WhatsApp.';form.querySelector('button').textContent='Check Booking';}
 })();
-</script></body></html>
+</script><script src="site.js"></script></body></html>
