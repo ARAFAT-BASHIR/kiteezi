@@ -205,7 +205,30 @@ async function setBookingAndWhatsApp(id,status,payment,wa,textMessage){
 async function loadBuffets(){const [b,items]=await Promise.all([api('/rest/v1/booking_bundles?select=*&order=sort_order.asc'),api('/rest/v1/booking_bundle_items?select=*&order=sort_order.asc')]);$('#buffetTable').innerHTML='<table><tr><th>Name</th><th>Price/person</th><th>Contents</th><th>Active</th><th></th></tr>'+b.map(x=>'<tr><td>'+esc(x.name)+'</td><td>UGX '+money(x.price_per_person)+'</td><td>'+items.filter(i=>i.bundle_id===x.id&&i.active).map(i=>esc(i.name)+(i.description?' — '+esc(i.description):'')).join('<br>')+'</td><td>'+x.active+'</td><td><button class="btn" data-buffet="'+x.id+'">Edit</button></td></tr>').join('')+'</table>';document.querySelectorAll('[data-buffet]').forEach(x=>x.onclick=()=>editBuffet(x.dataset.buffet))}
 async function editBuffet(id){const rows=await api('/rest/v1/booking_bundles?id=eq.'+id);const b=rows[0];const items=await api('/rest/v1/booking_bundle_items?bundle_id=eq.'+id+'&order=sort_order.asc');modal('Edit buffet','<form id="bf" class="form"><input name="name" value="'+esc(b.name)+'" placeholder="Name" required><input name="price" type="number" value="'+b.price_per_person+'" placeholder="Price per person"><textarea name="description" placeholder="Description">'+esc(b.description||'')+'</textarea><label>Active <input name="active" type="checkbox" '+(b.active?'checked':'')+'></label><textarea name="contents" placeholder="One included item per line">'+items.map(i=>i.name+(i.description?' | '+i.description:'')).join('\n')+'</textarea><button class="btn btn-dark">Save</button></form>');$('#bf').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);await api('/rest/v1/booking_bundles?id=eq.'+id,{method:'PATCH',body:JSON.stringify({name:f.get('name'),price_per_person:Number(f.get('price')||0),price_on_request:Number(f.get('price')||0)<=0,description:f.get('description'),active:f.get('active')==='on'})});await api('/rest/v1/booking_bundle_items?bundle_id=eq.'+id,{method:'DELETE'});for(const [n,line] of String(f.get('contents')||'').split('\n').map(x=>x.trim()).filter(Boolean).entries()){const [name,...d]=line.split('|');await api('/rest/v1/booking_bundle_items',{method:'POST',body:JSON.stringify({bundle_id:id,name:name.trim(),description:d.join('|').trim()||null,sort_order:n,active:true})})}closeModal();loadBuffets()}}
 async function addBuffet(){modal('Add buffet','<form id="bf" class="form"><input name="name" placeholder="Buffet name" required><input name="price" type="number" value="0" placeholder="Price per person"><textarea name="description" placeholder="Description"></textarea><input name="sort" type="number" value="0" placeholder="Sort order"><textarea name="contents" placeholder="One included item per line"></textarea><label>Active <input name="active" type="checkbox" checked></label><button class="btn btn-dark">Save</button></form>');$('#bf').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget),r=await api('/rest/v1/booking_bundles',{method:'POST',body:JSON.stringify({name:f.get('name'),price_per_person:Number(f.get('price')||0),price_on_request:Number(f.get('price')||0)<=0,description:f.get('description')||null,sort_order:Number(f.get('sort')||0),active:f.get('active')==='on'})}),id=r?.[0]?.id;if(id)for(const [n,line] of String(f.get('contents')||'').split('\n').map(x=>x.trim()).filter(Boolean).entries()){const [name,...d]=line.split('|');await api('/rest/v1/booking_bundle_items',{method:'POST',body:JSON.stringify({bundle_id:id,name:name.trim(),description:d.join('|').trim()||null,sort_order:n,active:true})})}closeModal();loadBuffets()}}
+async function loadStationOrders(){
+  const station=profile?.role==='barista'?'Barista':'Kitchen';
+  const rows=await api('/rest/v1/rpc/get_station_order_workflow',{method:'POST',body:JSON.stringify({p_station:station})});
+  const filter=$('#orderStatusFilter')?.value||'all';
+  const visible=(rows||[]).filter(x=>filter==='all'||x.order_status===filter);
+  $('#ordersTable').innerHTML=visible.length
+    ? '<table><tr><th>Order</th><th>Customer</th><th>Fulfillment</th><th>Order Status</th><th>Station</th><th>Station Progress</th><th>Action</th></tr>'+
+      visible.map(r=>{
+        const label=r.station_status==='waiting'?'Waiting':r.station_status==='in_progress'?'In Progress':'Complete';
+        const action=r.order_status==='confirmed'
+          ? '<select data-station-status="'+r.order_id+'" data-station-id="'+r.station_id+'"><option value="waiting" '+(r.station_status==='waiting'?'selected':'')+'>Waiting</option><option value="in_progress" '+(r.station_status==='in_progress'?'selected':'')+'>In Progress</option><option value="complete" '+(r.station_status==='complete'?'selected':'')+'>Complete</option></select>'
+          : '<span class="pill">'+esc(label)+'</span>';
+        return '<tr><td>#'+esc(r.order_id.slice(0,8).toUpperCase())+'<br><small>'+esc(r.source||'Website')+'</small></td><td>'+esc(r.customer_name||'Customer')+'<br><small>'+esc(r.customer_phone||'')+'</small></td><td>'+esc(String(r.fulfillment_method||'pickup').replace('_',' '))+'</td><td>'+esc(r.order_status)+'</td><td>'+esc(r.station_name)+'</td><td><span class="pill">'+esc(label)+'</span></td><td>'+action+'</td></tr>';
+      }).join('')+'</table>'
+    : '<div class="state">No active '+esc(station.toLowerCase())+' station orders.</div>';
+  document.querySelectorAll('[data-station-status]').forEach(x=>x.onchange=async()=>{
+    try{
+      await api('/rest/v1/rpc/set_order_station_status',{method:'POST',body:JSON.stringify({p_order_id:x.dataset.stationStatus,p_station_id:x.dataset.stationId,p_status:x.value})});
+      await loadStationOrders();
+    }catch(e){msg(e);await loadStationOrders();}
+  });
+}
 async function loadOrders(){
+  if(['chef','barista'].includes(profile?.role)){await loadStationOrders();return;}
   const filter=$('#orderStatusFilter').value;
   let q='/rest/v1/orders?select=*,customers(name,phone)&order=created_at.desc';
   if(filter!=='all')q+='&status=eq.'+filter;
