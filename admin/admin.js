@@ -151,11 +151,11 @@ async function setBookingStatus(id,status,payment){const body={};if(status)body.
 function openWhatsApp(phone,textMessage){const raw=String(phone||'').trim();let digits=raw.replace(/\D/g,'');if(digits.startsWith('00'))digits=digits.slice(2);if(digits.startsWith('0'))digits='256'+digits.slice(1);if(!digits.startsWith('256')&&digits.length===9)digits='256'+digits;if(!/^2567\d{8}$/.test(digits)){msg(new Error('This booking does not have a valid Uganda WhatsApp number.'));return false;}const url='https://wa.me/'+digits+'?text='+textMessage;window.location.href=url;return true}
 async function setBookingAndWhatsApp(id,status,payment,wa,textMessage){
   const raw=String(wa||'').trim();
-  let digits=raw.replace(/\\D/g,'');
+  let digits=raw.replace(/\D/g,'');
   if(digits.startsWith('00'))digits=digits.slice(2);
   if(digits.startsWith('0'))digits='256'+digits.slice(1);
   if(!digits.startsWith('256')&&digits.length===9)digits='256'+digits;
-  if(!/^2567\\d{8}$/.test(digits)){msg(new Error('This booking does not have a valid Uganda WhatsApp number.'));return}
+  if(!/^2567\d{8}$/.test(digits)){msg(new Error('This booking does not have a valid Uganda WhatsApp number.'));return}
   const url='https://wa.me/'+digits+'?text='+textMessage;
   window.open(url,'_blank');
   try{await setBookingStatus(id,status,payment)}catch(e){msg(e)}
@@ -174,8 +174,8 @@ async function loadOrders(){const filter=$('#orderStatusFilter').value;let q='/r
 }
 async function setOrder(id,status,payment){await api('/rest/v1/rpc/admin_set_order_status',{method:'POST',body:JSON.stringify({p_order_id:id,p_status:status,p_payment_status:payment})});await loadOrders()}
 async function setOrderAndWhatsApp(id,status,payment,wa,textMessage){
-  const digits=String(wa||'').replace(/\\D/g,'');
-  if(!/^2567\\d{8}$/.test(digits)){msg(new Error('This order does not have a valid Uganda WhatsApp number.'));return}
+  const digits=String(wa||'').replace(/\D/g,'');
+  if(!/^2567\d{8}$/.test(digits)){msg(new Error('This order does not have a valid Uganda WhatsApp number.'));return}
   const url='https://wa.me/'+digits+'?text='+textMessage;
   window.open(url,'_blank');
   try{await api('/rest/v1/rpc/admin_set_order_status',{method:'POST',body:JSON.stringify({p_order_id:id,p_status:status,p_payment_status:payment})});await loadOrders()}catch(e){msg(e)}
