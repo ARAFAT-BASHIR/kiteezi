@@ -20,7 +20,37 @@
 <section id="reviews" class="tab"><div class="panel"><div class="toolbar"><h2>Public reviews</h2><button id="refreshReviews" class="btn btn-dark">Refresh</button></div><p class="muted">Customers submit reviews. Staff can remove them; staff do not edit or create reviews.</p><div id="reviewsTable" class="state">Ready</div></div></section>
 <section id="social" class="tab"><div class="panel"><div class="toolbar"><h2>Social links</h2><button id="newSocial" class="btn">Add link</button><button id="refreshSocial" class="btn btn-dark">Refresh</button></div><div id="socialTable" class="state">Ready</div></div></section>
 <section id="staff" class="tab"><div class="panel"><div class="toolbar"><h2>Staff / roles</h2><button id="newStaff" class="btn">Add staff / owner</button><button id="refreshStaff" class="btn btn-dark">Refresh</button></div><p id="staffHelp" class="muted">Owner-managed staff accounts. You can create the account, password, role, photo and background information directly.</p><div id="staffTable" class="state">Ready</div></div><div class="panel"><div class="toolbar"><h2>Public departments & positions</h2><button id="newTeamPosition" class="btn btn-dark" type="button">Add position</button></div><p class="muted">Add departments as the business grows. Each position can have its own person's name and can be edited or removed later.</p><div id="teamPositionsTable" class="state">Ready</div><div id="teamPositionMsg" class="notice" hidden></div></div></section>
-<section id="reports" class="tab"><div class="panel"><div class="toolbar"><h2>Reports</h2><input id="reportFrom" type="date"><input id="reportTo" type="date"><button id="generateReport" class="btn btn-dark">Generate</button><button id="downloadReport" class="btn">Download CSV</button><button id="printReport" class="btn" type="button">Print</button></div><div class="metrics"><div class="metric"><b id="reportBookings">0</b>Bookings</div><div class="metric"><b id="reportOrders">0</b>Orders</div><div class="metric"><b id="reportEvents">0</b>Events</div><div class="metric"><b id="reportRevenue">UGX 0</b>Recorded value</div><div class="metric"><b id="reportPurchases">UGX 0</b>Purchase spend</div></div></div><div class="panel"><div id="reportTable" class="state">Generate a report.</div></div></section>
+<section id="reports" class="tab">
+<div class="report-workspace">
+  <div class="report-head">
+    <div><div class="eyebrow">Financial & Operations</div><h2>Treasury & Reports</h2><p class="muted">See money coming in, money going out, outstanding amounts and the stock activity behind them.</p></div>
+    <div class="report-actions"><label>From<input id="reportFrom" type="date"></label><label>To<input id="reportTo" type="date"></label><button id="generateReport" class="btn btn-dark">Generate</button><button id="downloadReport" class="btn">Download</button><button id="printReport" class="btn" type="button">Print</button></div>
+  </div>
+  <div class="report-nav" role="tablist" aria-label="Report categories">
+    <button class="active" type="button" data-report-view="treasury">Treasury / Cash Flow</button>
+    <button type="button" data-report-view="sales">Sales & Revenue</button>
+    <button type="button" data-report-view="purchases">Purchases & Expenses</button>
+    <button type="button" data-report-view="inventory">Inventory & Stock Flow</button>
+  </div>
+  <div class="metrics report-metrics">
+    <div class="metric"><span>Money In</span><b id="reportRevenue">UGX 0</b><small>Recorded cash/value</small></div>
+    <div class="metric"><span>Money Out</span><b id="reportPurchases">UGX 0</b><small>Purchase spend</small></div>
+    <div class="metric"><span>Net Cash Movement</span><b id="reportNet">UGX 0</b><small>Money in minus money out</small></div>
+    <div class="metric"><span>Outstanding</span><b id="reportOutstanding">UGX 0</b><small>Completed but unpaid</small></div>
+    <div class="metric"><span>Orders</span><b id="reportOrders">0</b><small>Sales records</small></div>
+    <div class="metric"><span>Bookings</span><b id="reportBookings">0</b><small>Booking records</small></div>
+    <div class="metric"><span>Events</span><b id="reportEvents">0</b><small>Event records</small></div>
+    <div class="metric"><span>Stock Movements</span><b id="reportMovements">0</b><small>Inventory activity</small></div>
+  </div>
+  <div class="report-summary">
+    <div class="report-card"><h3>Money In</h3><p>Cash actually received from orders, bookings and events.</p><strong id="reportInSummary">UGX 0</strong></div>
+    <div class="report-card"><h3>Money Out</h3><p>Purchases and recorded expenditure paid during the period.</p><strong id="reportOutSummary">UGX 0</strong></div>
+    <div class="report-card"><h3>Net Cash</h3><p>Money In − Money Out.</p><strong id="reportNetSummary">UGX 0</strong></div>
+    <div class="report-card"><h3>Inventory Cross-check</h3><p>Stock movements and physical counts supporting the financial report.</p><strong id="reportStockSummary">0 movements</strong></div>
+  </div>
+  <div class="panel report-table-panel"><div class="toolbar"><h3 id="reportTableTitle">Treasury / Cash Flow</h3><span class="muted">Generated report</span></div><div id="reportTable" class="state">Generate a report.</div></div>
+</div>
+</section>
 <section id="settings" class="tab"><div class="panel"><div class="toolbar"><h2>Site settings</h2><button id="refreshSettings" class="btn btn-dark">Refresh</button><button id="saveSettings" class="btn">Save changes</button></div><div class="form-grid"><label class="full"><strong>Business logo</strong><input id="logoUrl" data-set="logo_url" placeholder="Example: admin/logo.jpg"><small class="muted">Use a repository image path or a public image URL. The logo is used across the public website and admin.</small></label><div class="full"><img id="logoPreview" hidden alt="Logo preview" style="max-width:220px;max-height:120px;object-fit:contain;border:1px solid #e1e7e2;border-radius:12px;padding:8px;background:#fff"></div></div><hr style="border:0;border-top:1px solid #e1e7e2;margin:20px 0"><div id="settingsTable" class="form-grid"></div></div></section>
 </main></div>
 <div id="modal" class="modal"><div class="modal-card"><div class="toolbar"><h2 id="modalTitle">Edit</h2><button id="modalClose" class="btn">Close</button></div><div id="modalBody"></div></div></div>
