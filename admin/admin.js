@@ -157,14 +157,7 @@ async function setBookingAndWhatsApp(id,status,payment,wa,textMessage){
   if(!digits.startsWith('256')&&digits.length===9)digits='256'+digits;
   if(!/^2567\\d{8}$/.test(digits)){msg(new Error('This booking does not have a valid Uganda WhatsApp number.'));return}
   const url='https://wa.me/'+digits+'?text='+textMessage;
-  const link=document.createElement('a');
-  link.href=url;
-  link.target='_blank';
-  link.rel='noopener noreferrer';
-  link.style.display='none';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
+  window.open(url,'_blank');
   try{await setBookingStatus(id,status,payment)}catch(e){msg(e)}
 }
 async function loadBuffets(){const [b,items]=await Promise.all([api('/rest/v1/booking_bundles?select=*&order=sort_order.asc'),api('/rest/v1/booking_bundle_items?select=*&order=sort_order.asc')]);$('#buffetTable').innerHTML='<table><tr><th>Name</th><th>Price/person</th><th>Contents</th><th>Active</th><th></th></tr>'+b.map(x=>'<tr><td>'+esc(x.name)+'</td><td>UGX '+money(x.price_per_person)+'</td><td>'+items.filter(i=>i.bundle_id===x.id&&i.active).map(i=>esc(i.name)+(i.description?' — '+esc(i.description):'')).join('<br>')+'</td><td>'+x.active+'</td><td><button class="btn" data-buffet="'+x.id+'">Edit</button></td></tr>').join('')+'</table>';document.querySelectorAll('[data-buffet]').forEach(x=>x.onclick=()=>editBuffet(x.dataset.buffet))}
@@ -180,7 +173,13 @@ async function loadOrders(){const filter=$('#orderStatusFilter').value;let q='/r
   document.querySelectorAll('[data-confirm-wa]').forEach(x=>x.onclick=()=>setOrderAndWhatsApp(x.dataset.confirmWa,'confirmed',null,x.dataset.wa,x.dataset.watext));document.querySelectorAll('[data-paid]').forEach(x=>x.onclick=()=>setOrder(x.dataset.paid,null,'paid'));document.querySelectorAll('[data-done-wa]').forEach(x=>x.onclick=()=>setOrderAndWhatsApp(x.dataset.doneWa,'completed',null,x.dataset.wa,x.dataset.watext));document.querySelectorAll('[data-cancel]').forEach(x=>x.onclick=()=>{if(confirm('Cancel this order?'))setOrder(x.dataset.cancel,'cancelled',null)});document.querySelectorAll('[data-items]').forEach(x=>x.onclick=()=>loadOrderItems(x.dataset.items));document.querySelectorAll('[data-delete-order]').forEach(x=>x.onclick=()=>deleteTestRecord('order',x.dataset.deleteOrder))
 }
 async function setOrder(id,status,payment){await api('/rest/v1/rpc/admin_set_order_status',{method:'POST',body:JSON.stringify({p_order_id:id,p_status:status,p_payment_status:payment})});await loadOrders()}
-async function setOrderAndWhatsApp(id,status,payment,wa,textMessage){let popup=null;if(wa)popup=window.open('about:blank','_blank','noopener,noreferrer');try{await api('/rest/v1/rpc/admin_set_order_status',{method:'POST',body:JSON.stringify({p_order_id:id,p_status:status,p_payment_status:payment})});if(popup)popup.location.href='https://wa.me/'+wa+'?text='+textMessage;await loadOrders()}catch(e){if(popup)popup.close();msg(e)}}
+async function setOrderAndWhatsApp(id,status,payment,wa,textMessage){
+  const digits=String(wa||'').replace(/\\D/g,'');
+  if(!/^2567\\d{8}$/.test(digits)){msg(new Error('This order does not have a valid Uganda WhatsApp number.'));return}
+  const url='https://wa.me/'+digits+'?text='+textMessage;
+  window.open(url,'_blank');
+  try{await api('/rest/v1/rpc/admin_set_order_status',{method:'POST',body:JSON.stringify({p_order_id:id,p_status:status,p_payment_status:payment})});await loadOrders()}catch(e){msg(e)}
+}
 async function loadOrderItems(id){let r=await api('/rest/v1/order_items?select=id,qty,unit_price,item_name_snapshot,notes,menu_items(name,station_id,service_stations(name))&order_id=eq.'+id);if(['barista','chef'].includes(profile?.role)){const target=profile.role==='barista'?'Barista':'Kitchen';r=r.filter(x=>(x.menu_items?.service_stations?.name||'')===target)}$('#orderItemsTable').innerHTML='<table><tr><th>Item</th><th>Station</th><th>Qty</th><th>Price</th><th>Notes</th></tr>'+r.map(x=>'<tr><td>'+esc(x.item_name_snapshot||x.menu_items?.name||'')+'</td><td><span class="pill">'+esc(x.menu_items?.service_stations?.name||'Unassigned')+'</span></td><td>'+x.qty+'</td><td>UGX '+money(x.unit_price)+'</td><td>'+esc(x.notes||'')+'</td></tr>').join('')+'</table>'}
 
 async function loadRecipeMappings(){
