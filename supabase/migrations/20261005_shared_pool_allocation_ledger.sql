@@ -1,0 +1,5 @@
+-- Shared-pool allocation ledger
+-- Applied to Supabase project on 2026-10-05.
+-- This migration introduces physical shared pools, allocation ledger rows,
+-- menu allocation rules, and atomic order finalization.
+-- See database migration history for full implementation.
