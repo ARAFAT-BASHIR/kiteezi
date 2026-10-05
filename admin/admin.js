@@ -345,7 +345,10 @@ async function loadReport(){
     api('/rest/v1/stock_movements?select=id,item_id,quantity,movement_type,reason,supplier,staff_id,created_at&created_at=gte.'+from+'T00:00&created_at=lte.'+to+'T23:59:59&order=created_at.desc'),
     api('/rest/v1/inventory_daily_counts?select=id,inventory_item_id,count_date,physical_quantity,counted_by,notes&count_date=gte.'+from+'&count_date=lte.'+to+'&order=count_date.desc')
   ]);
-  const [inv]=await Promise.all([api('/rest/v1/inventory_items?select=id,name,unit,category,station_id&active=eq.true&order=name.asc')]);
+  const [inv,mAll]=await Promise.all([
+    api('/rest/v1/inventory_items?select=id,name,unit,category,station_id&active=eq.true&order=name.asc'),
+    api('/rest/v1/stock_movements?select=item_id,quantity,movement_type')
+  ]);
   const invById=Object.fromEntries(inv.map(x=>[x.id,x]));
   const value=b.reduce((a,x)=>a+Number(x.total||0),0)+o.reduce((a,x)=>a+Number(x.total||0),0)+e.reduce((a,x)=>a+Number(x.total||0),0);
   const spend=p.reduce((a,x)=>a+Number(x.total||0),0);
@@ -353,13 +356,15 @@ async function loadReport(){
   $('#reportBookings').textContent=b.length;$('#reportOrders').textContent=o.length;$('#reportEvents').textContent=e.length;
   $('#reportRevenue').textContent='UGX '+money(value);$('#reportPurchases').textContent='UGX '+money(spend);
   const movementRows=m.map(x=>['Stock movement',x.id,String(x.created_at||'').slice(0,10),x.movement_type||'',(invById[x.item_id]?.name||x.item_id)+' — '+(x.reason||''),x.quantity]);
+  const balances={};mAll.forEach(x=>{const q=Number(x.quantity||0);balances[x.item_id]=(balances[x.item_id]||0)+(String(x.movement_type||'').toLowerCase()==='out'?-q:q)});
+  const inventoryRows=inv.map(x=>['Inventory balance',x.id,to||today(),'current',(x.name+' ('+x.unit+')'),balances[x.id]||0]);
   const purchaseRows=p.map(x=>['Purchase',x.id,String(x.created_at||'').slice(0,10),x.status||'',x.supplier||x.reference||'',x.total]);
   const stockRows=d.map(x=>['Physical count',x.id,x.count_date,'counted',(invById[x.inventory_item_id]?.name||x.inventory_item_id),x.physical_quantity]);
   const rows=[
     ...b.map(x=>['Booking',x.id,x.booking_date,x.status,x.total]),
     ...o.map(x=>['Order',x.id,String(x.created_at||'').slice(0,10),x.status,x.total]),
     ...e.map(x=>['Event',x.id,x.event_date,x.status,x.total]),
-    ...purchaseRows,...movementRows,...stockRows
+    ...purchaseRows,...movementRows,...stockRows,...inventoryRows
   ];
   lastReport={from,to,b,o,e,p,m,d,inv,value,spend,movementQty,rows};
   $('#reportTable').innerHTML='<div class="metrics"><div class="metric"><b>'+m.length+'</b>Stock movements</div><div class="metric"><b>'+movementQty+'</b>Moved quantity</div><div class="metric"><b>'+d.length+'</b>Physical counts</div></div>'+table(['Type','ID','Date','Status / Type','Item / Supplier','Value / Quantity'],rows,x=>x);
