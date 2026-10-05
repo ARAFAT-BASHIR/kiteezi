@@ -247,6 +247,22 @@
     });
 
     /*
+      EMAIL CONTACTS
+    */
+    const infoEmail = String(settings.information_email || '').trim();
+    const bookingsEmail = String(settings.bookings_email || '').trim();
+    document.querySelectorAll('[data-site-setting="information_email"]').forEach(element => {
+      element.textContent = infoEmail;
+      if (element.matches('a')) element.href = infoEmail ? 'mailto:' + infoEmail : '#';
+      element.hidden = !infoEmail;
+    });
+    document.querySelectorAll('[data-site-setting="bookings_email"]').forEach(element => {
+      element.textContent = bookingsEmail;
+      if (element.matches('a')) element.href = bookingsEmail ? 'mailto:' + bookingsEmail : '#';
+      element.hidden = !bookingsEmail;
+    });
+
+    /*
       PAYMENT CONTACTS
     */
     setText(
