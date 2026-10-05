@@ -582,3 +582,35 @@ body.admin #loginView #loginMsg{
   body.admin #loginView .brand>span:last-child{font-size:20px}
   body.admin #loginView h2{font-size:27px}
 }
+
+/* === Final cascade repair: mobile admin navigation and role visibility === */
+.role-hidden{display:none!important}
+@media(max-width:900px){
+  body.admin #app.admin-shell{
+    display:block!important;
+    width:100%!important;
+    min-height:100vh!important;
+  }
+  body.admin #app.admin-shell>.side{
+    position:relative!important;left:auto!important;top:auto!important;bottom:auto!important;
+    width:100%!important;height:auto!important;max-height:none!important;overflow:visible!important;
+    padding:20px 18px 10px!important;z-index:50!important;
+  }
+  body.admin #app.admin-shell>.side nav{
+    display:flex!important;flex-direction:row!important;grid-template-columns:none!important;
+    align-items:flex-end!important;overflow-x:auto!important;overflow-y:hidden!important;
+  }
+  body.admin #app.admin-shell>.side nav a{
+    display:flex!important;flex:0 0 auto!important;width:auto!important;white-space:nowrap!important;
+  }
+  body.admin #app.admin-shell>.main{
+    display:block!important;grid-column:auto!important;grid-row:auto!important;
+    width:100%!important;max-width:none!important;margin:0!important;padding:0 0 32px!important;
+  }
+  body.admin #app.admin-shell>.main>.toolbar{margin:0!important}
+  body.admin #app.admin-shell>.main>.tab{width:100%!important;max-width:none!important}
+}
+@media(max-width:600px){
+ body.admin #app.admin-shell>.side #logout{right:18px!important;top:22px!important}
+ body.admin #app.admin-shell>.main>.tab{padding-left:20px!important;padding-right:20px!important}
+}
