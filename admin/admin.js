@@ -53,6 +53,9 @@ function msg(e){console.error(e);alert(e.message||'Something went wrong.')}
 // Login is handled exclusively by admin-login.js to avoid duplicate submit handlers. 
 async function loadStations(){return api('/rest/v1/service_stations?select=id,name,description,active,sort_order&order=sort_order.asc,name.asc')}
 let UNIT_OPTIONS=[];
+async function loadUnitOptions(){if(UNIT_OPTIONS.length)return UNIT_OPTIONS;const rows=await api('/rest/v1/unit_options?select=code,label,category&active=eq.true&order=sort_order.asc,label.asc');UNIT_OPTIONS=Array.isArray(rows)?rows:[];return UNIT_OPTIONS}
+function unitOptionsHtml(selected=''){const v=String(selected||'').toLowerCase();return '<option value="">Choose unit</option>'+UNIT_OPTIONS.map(u=>'<option value="'+esc(u.code)+'" '+(u.code===v?'selected':'')+'>'+esc(u.label)+'</option>').join('')}
+let UNIT_OPTIONS=[];
 async function loadUnitOptions(){
   if(UNIT_OPTIONS.length)return UNIT_OPTIONS;
   const rows=await api('/rest/v1/unit_options?select=code,label,category&active=eq.true&order=sort_order.asc,label.asc');
@@ -260,10 +263,10 @@ async function editRequisition(id){
   const rows=await api('/rest/v1/requisitions?id=eq.'+encodeURIComponent(id)+'&select=*,requisition_items(*)');
   const r=rows?.[0]; if(!r)return;
   const [inv]=await Promise.all([api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc'),loadUnitOptions()]);
-  const line=(i={})=>'<div class="req-line" style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin:6px 0"><select name="item">'+inv.map(x=>'<option value="'+x.id+'" '+(x.id===i.inventory_item_id?'selected':'')+'>'+esc(x.name)+' ('+esc(x.unit)+')</option>').join('')+'</select><input name="qty" type="number" min="0.001" step="0.001" value="'+esc(i.quantity||'')+'"><input name="price" type="number" min="0" step="0.01" value="'+esc(i.estimated_unit_price||'')+'"></div>';
+  const line=(i={})=>'<div class="req-line" style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin:6px 0"><select name="item">'+inv.map(x=>'<option value="'+x.id+'" '+(x.id===i.inventory_item_id?'selected':'')+'>'+esc(x.name)+' ('+esc(x.unit)+')</option>').join('')+'</select><input name="qty" type="number" min="0.001" step="0.001" value="'+esc(i.quantity||'')+'"><select name="unit" required>'+unitOptionsHtml(i.unit_code||i.unit||'')+'</select><input name="price" type="number" min="0" step="0.01" value="'+esc(i.estimated_unit_price||'')+'"></div>';
   modal('Edit requisition — reason required','<form id="reqEditForm" class="form"><p class="muted">The edit reason becomes part of the permanent approval audit trail.</p><textarea name="reason" required placeholder="Why are you changing this requisition?"></textarea><div id="reqLines">'+(r.requisition_items||[]).map(line).join('')+'</div><button type="button" class="btn" id="addReqLine">Add item</button> <button class="btn btn-dark">Save edit and approve</button></form>');
   $('#addReqLine').onclick=()=>$('#reqLines').insertAdjacentHTML('beforeend',line());
-  $('#reqEditForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const items=[...e.currentTarget.querySelectorAll('.req-line')].map(row=>({inventory_item_id:row.querySelector('[name=item]').value,quantity:Number(row.querySelector('[name=qty]').value||0),unit_code:row.querySelector('[name=unit]').value,unit_code:row.querySelector('[name=unit]').value,estimated_unit_price:Number(row.querySelector('[name=price]').value||0)})).filter(x=>x.quantity>0);if(!String(f.get('reason')||'').trim())return alert('Edit reason is required.');try{await api('/rest/v1/rpc/approve_requisition',{method:'POST',body:JSON.stringify({p_requisition_id:id,p_action:'edited',p_items:items,p_reason:String(f.get('reason')).trim()})});closeModal();await loadRequisitions();}catch(err){msg(err)}};
+  $('#reqEditForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const items=[...e.currentTarget.querySelectorAll('.req-line')].map(row=>({inventory_item_id:row.querySelector('[name=item]').value,quantity:Number(row.querySelector('[name=qty]').value||0),unit_code:row.querySelector('[name=unit]').value,unit_code:row.querySelector('[name=unit]').value,unit_code:row.querySelector('[name=unit]').value,estimated_unit_price:Number(row.querySelector('[name=price]').value||0)})).filter(x=>x.quantity>0);if(!String(f.get('reason')||'').trim())return alert('Edit reason is required.');try{await api('/rest/v1/rpc/approve_requisition',{method:'POST',body:JSON.stringify({p_requisition_id:id,p_action:'edited',p_items:items,p_reason:String(f.get('reason')).trim()})});closeModal();await loadRequisitions();}catch(err){msg(err)}};
 }
 async function loadGeneratedPOs(){
   const rows=await api('/rest/v1/purchase_orders?select=id,po_number,requisition_id,status,supplier,reference,total,payment_status,generated_at,received_at,paid_at&order=generated_at.desc');
@@ -285,7 +288,7 @@ async function loadGeneratedPOs(){
 }
 async function createRequisition(){
   const [inv]=await Promise.all([api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc'),loadUnitOptions()]);
-  const line=()=>'<div class="req-new-line" style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin:6px 0"><select name="item">'+inv.map(x=>'<option value="'+x.id+'">'+esc(x.name)+' ('+esc(x.unit)+')</option>').join('')+'</select><input name="qty" type="number" min="0.001" step="0.001" placeholder="Qty" required><input name="price" type="number" min="0" step="0.01" placeholder="Est. unit price"></div>';
+  const line=()=>'<div class="req-new-line" style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin:6px 0"><select name="item">'+inv.map(x=>'<option value="'+x.id+'">'+esc(x.name)+' ('+esc(x.unit)+')</option>').join('')+'</select><input name="qty" type="number" min="0.001" step="0.001" placeholder="Qty" required><select name="unit" required>'+unitOptionsHtml()+'</select><input name="price" type="number" min="0" step="0.01" placeholder="Est. unit price"></div>';
   modal('New requisition','<form id="newReqForm" class="form"><textarea name="notes" placeholder="Reason / notes"></textarea><div id="newReqLines">'+line()+'</div><button type="button" class="btn" id="addNewReqLine">Add item</button> <button class="btn btn-dark">Submit to Manager</button></form>');
   $('#addNewReqLine').onclick=()=>$('#newReqLines').insertAdjacentHTML('beforeend',line());
   $('#newReqForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const items=[...e.currentTarget.querySelectorAll('.req-new-line')].map(row=>({inventory_item_id:row.querySelector('[name=item]').value,quantity:Number(row.querySelector('[name=qty]').value||0),estimated_unit_price:Number(row.querySelector('[name=price]').value||0)})).filter(x=>x.quantity>0);if(!items.length)return alert('Add at least one item.');try{await api('/rest/v1/rpc/create_requisition',{method:'POST',body:JSON.stringify({p_items:items,p_notes:f.get('notes')||null})});closeModal();await loadRequisitions();}catch(err){msg(err)}};
@@ -583,7 +586,7 @@ async function loadInventory(){
   }catch(e){box.innerHTML='<div class="state">Inventory could not be loaded. '+esc(e.message||'Please try again.')+'</div>'}
 }
 async function editInventory(id=null){
-  const stations=await api('/rest/v1/service_stations?select=id,name&active=eq.true&order=sort_order.asc');
+  const [stations]=await Promise.all([api('/rest/v1/service_stations?select=id,name&active=eq.true&order=sort_order.asc'),loadUnitOptions()]);
   const roleScope={chef:'kitchen',barista:'bar',grounds_cleaning:'cleaning',head_swimming_coach:'swimming'}[profile?.role]||'operational';
   const restricted=['chef','barista','grounds_cleaning','head_swimming_coach'].includes(profile?.role);
   const x=id?(await api('/rest/v1/inventory_items?id=eq.'+id))[0]:{name:'',unit:'',category:'',reorder_level:0,active:true,station_id:null,inventory_scope:roleScope};
