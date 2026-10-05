@@ -2,22 +2,21 @@
 const C=window.KITEEZI_CONFIG||{}, URL=String(C.SUPABASE_URL||'').replace(/\/+$/,''), KEY=String(C.SUPABASE_ANON_KEY||'');
 let session=null,profile=null,tab='dashboard',permissions=new Set();
 const TAB_PERMISSIONS={
-  dashboard:'dashboard.view',
-  bookings:'bookings.manage',
-  restaurant:'orders.manage',
-  inventory:'inventory.manage',
-  menu:'menu.manage',
-  services:'services.manage',
-  inquiries:'inquiries.view',
-  swimming_timetable:'swimming.manage',
-  content:'content.manage',
-  reviews:'reviews.moderate',
-  social:'social.manage',
-  staff:'staff.manage',
-  reports:'reports.view',
-  settings:'site_settings.manage'
+  dashboard:'dashboard.view', bookings:'bookings.manage', restaurant:'orders.manage',
+  inventory:'inventory.operational', menu:'menu.manage', services:'services.manage',
+  inquiries:'inquiries.view', swimming_timetable:'swimming.manage', content:'content.manage',
+  reviews:'reviews.moderate', social:'social.manage', staff:'staff.manage',
+  reports:'reports.view', settings:'site_settings.manage'
+};
+const TAB_FALLBACK_PERMISSIONS={
+  inventory:['inventory.all','inventory.operational','inventory.kitchen','inventory.bar','inventory.cleaning','inventory.swimming'],
+  restaurant:['orders.manage','orders.station_kitchen','orders.station_barista','orders.reception.view'],
+  menu:['menu.manage','menu.public_content.manage'],
+  inquiries:['inquiries.view','inquiries.catering','inquiries.drinks','inquiries.general','inquiries.swimming'],
+  reports:['reports.view','reports.reservations.view']
 };
 const hasPermission=code=>profile?.role==='owner'||permissions.has(code);
+const canSeeTab=name=>hasPermission(TAB_PERMISSIONS[name])||(TAB_FALLBACK_PERMISSIONS[name]||[]).some(hasPermission);
 
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -125,11 +124,11 @@ async function loadPermissions(){
 function applyRoleNavigation(){
   document.querySelectorAll('[data-tab]').forEach(a=>{
     const required=TAB_PERMISSIONS[a.dataset.tab];
-    a.classList.toggle('role-hidden',!hasPermission(required));
+    a.classList.toggle('role-hidden',!canSeeTab(a.dataset.tab));
   });
   if(!hasPermission(TAB_PERMISSIONS.staff)) $('#staffHelp').textContent='Staff accounts are managed by the owner.';
 }
-function canOpenTab(name){return hasPermission(TAB_PERMISSIONS[name]);}
+function canOpenTab(name){return canSeeTab(name);}
 function inquiryTypesForRole(){
   if(['owner','manager','ceo','general_manager','reception_manager'].includes(profile?.role)) return null;
   if(profile?.role==='head_swimming_coach'||profile?.role==='swimming_coach') return ['coaching','swimming'];
@@ -361,7 +360,8 @@ async function loadInventory(){
     const r=await api('/rest/v1/inventory_items?select=id,name,unit,category,reorder_level,active,station_id,service_stations(name)&order=name.asc');
     const mov=await api('/rest/v1/stock_movements?select=item_id,quantity,movement_type');
     const stock={};mov.forEach(x=>stock[x.item_id]=(stock[x.item_id]||0)+(String(x.movement_type).toLowerCase()==='out'?-1:1)*Number(x.quantity||0));
-    const rows0=profile?.role==='barista'?r.filter(x=>x.service_stations?.name==='Barista'):profile?.role==='chef'?r.filter(x=>x.service_stations?.name==='Kitchen'):r;
+    const scopeForRole={chef:'kitchen',barista:'bar',grounds_cleaning:'cleaning',head_swimming_coach:'swimming'}[profile?.role];
+    const rows0=scopeForRole?r.filter(x=>x.inventory_scope===scopeForRole):r;
     const low=rows0.filter(x=>Number(stock[x.id]||0)<=Number(x.reorder_level||0));
     box.innerHTML=(low.length?'<div class="low-stock-banner"><strong>Low stock: '+low.length+' item(s)</strong><span>'+low.map(x=>esc(x.name)).join(', ')+'</span></div>':'')+(rows0.length?'<table><thead><tr><th>Item</th><th>Category</th><th>Unit</th><th>Station</th><th>Reorder</th><th>Active</th><th></th></tr></thead><tbody>'+
       rows0.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.category||'')+'</td><td>'+esc(x.unit||'')+'</td><td><span class="pill">'+esc(x.service_stations?.name||'Unassigned')+'</span></td><td>'+esc(x.reorder_level??0)+'</td><td>'+esc(x.active?'Yes':'No')+'</td><td><button class="btn" data-edit-inv="'+x.id+'">Edit</button></td></tr>').join('')+
@@ -371,9 +371,13 @@ async function loadInventory(){
 }
 async function editInventory(id=null){
   const stations=await api('/rest/v1/service_stations?select=id,name&active=eq.true&order=sort_order.asc');
-  const x=id?(await api('/rest/v1/inventory_items?id=eq.'+id))[0]:{name:'',unit:'',category:'',reorder_level:0,active:true,station_id:null};
-  modal(id?'Inventory item':'Add inventory item','<form id="inv" class="form"><input name="name" value="'+esc(x.name)+'" placeholder="Ingredient / stock item name" required><input name="unit" value="'+esc(x.unit)+'" placeholder="kg, litre, bottle, piece…" required><select name="station" required><option value="">Choose responsible station</option>'+stations.map(q=>'<option value="'+q.id+'" '+(x.station_id===q.id?'selected':'')+'>'+esc(q.name)+'</option>').join('')+'</select><input name="category" value="'+esc(x.category||'')+'" placeholder="Category"><input name="reorder" type="number" step="0.001" value="'+(x.reorder_level||0)+'" placeholder="Reorder level"><label>Active <input name="active" type="checkbox" '+(x.active?'checked':'')+'></label><button class="btn btn-dark">Save</button></form>');
-  $('#inv').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget),body={name:f.get('name'),unit:f.get('unit'),station_id:f.get('station')||null,category:f.get('category')||null,reorder_level:Number(f.get('reorder')||0),active:f.get('active')==='on'};try{await api(id?'/rest/v1/inventory_items?id=eq.'+id:'/rest/v1/inventory_items',{method:id?'PATCH':'POST',body:JSON.stringify(body)});closeModal();loadInventory()}catch(err){msg(err)}}
+  const roleScope={chef:'kitchen',barista:'bar',grounds_cleaning:'cleaning',head_swimming_coach:'swimming'}[profile?.role]||'operational';
+  const restricted=['chef','barista','grounds_cleaning','head_swimming_coach'].includes(profile?.role);
+  const x=id?(await api('/rest/v1/inventory_items?id=eq.'+id))[0]:{name:'',unit:'',category:'',reorder_level:0,active:true,station_id:null,inventory_scope:roleScope};
+  const allowedScopes=['owner','ceo','general_manager','manager'].includes(profile?.role)?['operational','kitchen','bar','cleaning','swimming','facility']:[roleScope];
+  const stationOptions=stations.filter(st=>profile?.role==='chef'?st.name==='Kitchen':profile?.role==='barista'?st.name==='Barista':true);
+  modal(id?'Inventory item':'Add inventory item','<form id="inv" class="form"><input name="name" value="'+esc(x.name)+'" placeholder="Ingredient / stock item name" required><input name="unit" value="'+esc(x.unit)+'" placeholder="kg, litre, bottle, piece…" required><select name="station"><option value="">No production station</option>'+stationOptions.map(q=>'<option value="'+q.id+'" '+(x.station_id===q.id?'selected':'')+'>'+esc(q.name)+'</option>').join('')+'</select><select name="scope" '+(restricted?'disabled':'')+'>'+allowedScopes.map(sc=>'<option value="'+sc+'" '+((x.inventory_scope||roleScope)===sc?'selected':'')+'>'+esc(sc)+'</option>').join('')+'</select><input name="category" value="'+esc(x.category||'')+'" placeholder="Category"><input name="reorder" type="number" step="0.001" value="'+(x.reorder_level||0)+'" placeholder="Reorder level"><label>Active <input name="active" type="checkbox" '+(x.active?'checked':'')+'></label><button class="btn btn-dark">Save</button></form>');
+  $('#inv').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget),scope=restricted?roleScope:String(f.get('scope')||roleScope),body={name:f.get('name'),unit:f.get('unit'),station_id:f.get('station')||null,inventory_scope:scope,category:f.get('category')||null,reorder_level:Number(f.get('reorder')||0),active:f.get('active')==='on'};try{await api(id?'/rest/v1/inventory_items?id=eq.'+id:'/rest/v1/inventory_items',{method:id?'PATCH':'POST',body:JSON.stringify(body)});closeModal();loadInventory()}catch(err){msg(err)}}
 }
 async function manageRecipe(existingId=null){
   try{
