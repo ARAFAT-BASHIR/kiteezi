@@ -253,8 +253,22 @@ async function editRequisition(id){
   $('#reqEditForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const items=[...e.currentTarget.querySelectorAll('.req-line')].map(row=>({inventory_item_id:row.querySelector('[name=item]').value,quantity:Number(row.querySelector('[name=qty]').value||0),estimated_unit_price:Number(row.querySelector('[name=price]').value||0)})).filter(x=>x.quantity>0);if(!String(f.get('reason')||'').trim())return alert('Edit reason is required.');try{await api('/rest/v1/rpc/approve_requisition',{method:'POST',body:JSON.stringify({p_requisition_id:id,p_action:'edited',p_items:items,p_reason:String(f.get('reason')).trim()})});closeModal();await loadRequisitions();}catch(err){msg(err)}};
 }
 async function loadGeneratedPOs(){
-  const rows=await api('/rest/v1/purchase_orders?select=id,po_number,requisition_id,status,supplier,reference,total,payment_status,generated_at&order=generated_at.desc');
-  setHTML('#generatedPOTable',rows.length?'<table><tr><th>PO</th><th>Source requisition</th><th>Status</th><th>Supplier</th><th>Total</th><th>Payment</th><th>Generated</th></tr>'+rows.map(x=>'<tr><td>'+esc(x.po_number||x.id.slice(0,8).toUpperCase())+'</td><td>'+esc(x.reference||x.requisition_id||'')+'</td><td>'+esc(x.status)+'</td><td>'+esc(x.supplier||'')+'</td><td>UGX '+money(x.total)+'</td><td>'+esc(x.payment_status)+'</td><td>'+esc(x.generated_at||'')+'</td></tr>').join('')+'</table>':'<div class="state">No generated purchase orders.</div>');
+  const rows=await api('/rest/v1/purchase_orders?select=id,po_number,requisition_id,status,supplier,reference,total,payment_status,generated_at,received_at,paid_at&order=generated_at.desc');
+  const canManage=hasPermission('purchase_orders.manage');
+  setHTML('#generatedPOTable',rows.length?'<table><tr><th>PO</th><th>Source requisition</th><th>Status</th><th>Supplier</th><th>Total</th><th>Payment</th><th>Received</th><th>Actions</th></tr>'+
+    rows.map(x=>'<tr><td>'+esc(x.po_number||x.id.slice(0,8).toUpperCase())+'</td><td>'+esc(x.reference||x.requisition_id||'')+'</td><td>'+esc(x.status||'ordered')+'</td><td>'+esc(x.supplier||'')+'</td><td>UGX '+money(x.total)+'</td><td>'+esc(x.payment_status||'unpaid')+'</td><td>'+esc(x.received_at?new Date(x.received_at).toLocaleString():'Not received')+'</td><td class="actions">'+
+      (canManage&&x.status!=='received'&&x.status!=='cancelled'?'<button class="btn" data-po-receive="'+x.id+'">Receive</button> ':'')+
+      (canManage&&x.payment_status!=='paid'&&x.status!=='cancelled'?'<button class="btn" data-po-paid="'+x.id+'">Mark paid</button> ':'')+
+      (profile?.role==='owner'?'<button class="btn danger" data-delete-po="'+x.id+'">Delete test</button>':'')+
+      '</td></tr>').join('')+'</table>':'<div class="state">No generated purchase orders.</div>');
+  $$('[data-po-receive]').forEach(b=>b.onclick=()=>receivePurchase(b.dataset.poReceive).catch(msg));
+  $$('[data-po-paid]').forEach(b=>b.onclick=async()=>{
+    try{
+      await api('/rest/v1/rpc/mark_purchase_order_paid',{method:'POST',body:JSON.stringify({p_purchase_order_id:b.dataset.poPaid})});
+      await loadGeneratedPOs();
+    }catch(err){msg(err);}
+  });
+  $$('[data-delete-po]').forEach(b=>b.onclick=()=>deleteTestRecord('purchase_order',b.dataset.deletePo));
 }
 async function createRequisition(){
   const inv=await api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc');
