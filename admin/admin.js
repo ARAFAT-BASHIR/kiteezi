@@ -9,6 +9,7 @@ const TAB_PERMISSIONS={
   reports:'reports.view', settings:'site_settings.manage', requisitions:'requisitions.view', purchases:'purchase_orders.view', service_tally:'service_logs.create'
 };
 const TAB_FALLBACK_PERMISSIONS={
+  bookings:['bookings.view'],
   inventory:['inventory.all','inventory.operational','inventory.kitchen','inventory.bar','inventory.cleaning','inventory.swimming'],
   restaurant:['orders.manage','orders.station_kitchen','orders.station_barista','orders.reception.view'],
   menu:['menu.manage','menu.public_content.manage'],
@@ -51,6 +52,17 @@ async function api(path,opt={},token=session?.access_token||KEY){
 function msg(e){console.error(e);alert(e.message||'Something went wrong.')}
 // Login is handled exclusively by admin-login.js to avoid duplicate submit handlers. 
 async function loadStations(){return api('/rest/v1/service_stations?select=id,name,description,active,sort_order&order=sort_order.asc,name.asc')}
+let UNIT_OPTIONS=[];
+async function loadUnitOptions(){
+  if(UNIT_OPTIONS.length)return UNIT_OPTIONS;
+  const rows=await api('/rest/v1/unit_options?select=code,label,category&active=eq.true&order=sort_order.asc,label.asc');
+  UNIT_OPTIONS=Array.isArray(rows)?rows:[];
+  return UNIT_OPTIONS;
+}
+function unitOptionsHtml(selected=''){
+  const value=String(selected||'').toLowerCase();
+  return '<option value="">Choose unit</option>'+UNIT_OPTIONS.map(u=>'<option value="'+esc(u.code)+'" '+(u.code===value?'selected':'')+'>'+esc(u.label)+'</option>').join('');
+}
 async function bootAdmin(authSession){
   try{
     session=authSession||JSON.parse(sessionStorage.getItem('kiteezi_admin_session')||'null');
@@ -108,7 +120,7 @@ async function show(){
   try{loadNotifications().catch(()=>{});startNotificationPolling()}catch(e){console.warn('Admin notifications unavailable',e)}
   try{await loadPermissions()}catch(e){console.warn('Admin permissions load failed',e);permissions=new Set()}
   try{applyRoleNavigation()}catch(e){console.warn('Admin navigation setup failed',e)}
-  try{route(location.hash.slice(1)||'dashboard')}catch(e){
+  try{history.replaceState(null,'','#dashboard');route('dashboard')}catch(e){
     console.error('Admin route initialization failed:',e);
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
     $('#dashboard')?.classList.add('active');
@@ -142,7 +154,8 @@ function applyRoleNavigation(){
       owner:[['dashboard','Dashboard'],['service_tally','Service Tally'],['bookings','Bookings'],['restaurant','POS / Orders'],['inventory','Inventory'],['menu','Menu'],['services','Services'],['inquiries','Inquiries'],['swimming_timetable','Swimming Timetable'],['swimming_sessions','Swimming Sessions'],['tasks','Grounds / Tasks'],['content','Content / Media'],['reviews','Reviews'],['social','Social Links'],['staff','Staff / Roles'],['reports','Reports'],['requisitions','Requisitions'],['purchases','Purchase Orders'],['settings','Settings']]
     };
     const tree=trees[role]||[['dashboard','Dashboard']];
-    nav.innerHTML=tree.map(([id,label])=>'<a href="#'+id+'" data-tab="'+id+'">'+label+'</a>').join('');
+    const visibleTree=tree.filter(([id])=>canSeeTab(id));
+    nav.innerHTML=visibleTree.map(([id,label])=>'<a href="#'+id+'" data-tab="'+id+'">'+label+'</a>').join('');
   }
   if(!hasPermission(TAB_PERMISSIONS.staff)) $('#staffHelp').textContent='Staff accounts are managed by the owner.';
   const newMenu=$('#newMenu'); if(newMenu) newMenu.hidden=!hasPermission('menu.manage');
@@ -246,11 +259,11 @@ async function loadRequisitions(){
 async function editRequisition(id){
   const rows=await api('/rest/v1/requisitions?id=eq.'+encodeURIComponent(id)+'&select=*,requisition_items(*)');
   const r=rows?.[0]; if(!r)return;
-  const inv=await api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc');
+  const [inv]=await Promise.all([api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc'),loadUnitOptions()]);
   const line=(i={})=>'<div class="req-line" style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin:6px 0"><select name="item">'+inv.map(x=>'<option value="'+x.id+'" '+(x.id===i.inventory_item_id?'selected':'')+'>'+esc(x.name)+' ('+esc(x.unit)+')</option>').join('')+'</select><input name="qty" type="number" min="0.001" step="0.001" value="'+esc(i.quantity||'')+'"><input name="price" type="number" min="0" step="0.01" value="'+esc(i.estimated_unit_price||'')+'"></div>';
   modal('Edit requisition — reason required','<form id="reqEditForm" class="form"><p class="muted">The edit reason becomes part of the permanent approval audit trail.</p><textarea name="reason" required placeholder="Why are you changing this requisition?"></textarea><div id="reqLines">'+(r.requisition_items||[]).map(line).join('')+'</div><button type="button" class="btn" id="addReqLine">Add item</button> <button class="btn btn-dark">Save edit and approve</button></form>');
   $('#addReqLine').onclick=()=>$('#reqLines').insertAdjacentHTML('beforeend',line());
-  $('#reqEditForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const items=[...e.currentTarget.querySelectorAll('.req-line')].map(row=>({inventory_item_id:row.querySelector('[name=item]').value,quantity:Number(row.querySelector('[name=qty]').value||0),estimated_unit_price:Number(row.querySelector('[name=price]').value||0)})).filter(x=>x.quantity>0);if(!String(f.get('reason')||'').trim())return alert('Edit reason is required.');try{await api('/rest/v1/rpc/approve_requisition',{method:'POST',body:JSON.stringify({p_requisition_id:id,p_action:'edited',p_items:items,p_reason:String(f.get('reason')).trim()})});closeModal();await loadRequisitions();}catch(err){msg(err)}};
+  $('#reqEditForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const items=[...e.currentTarget.querySelectorAll('.req-line')].map(row=>({inventory_item_id:row.querySelector('[name=item]').value,quantity:Number(row.querySelector('[name=qty]').value||0),unit_code:row.querySelector('[name=unit]').value,unit_code:row.querySelector('[name=unit]').value,estimated_unit_price:Number(row.querySelector('[name=price]').value||0)})).filter(x=>x.quantity>0);if(!String(f.get('reason')||'').trim())return alert('Edit reason is required.');try{await api('/rest/v1/rpc/approve_requisition',{method:'POST',body:JSON.stringify({p_requisition_id:id,p_action:'edited',p_items:items,p_reason:String(f.get('reason')).trim()})});closeModal();await loadRequisitions();}catch(err){msg(err)}};
 }
 async function loadGeneratedPOs(){
   const rows=await api('/rest/v1/purchase_orders?select=id,po_number,requisition_id,status,supplier,reference,total,payment_status,generated_at,received_at,paid_at&order=generated_at.desc');
@@ -271,7 +284,7 @@ async function loadGeneratedPOs(){
   $$('[data-delete-po]').forEach(b=>b.onclick=()=>deleteTestRecord('purchase_order',b.dataset.deletePo));
 }
 async function createRequisition(){
-  const inv=await api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc');
+  const [inv]=await Promise.all([api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc'),loadUnitOptions()]);
   const line=()=>'<div class="req-new-line" style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin:6px 0"><select name="item">'+inv.map(x=>'<option value="'+x.id+'">'+esc(x.name)+' ('+esc(x.unit)+')</option>').join('')+'</select><input name="qty" type="number" min="0.001" step="0.001" placeholder="Qty" required><input name="price" type="number" min="0" step="0.01" placeholder="Est. unit price"></div>';
   modal('New requisition','<form id="newReqForm" class="form"><textarea name="notes" placeholder="Reason / notes"></textarea><div id="newReqLines">'+line()+'</div><button type="button" class="btn" id="addNewReqLine">Add item</button> <button class="btn btn-dark">Submit to Manager</button></form>');
   $('#addNewReqLine').onclick=()=>$('#newReqLines').insertAdjacentHTML('beforeend',line());
@@ -557,7 +570,7 @@ async function loadInventory(){
   const box=$('#inventoryTable'); if(!box)return;
   box.innerHTML='<div class="state">Loading inventory…</div>';
   try{
-    const r=await api('/rest/v1/inventory_items?select=id,name,unit,category,reorder_level,active,station_id,service_stations(name)&order=name.asc');
+    const r=await api('/rest/v1/inventory_items?select=id,name,unit,category,reorder_level,active,station_id,inventory_scope,service_stations(name)&order=name.asc');
     const mov=await api('/rest/v1/stock_movements?select=item_id,quantity,movement_type');
     const stock={};mov.forEach(x=>stock[x.item_id]=(stock[x.item_id]||0)+(String(x.movement_type).toLowerCase()==='out'?-1:1)*Number(x.quantity||0));
     const scopeForRole={chef:'kitchen',barista:'bar',grounds_cleaning:'cleaning',head_swimming_coach:'swimming'}[profile?.role];
@@ -576,14 +589,15 @@ async function editInventory(id=null){
   const x=id?(await api('/rest/v1/inventory_items?id=eq.'+id))[0]:{name:'',unit:'',category:'',reorder_level:0,active:true,station_id:null,inventory_scope:roleScope};
   const allowedScopes=['owner','ceo','general_manager','manager'].includes(profile?.role)?['operational','kitchen','bar','cleaning','swimming','facility']:[roleScope];
   const stationOptions=stations.filter(st=>profile?.role==='chef'?st.name==='Kitchen':profile?.role==='barista'?st.name==='Barista':true);
-  modal(id?'Inventory item':'Add inventory item','<form id="inv" class="form"><input name="name" value="'+esc(x.name)+'" placeholder="Ingredient / stock item name" required><input name="unit" value="'+esc(x.unit)+'" placeholder="kg, litre, bottle, piece…" required><select name="station"><option value="">No production station</option>'+stationOptions.map(q=>'<option value="'+q.id+'" '+(x.station_id===q.id?'selected':'')+'>'+esc(q.name)+'</option>').join('')+'</select><select name="scope" '+(restricted?'disabled':'')+'>'+allowedScopes.map(sc=>'<option value="'+sc+'" '+((x.inventory_scope||roleScope)===sc?'selected':'')+'>'+esc(sc)+'</option>').join('')+'</select><input name="category" value="'+esc(x.category||'')+'" placeholder="Category"><input name="reorder" type="number" step="0.001" value="'+(x.reorder_level||0)+'" placeholder="Reorder level"><label>Active <input name="active" type="checkbox" '+(x.active?'checked':'')+'></label><button class="btn btn-dark">Save</button></form>');
+  modal(id?'Inventory item':'Add inventory item','<form id="inv" class="form"><input name="name" value="'+esc(x.name)+'" placeholder="Ingredient / stock item name" required><select name="unit" required>'+unitOptionsHtml(x.unit)+'</select><select name="station"><option value="">No production station</option>'+stationOptions.map(q=>'<option value="'+q.id+'" '+(x.station_id===q.id?'selected':'')+'>'+esc(q.name)+'</option>').join('')+'</select><select name="scope" '+(restricted?'disabled':'')+'>'+allowedScopes.map(sc=>'<option value="'+sc+'" '+((x.inventory_scope||roleScope)===sc?'selected':'')+'>'+esc(sc)+'</option>').join('')+'</select><input name="category" value="'+esc(x.category||'')+'" placeholder="Category"><input name="reorder" type="number" step="0.001" value="'+(x.reorder_level||0)+'" placeholder="Reorder level"><label>Active <input name="active" type="checkbox" '+(x.active?'checked':'')+'></label><button class="btn btn-dark">Save</button></form>');
   $('#inv').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget),scope=restricted?roleScope:String(f.get('scope')||roleScope),body={name:f.get('name'),unit:f.get('unit'),station_id:f.get('station')||null,inventory_scope:scope,category:f.get('category')||null,reorder_level:Number(f.get('reorder')||0),active:f.get('active')==='on'};try{await api(id?'/rest/v1/inventory_items?id=eq.'+id:'/rest/v1/inventory_items',{method:id?'PATCH':'POST',body:JSON.stringify(body)});closeModal();loadInventory()}catch(err){msg(err)}}
 }
 async function manageRecipe(existingId=null){
   try{
     const [m,i]=await Promise.all([
       api('/rest/v1/menu_items?select=id,name,serving_unit,station_id,service_stations(name)&order=name.asc'),
-      api('/rest/v1/inventory_items?select=id,name,unit,station_id,service_stations(name)&active=eq.true&order=name.asc')
+      api('/rest/v1/inventory_items?select=id,name,unit,station_id,service_stations(name)&active=eq.true&order=name.asc'),
+      loadUnitOptions()
     ]);
     if(!m.length)throw Error('No menu items exist yet. Add the menu item first.');
     if(!i.length)throw Error('No active inventory ingredients exist yet. Add an inventory item first.');
@@ -596,7 +610,7 @@ async function manageRecipe(existingId=null){
     const row=(inv='',qty='',unit='stock',factor='1')=>'<div class="recipe-row" style="display:grid;grid-template-columns:minmax(0,1fr) 110px 120px 150px auto;gap:8px;align-items:end;margin-bottom:8px">'+
       '<label>Ingredient<select class="recipe-inv" required>'+i.map(x=>'<option value="'+x.id+'" '+(inv===x.id?'selected':'')+'>'+esc(x.name)+' ('+esc(x.unit)+')</option>').join('')+'</select></label>'+
       '<label>Amount<input class="recipe-qty" type="number" step="0.001" min="0.001" value="'+esc(qty)+'" placeholder="1" required></label>'+
-      '<label>Recipe unit<input class="recipe-unit" value="'+esc(unit)+'" placeholder="bottle, shot, ml…"></label>'+
+      '<label>Recipe unit<select class="recipe-unit" required>'+unitOptionsHtml(unit)+'</select></label>'+
       '<label>Stock conversion<input class="recipe-factor" type="number" step="0.000001" min="0.000001" value="'+esc(factor)+'" placeholder="1"></label>'+
       '<button type="button" class="btn recipe-remove">Remove</button></div>';
     modal(existing?'Edit recipe ingredient':'Build recipe',
@@ -683,8 +697,8 @@ async function editMenu(id=null){
     $('#mi').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);let imageUrl=String(f.get('img')||'').trim();const file=f.get('imageFile');if(file instanceof File&&file.size)imageUrl=await uploadAdminImage(file,'menu');try{await api('/rest/v1/menu_items?id=eq.'+id,{method:'PATCH',body:JSON.stringify({name:f.get('name'),category_id:f.get('category')||null,description:f.get('description')||null,img_url:imageUrl||null,alt_text:f.get('alt')||null})});closeModal();loadMenu()}catch(err){msg(err)}};
     return;
   }
-  const stations=await api('/rest/v1/service_stations?select=id,name&active=eq.true&order=sort_order.asc');
-  modal(id?'Menu item':'Add menu item','<form id="mi" class="form"><input name="name" value="'+esc(x.name)+'" placeholder="Name" required><select name="category"><option value="">No category</option>'+cats.map(q=>'<option value="'+q.id+'" '+(x.category_id===q.id?'selected':'')+'>'+esc(q.name)+'</option>').join('')+'</select><select name="station" required><option value="">Choose preparation station</option>'+stations.map(q=>'<option value="'+q.id+'" '+(x.station_id===q.id?'selected':'')+'>'+esc(q.name)+'</option>').join('')+'</select><input name="serving" value="'+esc(x.serving_unit||'portion')+'" placeholder="Serving unit: portion, bottle, glass, shot, cup…"><textarea name="description" placeholder="Description">'+esc(x.description||'')+'</textarea><input name="price" type="number" step="0.01" value="'+(x.price||0)+'" placeholder="Price"><label>Image<input id="menuImageFile" name="imageFile" type="file" accept="image/*"><small class="muted">Choose an image from your phone or computer, or paste an image URL below.</small></label><input name="img" value="'+esc(x.img_url||'')+'" placeholder="Image URL"><label>Price on request <input name="por" type="checkbox" '+(x.price_on_request?'checked':'')+'></label><label>In stock <input name="stock" type="checkbox" '+(x.in_stock?'checked':'')+'></label><button class="btn btn-dark">Save</button></form>');$('#mi').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);let imageUrl=String(f.get('img')||'').trim();const file=f.get('imageFile');if(file instanceof File&&file.size)imageUrl=await uploadAdminImage(file,'menu');const body={name:f.get('name'),category_id:f.get('category')||null,station_id:f.get('station')||null,serving_unit:String(f.get('serving')||'portion').trim()||'portion',description:f.get('description')||null,price:Number(f.get('price')||0),img_url:imageUrl||null,price_on_request:f.get('por')==='on',in_stock:f.get('stock')==='on'};await api(id?'/rest/v1/menu_items?id=eq.'+id:'/rest/v1/menu_items',{method:id?'PATCH':'POST',body:JSON.stringify(body)});closeModal();loadMenu()}
+  const [stations]=await Promise.all([api('/rest/v1/service_stations?select=id,name&active=eq.true&order=sort_order.asc'),loadUnitOptions()]);
+  modal(id?'Menu item':'Add menu item','<form id="mi" class="form"><input name="name" value="'+esc(x.name)+'" placeholder="Name" required><select name="category"><option value="">No category</option>'+cats.map(q=>'<option value="'+q.id+'" '+(x.category_id===q.id?'selected':'')+'>'+esc(q.name)+'</option>').join('')+'</select><select name="station" required><option value="">Choose preparation station</option>'+stations.map(q=>'<option value="'+q.id+'" '+(x.station_id===q.id?'selected':'')+'>'+esc(q.name)+'</option>').join('')+'</select><select name="serving" required>'+unitOptionsHtml(x.serving_unit||'portion')+'</select><textarea name="description" placeholder="Description">'+esc(x.description||'')+'</textarea><input name="price" type="number" step="0.01" value="'+(x.price||0)+'" placeholder="Price"><label>Image<input id="menuImageFile" name="imageFile" type="file" accept="image/*"><small class="muted">Choose an image from your phone or computer, or paste an image URL below.</small></label><input name="img" value="'+esc(x.img_url||'')+'" placeholder="Image URL"><label>Price on request <input name="por" type="checkbox" '+(x.price_on_request?'checked':'')+'></label><label>In stock <input name="stock" type="checkbox" '+(x.in_stock?'checked':'')+'></label><button class="btn btn-dark">Save</button></form>');$('#mi').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);let imageUrl=String(f.get('img')||'').trim();const file=f.get('imageFile');if(file instanceof File&&file.size)imageUrl=await uploadAdminImage(file,'menu');const body={name:f.get('name'),category_id:f.get('category')||null,station_id:f.get('station')||null,serving_unit:String(f.get('serving')||'portion').trim()||'portion',description:f.get('description')||null,price:Number(f.get('price')||0),img_url:imageUrl||null,price_on_request:f.get('por')==='on',in_stock:f.get('stock')==='on'};await api(id?'/rest/v1/menu_items?id=eq.'+id:'/rest/v1/menu_items',{method:id?'PATCH':'POST',body:JSON.stringify(body)});closeModal();loadMenu()}
 }
 async function loadServices(){let [s,sp]=await Promise.all([api('/rest/v1/services?select=*&order=name.asc'),api('/rest/v1/sports?select=*&order=name.asc')]);if(['head_swimming_coach','swimming_coach'].includes(profile?.role))s=s.filter(x=>/swim/i.test(x.name+' '+(x.description||'')));$('#servicesTable').innerHTML='<table><tr><th>Name</th><th>Price</th><th>Pricing</th><th>Active</th><th></th></tr>'+s.map(x=>'<tr><td>'+esc(x.name)+'</td><td>UGX '+money(x.price)+'</td><td>'+esc(x.pricing_mode||'fixed')+'</td><td>'+x.active+'</td><td><button class="btn" data-svc="'+x.id+'">Edit</button></td></tr>').join('')+'</table>';$('#sportsTable').innerHTML='<table><tr><th>Sport</th><th>Description</th><th>Active</th><th></th></tr>'+sp.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.description||'')+'</td><td>'+x.active+'</td><td><button class="btn" data-sport="'+x.id+'">Edit</button></td></tr>').join('')+'</table>';document.querySelectorAll('[data-svc]').forEach(x=>x.onclick=()=>editService(x.dataset.svc));document.querySelectorAll('[data-sport]').forEach(x=>x.onclick=()=>editSport(x.dataset.sport))}
 async function editService(id=null){const x=id?(await api('/rest/v1/services?id=eq.'+id))[0]:{name:'',description:'',price:0,team_threshold:null,small_group_price:null,full_team_price:null,active:true,pricing_mode:'fixed'};modal(id?'Service':'Add service','<form id="svc" class="form"><input name="name" value="'+esc(x.name)+'" placeholder="Service name" required><textarea name="description" placeholder="Description">'+esc(x.description||'')+'</textarea><input name="price" type="number" value="'+(x.price||0)+'" placeholder="Base price"><input name="duration" type="number" value="'+(x.duration_minutes||'')+'" placeholder="Duration minutes"><select name="pricing"><option value="fixed" '+(x.pricing_mode==='fixed'?'selected':'')+'>Fixed</option><option value="per_person" '+(x.pricing_mode==='per_person'?'selected':'')+'>Per person</option><option value="team" '+(x.pricing_mode==='team'?'selected':'')+'>Team</option></select><input name="threshold" type="number" value="'+(x.team_threshold||'')+'" placeholder="Team threshold"><input name="small" type="number" value="'+(x.small_group_price||'')+'" placeholder="Small group price"><input name="full" type="number" value="'+(x.full_team_price||'')+'" placeholder="Full team price"><label>Active <input name="active" type="checkbox" '+(x.active?'checked':'')+'></label><button class="btn btn-dark">Save</button></form>');$('#svc').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget),body={name:f.get('name'),description:f.get('description')||null,price:Number(f.get('price')||0),duration_minutes:Number(f.get('duration')||0)||null,pricing_mode:f.get('pricing'),team_threshold:Number(f.get('threshold')||0)||null,small_group_price:Number(f.get('small')||0)||null,full_team_price:Number(f.get('full')||0)||null,active:f.get('active')==='on'};await api(id?'/rest/v1/services?id=eq.'+id:'/rest/v1/services',{method:id?'PATCH':'POST',body:JSON.stringify(body)});closeModal();loadServices()}}
@@ -740,20 +754,20 @@ async function loadReport(){
   const cashIn=b.filter(paid).reduce((a,x)=>a+Number(x.total||0),0)+o.filter(paid).reduce((a,x)=>a+Number(x.total||0),0)+e.reduce((a,x)=>a+Number(x.total||0),0);
   const outstanding=b.filter(x=>!paid(x)).reduce((a,x)=>a+Number(x.total||0),0)+o.filter(x=>!paid(x)).reduce((a,x)=>a+Number(x.total||0),0);
   const net=cashIn-spend;
-  setText('#reportRevenue','UGX '+money(cashIn);$('#reportPurchases').textContent='UGX '+money(spend));
-  setText('#reportNet','UGX '+money(net);$('#reportOutstanding').textContent='UGX '+money(outstanding));
+  setText('#reportRevenue','UGX '+money(cashIn));setText('#reportPurchases','UGX '+money(spend));
+  setText('#reportNet','UGX '+money(net));setText('#reportOutstanding','UGX '+money(outstanding));
   const inOrders=o.filter(paid).reduce((a,x)=>a+Number(x.total||0),0),inBookings=b.filter(paid).reduce((a,x)=>a+Number(x.total||0),0),inEvents=e.reduce((a,x)=>a+Number(x.total||0),0);
-  setText('#reportInOrders','UGX '+money(inOrders);$('#reportInBookings').textContent='UGX '+money(inBookings);$('#reportInEvents').textContent='UGX '+money(inEvents));
+  setText('#reportInOrders','UGX '+money(inOrders));setText('#reportInBookings','UGX '+money(inBookings));setText('#reportInEvents','UGX '+money(inEvents));
   setText('#reportOutstandingOrders','UGX '+money(o.filter(x=>!paid(x)).reduce((a,x)=>a+Number(x.total||0),0)));
   setText('#reportOutstandingBookings','UGX '+money(b.filter(x=>!paid(x)).reduce((a,x)=>a+Number(x.total||0),0)));
   const foodSpend=p.filter(x=>/food|kitchen/i.test(String(x.category||x.notes||x.supplier||''))).reduce((a,x)=>a+Number(x.total||0),0);
   const beverageSpend=p.filter(x=>/beverage|bar|drink/i.test(String(x.category||x.notes||x.supplier||''))).reduce((a,x)=>a+Number(x.total||0),0);
   const otherSpend=Math.max(0,spend-foodSpend-beverageSpend);
-  setText('#reportFoodPurchases','UGX '+money(foodSpend);$('#reportBeveragePurchases').textContent='UGX '+money(beverageSpend);$('#reportOtherPurchases').textContent='UGX '+money(otherSpend));
+  setText('#reportFoodPurchases','UGX '+money(foodSpend));setText('#reportBeveragePurchases','UGX '+money(beverageSpend));setText('#reportOtherPurchases','UGX '+money(otherSpend));
   const setLegend=(id,items)=>{$('#'+id).innerHTML=items.map((x,i)=>'<div><i class="'+(['','blue','purple','orange','cyan'][i]||'')+'"></i><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')};
   setLegend('moneyInLegend',[['Orders','UGX '+money(inOrders)],['Bookings','UGX '+money(inBookings)],['Events','UGX '+money(inEvents)],['Other','UGX 0']]);
   setLegend('moneyOutLegend',[['Food Purchases','UGX '+money(foodSpend)],['Beverage Purchases','UGX '+money(beverageSpend)],['Other Purchases','UGX '+money(otherSpend)],['Operating Expenses','UGX 0']]);
-  setText('#moneyInDonutValue',money(cashIn);$('#moneyOutDonutValue').textContent=money(spend));
+  setText('#moneyInDonutValue',money(cashIn));setText('#moneyOutDonutValue',money(spend));
   const max=Math.max(cashIn,spend,Math.abs(net),1);document.querySelectorAll('#cashFlowChart .bar-col').forEach((el,i)=>{const v=[cashIn,spend,Math.abs(net)][i];el.querySelector('span').textContent=money(v);el.querySelector('i').style.height=Math.max(3,(v/max)*78)+'%'});
   const movementRows=m.map(x=>['Stock movement',x.id,String(x.created_at||'').slice(0,10),x.movement_type||'',(invById[x.item_id]?.name||x.item_id)+' — '+(x.reason||''),x.quantity]);
   const balances={};mAll.forEach(x=>{const q=Number(x.quantity||0);balances[x.item_id]=(balances[x.item_id]||0)+(String(x.movement_type||'').toLowerCase()==='out'?-q:q)});
@@ -788,7 +802,7 @@ function renderReportView(view){
   setHTML('#reportTable',table(['Type','ID','Date','Status / Type','Item / Supplier','Value / Quantity'],rows,x=>x));
   document.querySelectorAll('[data-report-view]').forEach(b=>b.classList.toggle('active',b.dataset.reportView===view));
 }
-async function loadSettings(){const r=await api('/rest/v1/site_settings?select=key,value&order=key.asc');const logo=r.find(x=>x.key==='logo_url');const logoInput=$('#logoUrl');if(logoInput)logoInput.value=logo?.value||'';const preview=$('#logoPreview');if(preview){const v=logo?.value||'';preview.src=v?(v.startsWith('http')?v:'../'+v.replace(/^\/+/,'')):'';preview.hidden=!v;}$('#settingsTable').innerHTML=r.filter(x=>x.key!=='logo_url').map(x=>'<label>'+esc(x.key)+'<input data-set="'+esc(x.key)+'" value="'+esc(x.value||'')+'"></label>').join('')}
+async function loadSettings(){const r=await api('/rest/v1/site_settings?select=key,value&order=key.asc');const logo=r.find(x=>x.key==='logo_url');const logoInput=$('#logoUrl');if(logoInput)logoInput.value=logo?.value||'';const locationInput=$('#locationUrl');if(locationInput)locationInput.value=r.find(x=>x.key==='location_url')?.value||'';const informationEmail=$('#informationEmail');if(informationEmail)informationEmail.value=r.find(x=>x.key==='information_email')?.value||'';const bookingsEmail=$('#bookingsEmail');if(bookingsEmail)bookingsEmail.value=r.find(x=>x.key==='bookings_email')?.value||'';const preview=$('#logoPreview');if(preview){const v=logo?.value||'';preview.src=v?(v.startsWith('http')?v:'../'+v.replace(/^\/+/,'')):'';preview.hidden=!v;}$('#settingsTable').innerHTML=r.filter(x=>x.key!=='logo_url').map(x=>'<label>'+esc(x.key)+'<input data-set="'+esc(x.key)+'" value="'+esc(x.value||'')+'"></label>').join('')}
 async function saveSettings(){for(const x of document.querySelectorAll('[data-set]'))await api('/rest/v1/site_settings?key=eq.'+encodeURIComponent(x.dataset.set),{method:'PATCH',body:JSON.stringify({value:x.value,updated_at:new Date().toISOString()})});await loadSettings();await loadAdminLogo();alert('Site settings saved.')}
 function modal(title,body){$('#modalTitle').textContent=title;$('#modalBody').innerHTML=body;$('#modal').classList.add('open')}
 function printReport(){if(!lastReport){return alert('Generate a report first.')}window.print()}
