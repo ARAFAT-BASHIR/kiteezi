@@ -22,7 +22,30 @@ const hasPermission=code=>profile?.role==='owner'||permissions.has(code);
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>new Intl.NumberFormat('en-UG').format(Number(v)||0);
-async function api(path,opt={},token=session?.access_token||KEY){const h={apikey:KEY,Authorization:'Bearer '+token,'Content-Type':'application/json',...(opt.headers||{})};if(opt.method&&opt.method!=='GET')h.Prefer='return=representation';const r=await fetch(URL+path,{...opt,headers:h});const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw Error(d?.message||d?.msg||d?.error_description||d?.error||(typeof d==='string'?d:'Request failed'));return d}
+async function api(path,opt={},token=session?.access_token||KEY){
+  const request=async tk=>{
+    const h={apikey:KEY,Authorization:'Bearer '+tk,'Content-Type':'application/json',...(opt.headers||{})};
+    if(opt.method&&opt.method!=='GET')h.Prefer='return=representation';
+    return fetch(URL+path,{...opt,headers:h});
+  };
+  let r=await request(token);
+  if(r.status===401&&token!==KEY&&!opt.__authRetry&&typeof window.__KITEEZI_REFRESH_ADMIN_SESSION__==='function'){
+    try{
+      const refreshed=await window.__KITEEZI_REFRESH_ADMIN_SESSION__();
+      if(refreshed?.access_token){
+        session=refreshed;
+        token=refreshed.access_token;
+        const retryOpt={...opt,__authRetry:true};
+        const h={apikey:KEY,Authorization:'Bearer '+token,'Content-Type':'application/json',...(retryOpt.headers||{})};
+        if(retryOpt.method&&retryOpt.method!=='GET')h.Prefer='return=representation';
+        r=await fetch(URL+path,{...retryOpt,headers:h});
+      }
+    }catch{}
+  }
+  const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}
+  if(!r.ok)throw Error(d?.message||d?.msg||d?.error_description||d?.error||(typeof d==='string'?d:'Request failed'));
+  return d;
+}
 function msg(e){console.error(e);alert(e.message||'Something went wrong.')}
 // Login is handled exclusively by admin-login.js to avoid duplicate submit handlers. 
 async function loadStations(){return api('/rest/v1/service_stations?select=id,name,description,active,sort_order&order=sort_order.asc,name.asc')}
@@ -59,7 +82,20 @@ async function bootAdmin(authSession){
   }
 }
 window.KITEEZI_ADMIN_BOOT=bootAdmin;
-async function restore(){const raw=sessionStorage.getItem('kiteezi_admin_session');if(!raw){$('#loginView').classList.remove('hide');return}let saved;try{saved=JSON.parse(raw)}catch{saved=null}if(!saved?.access_token){$('#loginView').classList.remove('hide');return}await bootAdmin(saved)}
+async function restore(){
+  const raw=sessionStorage.getItem('kiteezi_admin_session');
+  if(!raw){$('#loginView').classList.remove('hide');return}
+  let saved;try{saved=JSON.parse(raw)}catch{saved=null}
+  if(!saved?.access_token){$('#loginView').classList.remove('hide');return}
+  try{
+    const refresh=window.__KITEEZI_REFRESH_ADMIN_SESSION__;
+    if(typeof refresh==='function'){
+      const fresh=await refresh();
+      if(fresh?.access_token)saved=fresh;
+    }
+  }catch{}
+  await bootAdmin(saved);
+}
 async function loadAdminLogo(){try{const r=await api('/rest/v1/site_settings?select=value&key=eq.logo_url&limit=1');const v=r?.[0]?.value||'';document.querySelectorAll('.brand-mark').forEach(el=>{if(!v){el.textContent='K';return;}const img=document.createElement('img');img.src=v.startsWith('http')?v:'../'+v.replace(/^\/+/, '');img.alt='Kiteezi Recreational Center';img.loading='eager';el.textContent='';el.appendChild(img);});const p=$('#logoPreview');if(p){p.src=v?(v.startsWith('http')?v:'../'+v.replace(/^\/+/,'')):'';p.hidden=!v;}}catch{}}
 async function show(){
   $('#loginView')?.classList.add('hide');
@@ -89,7 +125,7 @@ async function loadPermissions(){
 function applyRoleNavigation(){
   document.querySelectorAll('[data-tab]').forEach(a=>{
     const required=TAB_PERMISSIONS[a.dataset.tab];
-    a.style.display=hasPermission(required)?'block':'none';
+    a.classList.toggle('role-hidden',!hasPermission(required));
   });
   if(!hasPermission(TAB_PERMISSIONS.staff)) $('#staffHelp').textContent='Staff accounts are managed by the owner.';
 }
@@ -143,21 +179,21 @@ function route(x){
   (f[tab]||loadDashboard)().catch(msg);
 }
 async function loadDashboard(){const d=today();const [b,o,i,sm]=await Promise.all([api('/rest/v1/bookings?select=id,status&booking_date=eq.'+d),api('/rest/v1/orders?select=id,status&status=not.eq.completed&status=not.eq.cancelled'),api('/rest/v1/inventory_items?select=id,reorder_level'),api('/rest/v1/stock_movements?select=item_id,quantity,movement_type')]);const stock={};sm.forEach(x=>stock[x.item_id]=(stock[x.item_id]||0)+(String(x.movement_type).toLowerCase()==='out'?-1:1)*Number(x.quantity||0));$('#mBookings').textContent=b.length;$('#mPending').textContent=b.filter(x=>x.status==='pending').length;$('#mOrders').textContent=o.length;$('#mLow').textContent=i.filter(x=>(stock[x.id]||0)<=Number(x.reorder_level||0)).length;$('#todayOps').textContent='Live data connected.'}
-function today(){return new Date().toISOString().slice(0,10)}
+function today(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Kampala'}).format(new Date())}
 async function cancelBooking(id){modal('Cancel booking','<form id="cancelBookingForm" class="form"><p class="muted">Please enter why this booking cannot be accepted.</p><textarea name="reason" rows="4" required maxlength="500" placeholder="Cancellation reason"></textarea><button type="submit" class="btn btn-dark">Cancel booking</button></form>');$('#cancelBookingForm').onsubmit=async e=>{e.preventDefault();const reason=String(new FormData(e.currentTarget).get('reason')||'').trim();if(!reason)return;await api('/rest/v1/bookings?id=eq.'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({status:'cancelled',cancellation_reason:reason})});closeModal();await loadBookings()}}
 async function deleteTestRecord(type,id){if(profile?.role!=='owner')return;const labels={booking:'booking',order:'order',inquiry:'inquiry',purchase_order:'purchase order',stock_movement:'stock movement',menu_recipe:'recipe'};const label=labels[type]||'record';if(!confirm('Delete this test '+label+' permanently? This cannot be undone.'))return;try{await api('/rest/v1/rpc/owner_delete_test_record',{method:'POST',body:JSON.stringify({p_type:type,p_id:id})});if(type==='booking')await loadBookings();else if(type==='order')await loadOrders();else if(type==='inquiry')await loadInquiries();else if(type==='purchase_order')await loadPurchases();else if(type==='stock_movement')await loadStockMovements();}catch(e){msg(e)}}
 async function loadBookings(){const filter=$('#bookingFilter').value;let q='/rest/v1/bookings?select=*,customers(name,phone),services(name)&order=booking_date.desc,start_time.asc';if(filter!=='all')q+='&status=eq.'+filter;let rows=await api(q);if(['head_swimming_coach','swimming_coach'].includes(profile?.role))rows=rows.filter(r=>/swim/i.test(r.services?.name||''));$('#bookingTable').innerHTML=rows.length?'<table><tr><th>Date</th><th>Customer</th><th>People</th><th>Total</th><th>Status</th><th>Payment</th><th></th></tr>'+rows.map(r=>{const active=r.status!=='cancelled'&&r.status!=='completed';const num=String(r.customers?.phone||'').replace(/[^0-9+]/g,'').replace(/^\\+/,'');const customer=String(r.customers?.name||'');const waText=encodeURIComponent('Hello '+customer+', your booking request has been confirmed by Kiteezi Recreational Center.');const confirmBtn=r.status==='pending'?'<button class="btn" data-confirm-booking="'+r.id+'" data-wa="'+num+'" data-watext="'+waText+'">Confirm</button> ':'';const paidBtn=r.payment_status!=='paid'&&r.status!=='cancelled'?'<button class="btn" data-paid-booking="'+r.id+'">Paid</button> ':'';const completeBtn=active?'<button class="btn" data-complete-booking="'+r.id+'">Completed</button> ':'';const cancelBtn=active?'<button class="btn" data-cancel-booking="'+r.id+'">Cancel</button> ':'';const deleteBtn=profile?.role==='owner'?'<button class="btn danger" data-delete-booking="'+r.id+'">Delete test</button> ':'';return '<tr><td>'+esc(r.booking_date)+' '+esc(r.start_time||'')+'</td><td>'+esc(customer)+'<br>'+esc(r.customers?.phone||'')+'</td><td>'+r.people+'</td><td>UGX '+money(r.total)+'</td><td>'+esc(r.status)+'</td><td>'+esc(r.payment_status||'unpaid')+'</td><td class="actions">'+confirmBtn+paidBtn+completeBtn+cancelBtn+deleteBtn+'</td></tr>'}).join('')+'</table>':'<div class="state">No bookings.</div>';document.querySelectorAll('[data-confirm-booking]').forEach(x=>x.onclick=()=>setBookingAndWhatsApp(x.dataset.confirmBooking,'confirmed',null,x.dataset.wa,x.dataset.watext));document.querySelectorAll('[data-paid-booking]').forEach(x=>x.onclick=()=>setBookingStatus(x.dataset.paidBooking,null,'paid'));document.querySelectorAll('[data-complete-booking]').forEach(x=>x.onclick=()=>setBookingStatus(x.dataset.completeBooking,'completed',null));document.querySelectorAll('[data-cancel-booking]').forEach(x=>x.onclick=()=>cancelBooking(x.dataset.cancelBooking));document.querySelectorAll('[data-delete-booking]').forEach(x=>x.onclick=()=>deleteTestRecord('booking',x.dataset.deleteBooking));loadBuffets().catch(msg)}
 async function setBookingStatus(id,status,payment){const body={};if(status)body.status=status;if(payment)body.payment_status=payment;try{await api('/rest/v1/bookings?id=eq.'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify(body)});await loadBookings()}catch(e){msg(e)}}
 function openWhatsApp(phone,textMessage){const raw=String(phone||'').trim();let digits=raw.replace(/\D/g,'');if(digits.startsWith('00'))digits=digits.slice(2);if(digits.startsWith('0'))digits='256'+digits.slice(1);if(!digits.startsWith('256')&&digits.length===9)digits='256'+digits;if(!/^2567\d{8}$/.test(digits)){msg(new Error('This booking does not have a valid Uganda WhatsApp number.'));return false;}window.location.href='whatsapp://send?phone='+digits+'&text='+textMessage;return true}
-async function setBookingAndWhatsApp(id,status,payment,wa,textMessage){
+async async function setBookingAndWhatsApp(id,status,payment,wa,textMessage){
   const raw=String(wa||'').trim();
   let digits=raw.replace(/\D/g,'');
   if(digits.startsWith('00'))digits=digits.slice(2);
   if(digits.startsWith('0'))digits='256'+digits.slice(1);
   if(!digits.startsWith('256')&&digits.length===9)digits='256'+digits;
   if(!/^2567\d{8}$/.test(digits)){msg(new Error('This booking does not have a valid Uganda WhatsApp number.'));return}
+  try{await setBookingStatus(id,status,payment)}catch(e){msg(e);return}
   window.location.href='whatsapp://send?phone='+digits+'&text='+textMessage;
-  try{await setBookingStatus(id,status,payment)}catch(e){msg(e)}
 }
 async function loadBuffets(){const [b,items]=await Promise.all([api('/rest/v1/booking_bundles?select=*&order=sort_order.asc'),api('/rest/v1/booking_bundle_items?select=*&order=sort_order.asc')]);$('#buffetTable').innerHTML='<table><tr><th>Name</th><th>Price/person</th><th>Contents</th><th>Active</th><th></th></tr>'+b.map(x=>'<tr><td>'+esc(x.name)+'</td><td>UGX '+money(x.price_per_person)+'</td><td>'+items.filter(i=>i.bundle_id===x.id&&i.active).map(i=>esc(i.name)+(i.description?' — '+esc(i.description):'')).join('<br>')+'</td><td>'+x.active+'</td><td><button class="btn" data-buffet="'+x.id+'">Edit</button></td></tr>').join('')+'</table>';document.querySelectorAll('[data-buffet]').forEach(x=>x.onclick=()=>editBuffet(x.dataset.buffet))}
 async function editBuffet(id){const rows=await api('/rest/v1/booking_bundles?id=eq.'+id);const b=rows[0];const items=await api('/rest/v1/booking_bundle_items?bundle_id=eq.'+id+'&order=sort_order.asc');modal('Edit buffet','<form id="bf" class="form"><input name="name" value="'+esc(b.name)+'" placeholder="Name" required><input name="price" type="number" value="'+b.price_per_person+'" placeholder="Price per person"><textarea name="description" placeholder="Description">'+esc(b.description||'')+'</textarea><label>Active <input name="active" type="checkbox" '+(b.active?'checked':'')+'></label><textarea name="contents" placeholder="One included item per line">'+items.map(i=>i.name+(i.description?' | '+i.description:'')).join('\n')+'</textarea><button class="btn btn-dark">Save</button></form>');$('#bf').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);await api('/rest/v1/booking_bundles?id=eq.'+id,{method:'PATCH',body:JSON.stringify({name:f.get('name'),price_per_person:Number(f.get('price')||0),price_on_request:Number(f.get('price')||0)<=0,description:f.get('description'),active:f.get('active')==='on'})});await api('/rest/v1/booking_bundle_items?bundle_id=eq.'+id,{method:'DELETE'});for(const [n,line] of String(f.get('contents')||'').split('\n').map(x=>x.trim()).filter(Boolean).entries()){const [name,...d]=line.split('|');await api('/rest/v1/booking_bundle_items',{method:'POST',body:JSON.stringify({bundle_id:id,name:name.trim(),description:d.join('|').trim()||null,sort_order:n,active:true})})}closeModal();loadBuffets()}}
@@ -175,8 +211,8 @@ async function setOrder(id,status,payment){await api('/rest/v1/rpc/admin_set_ord
 async function setOrderAndWhatsApp(id,status,payment,wa,textMessage){
   const digits=String(wa||'').replace(/\D/g,'');
   if(!/^2567\d{8}$/.test(digits)){msg(new Error('This order does not have a valid Uganda WhatsApp number.'));return}
+  try{await api('/rest/v1/rpc/admin_set_order_status',{method:'POST',body:JSON.stringify({p_order_id:id,p_status:status,p_payment_status:payment})});await loadOrders()}catch(e){msg(e);return}
   window.location.href='whatsapp://send?phone='+digits+'&text='+textMessage;
-  try{await api('/rest/v1/rpc/admin_set_order_status',{method:'POST',body:JSON.stringify({p_order_id:id,p_status:status,p_payment_status:payment})});await loadOrders()}catch(e){msg(e)}
 }
 async function loadOrderItems(id){let r=await api('/rest/v1/order_items?select=id,qty,unit_price,item_name_snapshot,notes,menu_items(name,station_id,service_stations(name))&order_id=eq.'+id);if(['barista','chef'].includes(profile?.role)){const target=profile.role==='barista'?'Barista':'Kitchen';r=r.filter(x=>(x.menu_items?.service_stations?.name||'')===target)}$('#orderItemsTable').innerHTML='<table><tr><th>Item</th><th>Station</th><th>Qty</th><th>Price</th><th>Notes</th></tr>'+r.map(x=>'<tr><td>'+esc(x.item_name_snapshot||x.menu_items?.name||'')+'</td><td><span class="pill">'+esc(x.menu_items?.service_stations?.name||'Unassigned')+'</span></td><td>'+x.qty+'</td><td>UGX '+money(x.unit_price)+'</td><td>'+esc(x.notes||'')+'</td></tr>').join('')+'</table>'}
 
@@ -235,7 +271,7 @@ async function loadInventory(){
     const rows0=profile?.role==='barista'?r.filter(x=>x.service_stations?.name==='Barista'):profile?.role==='chef'?r.filter(x=>x.service_stations?.name==='Kitchen'):r;
     const low=rows0.filter(x=>Number(stock[x.id]||0)<=Number(x.reorder_level||0));
     box.innerHTML=(low.length?'<div class="low-stock-banner"><strong>Low stock: '+low.length+' item(s)</strong><span>'+low.map(x=>esc(x.name)).join(', ')+'</span></div>':'')+(rows0.length?'<table><thead><tr><th>Item</th><th>Category</th><th>Unit</th><th>Station</th><th>Reorder</th><th>Active</th><th></th></tr></thead><tbody>'+
-      rows.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.category||'')+'</td><td>'+esc(x.unit||'')+'</td><td><span class="pill">'+esc(x.service_stations?.name||'Unassigned')+'</span></td><td>'+esc(x.reorder_level??0)+'</td><td>'+esc(x.active?'Yes':'No')+'</td><td><button class="btn" data-edit-inv="'+x.id+'">Edit</button></td></tr>').join('')+
+      rows0.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.category||'')+'</td><td>'+esc(x.unit||'')+'</td><td><span class="pill">'+esc(x.service_stations?.name||'Unassigned')+'</span></td><td>'+esc(x.reorder_level??0)+'</td><td>'+esc(x.active?'Yes':'No')+'</td><td><button class="btn" data-edit-inv="'+x.id+'">Edit</button></td></tr>').join('')+
       '</tbody></table>':'<div class="state">No inventory items found.</div>';
     $$('[data-edit-inv]').forEach(x=>x.onclick=()=>editInventory(x.dataset.editInv));
   }catch(e){box.innerHTML='<div class="state">Inventory could not be loaded. '+esc(e.message||'Please try again.')+'</div>'}
@@ -349,6 +385,8 @@ async function editStaff(id,roles){const x=(await api('/rest/v1/profiles?id=eq.'
 let lastReport=null;
 async function loadReport(){
   const from=$('#reportFrom').value||today(),to=$('#reportTo').value||today();
+  if(from>to){alert('The report start date cannot be after the end date.');return}
+  const service=$('#reportService')?.value||'All Services';
   const [b,o,e,p,m,d]=await Promise.all([
     api('/rest/v1/bookings?select=id,total,booking_date,status,payment_status&booking_date=gte.'+from+'&booking_date=lte.'+to+'&status=neq.cancelled'),
     api('/rest/v1/orders?select=id,total,created_at,status,payment_status&created_at=gte.'+from+'T00:00:00&created_at=lte.'+to+'T23:59:59&status=neq.cancelled'),
@@ -357,6 +395,12 @@ async function loadReport(){
     api('/rest/v1/stock_movements?select=id,item_id,quantity,movement_type,reason,supplier,staff_id,created_at&created_at=gte.'+from+'T00:00&created_at=lte.'+to+'T23:59:59&order=created_at.desc'),
     api('/rest/v1/inventory_daily_counts?select=id,inventory_item_id,count_date,physical_quantity,counted_by,notes&count_date=gte.'+from+'&count_date=lte.'+to+'&order=count_date.desc')
   ]);
+  if(service!=='All Services'){
+    if(service==='Bookings'){o.length=0;e.length=0;p.length=0}
+    else if(service==='Orders'){b.length=0;e.length=0;p.length=0}
+    else if(service==='Events'){b.length=0;o.length=0;p.length=0}
+    else if(service==='Purchases'){b.length=0;o.length=0;e.length=0}
+  }
   const [inv,mAll]=await Promise.all([
     api('/rest/v1/inventory_items?select=id,name,unit,category,station_id&active=eq.true&order=name.asc'),
     api('/rest/v1/stock_movements?select=item_id,quantity,movement_type')
@@ -369,7 +413,6 @@ async function loadReport(){
   const cashIn=b.filter(paid).reduce((a,x)=>a+Number(x.total||0),0)+o.filter(paid).reduce((a,x)=>a+Number(x.total||0),0)+e.reduce((a,x)=>a+Number(x.total||0),0);
   const outstanding=b.filter(x=>!paid(x)).reduce((a,x)=>a+Number(x.total||0),0)+o.filter(x=>!paid(x)).reduce((a,x)=>a+Number(x.total||0),0);
   const net=cashIn-spend;
-  $('#reportBookings').textContent=b.length;$('#reportOrders').textContent=o.length;$('#reportEvents').textContent=e.length;
   $('#reportRevenue').textContent='UGX '+money(cashIn);$('#reportPurchases').textContent='UGX '+money(spend);
   $('#reportNet').textContent='UGX '+money(net);$('#reportOutstanding').textContent='UGX '+money(outstanding);
   const inOrders=o.filter(paid).reduce((a,x)=>a+Number(x.total||0),0),inBookings=b.filter(paid).reduce((a,x)=>a+Number(x.total||0),0),inEvents=e.reduce((a,x)=>a+Number(x.total||0),0);
@@ -385,7 +428,6 @@ async function loadReport(){
   setLegend('moneyOutLegend',[['Food Purchases','UGX '+money(foodSpend)],['Beverage Purchases','UGX '+money(beverageSpend)],['Other Purchases','UGX '+money(otherSpend)],['Operating Expenses','UGX 0']]);
   $('#moneyInDonutValue').textContent=money(cashIn);$('#moneyOutDonutValue').textContent=money(spend);
   const max=Math.max(cashIn,spend,Math.abs(net),1);document.querySelectorAll('#cashFlowChart .bar-col').forEach((el,i)=>{const v=[cashIn,spend,Math.abs(net)][i];el.querySelector('span').textContent=money(v);el.querySelector('i').style.height=Math.max(3,(v/max)*78)+'%'});
-  $('#reportInSummary').textContent='UGX '+money(cashIn);$('#reportOutSummary').textContent='UGX '+money(spend);$('#reportNetSummary').textContent='UGX '+money(net);$('#reportStockSummary').textContent=m.length+' movements';
   const movementRows=m.map(x=>['Stock movement',x.id,String(x.created_at||'').slice(0,10),x.movement_type||'',(invById[x.item_id]?.name||x.item_id)+' — '+(x.reason||''),x.quantity]);
   const balances={};mAll.forEach(x=>{const q=Number(x.quantity||0);balances[x.item_id]=(balances[x.item_id]||0)+(String(x.movement_type||'').toLowerCase()==='out'?-q:q)});
   const inventoryRows=inv.map(x=>['Inventory balance',x.id,to||today(),'current',(x.name+' ('+x.unit+')'),balances[x.id]||0]);
@@ -414,7 +456,7 @@ async function loadReport(){
 function renderReportView(view){
   if(!lastReport)return;
   const titles={treasury:'Treasury / Cash Flow',sales:'Sales & Revenue',purchases:'Purchases & Expenses',inventory:'Inventory & Stock Flow'};
-  $('#reportTableTitle').textContent=titles[view]||titles.treasury;
+  const reportTitle=$('#reportTableTitle'); if(reportTitle)reportTitle.textContent=titles[view]||titles.treasury;
   const rows=lastReport.views?.[view]||lastReport.rows;
   $('#reportTable').innerHTML=table(['Type','ID','Date','Status / Type','Item / Supplier','Value / Quantity'],rows,x=>x);
   document.querySelectorAll('[data-report-view]').forEach(b=>b.classList.toggle('active',b.dataset.reportView===view));
