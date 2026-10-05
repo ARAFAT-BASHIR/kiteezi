@@ -356,5 +356,7 @@ grant execute on function public.finalize_order_inventory(uuid) to service_role;
 
 -- Audit trail hardening: active staff may read/append only; no staff UPDATE/DELETE.
 drop policy if exists "Active staff can manage audit logs" on public.audit_logs;
+drop policy if exists "Active staff can read audit logs" on public.audit_logs;
+drop policy if exists "Active staff can append audit logs" on public.audit_logs;
 create policy "Active staff can read audit logs" on public.audit_logs for select to authenticated using(private.is_active_staff());
 create policy "Active staff can append audit logs" on public.audit_logs for insert to authenticated with check(private.is_active_staff());
