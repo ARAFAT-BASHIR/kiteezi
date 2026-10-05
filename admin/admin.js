@@ -55,17 +55,6 @@ async function loadStations(){return api('/rest/v1/service_stations?select=id,na
 let UNIT_OPTIONS=[];
 async function loadUnitOptions(){if(UNIT_OPTIONS.length)return UNIT_OPTIONS;const rows=await api('/rest/v1/unit_options?select=code,label,category&active=eq.true&order=sort_order.asc,label.asc');UNIT_OPTIONS=Array.isArray(rows)?rows:[];return UNIT_OPTIONS}
 function unitOptionsHtml(selected=''){const v=String(selected||'').toLowerCase();return '<option value="">Choose unit</option>'+UNIT_OPTIONS.map(u=>'<option value="'+esc(u.code)+'" '+(u.code===v?'selected':'')+'>'+esc(u.label)+'</option>').join('')}
-let UNIT_OPTIONS=[];
-async function loadUnitOptions(){
-  if(UNIT_OPTIONS.length)return UNIT_OPTIONS;
-  const rows=await api('/rest/v1/unit_options?select=code,label,category&active=eq.true&order=sort_order.asc,label.asc');
-  UNIT_OPTIONS=Array.isArray(rows)?rows:[];
-  return UNIT_OPTIONS;
-}
-function unitOptionsHtml(selected=''){
-  const value=String(selected||'').toLowerCase();
-  return '<option value="">Choose unit</option>'+UNIT_OPTIONS.map(u=>'<option value="'+esc(u.code)+'" '+(u.code===value?'selected':'')+'>'+esc(u.label)+'</option>').join('');
-}
 async function bootAdmin(authSession){
   try{
     session=authSession||JSON.parse(sessionStorage.getItem('kiteezi_admin_session')||'null');
