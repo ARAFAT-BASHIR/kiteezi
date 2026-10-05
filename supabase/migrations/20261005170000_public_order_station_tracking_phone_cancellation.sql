@@ -324,3 +324,31 @@ create index if not exists idx_pool_allocations_inventory_item on public.pool_al
 create index if not exists idx_pool_allocations_menu_item on public.pool_allocations(menu_item_id);
 create index if not exists idx_pool_allocations_order on public.pool_allocations(order_id);
 create index if not exists idx_shared_pool_menu_rules_inventory_item on public.shared_pool_menu_rules(inventory_item_id);
+
+
+-- Correct shared-pool finalization: aggregate all pool fragments before writing physical stock consumption.
+create or replace function public.finalize_order_inventory(p_order_id uuid)
+returns boolean language plpgsql security definer
+set search_path=public,private,pg_catalog,pg_temp as $$
+declare v_reservation public.order_inventory_reservations%rowtype; line record; pa record;
+begin
+ if not private.has_permission('orders.manage') then raise exception 'Not authorized'; end if;
+ select * into v_reservation from public.order_inventory_reservations where order_id=p_order_id and status='reserved' for update;
+ if not found then
+   if exists(select 1 from public.order_inventory_reservations where order_id=p_order_id and status='consumed') then return true; end if;
+   raise exception 'Order % has no active inventory reservation. Confirm the order before completing it.',p_order_id;
+ end if;
+ for line in select * from public.order_inventory_reservation_lines where reservation_id=v_reservation.id order by id loop
+   insert into public.inventory_consumptions(order_id,order_item_id,inventory_item_id,quantity) values(p_order_id,line.order_item_id,line.inventory_item_id,line.quantity) on conflict(order_item_id,inventory_item_id) do nothing;
+   if found then insert into public.stock_movements(item_id,quantity,movement_type,reason,staff_id) values(line.inventory_item_id,line.quantity,'out','Order '||p_order_id::text,auth.uid()); end if;
+ end loop;
+ for pa in select order_item_id,inventory_item_id,sum(consumed_quantity) consumed_quantity from public.pool_allocations where reservation_id=v_reservation.id and allocation_status='reserved' group by order_item_id,inventory_item_id order by order_item_id,inventory_item_id loop
+   insert into public.inventory_consumptions(order_id,order_item_id,inventory_item_id,quantity) values(p_order_id,pa.order_item_id,pa.inventory_item_id,pa.consumed_quantity) on conflict(order_item_id,inventory_item_id) do update set quantity=greatest(public.inventory_consumptions.quantity,excluded.quantity);
+   insert into public.stock_movements(item_id,quantity,movement_type,reason,staff_id) select pa.inventory_item_id,pa.consumed_quantity,'out','Order '||p_order_id::text||' shared pool',auth.uid() where not exists(select 1 from public.stock_movements sm where sm.item_id=pa.inventory_item_id and sm.movement_type='out' and sm.reason='Order '||p_order_id::text||' shared pool');
+ end loop;
+ update public.pool_allocations set allocation_status='consumed' where reservation_id=v_reservation.id and allocation_status='reserved';
+ update public.order_inventory_reservations set status='consumed',consumed_at=now() where id=v_reservation.id;
+ return true;
+end; $$;
+revoke all on function public.finalize_order_inventory(uuid) from public,anon,authenticated;
+grant execute on function public.finalize_order_inventory(uuid) to service_role;
