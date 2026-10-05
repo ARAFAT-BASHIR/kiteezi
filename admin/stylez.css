@@ -214,3 +214,242 @@ body.admin #app.admin-shell>.main>.tab:not(.active){display:none!important}
  body.admin #app.admin-shell>.main{padding-left:9px!important;padding-right:9px!important}
  body.admin #app.admin-shell>.main>.toolbar{margin-left:-9px!important;margin-right:-9px!important;padding-left:9px!important;padding-right:9px!important}
 }
+
+/* === Mobile admin display matched to Kiteezi reference layout === */
+/* The reference is a compact mobile operations shell: dark branded header,
+   horizontal primary navigation, then a clean light dashboard workspace. */
+.admin .brand-mark{overflow:hidden;flex:0 0 auto}
+.admin .brand-mark img{display:block;width:100%;height:100%;object-fit:contain;border-radius:inherit;background:#fff}
+
+@media(max-width:900px){
+  body.admin{background:#f4f6f4}
+  body.admin .admin-shell{display:block!important;min-height:100vh}
+  body.admin .side{
+    position:relative!important;
+    top:auto;left:auto;bottom:auto;
+    width:100%!important;height:auto!important;
+    max-height:none;overflow:visible;
+    padding:24px 25px 14px!important;
+    background:linear-gradient(180deg,#09271c 0%,#082219 100%);
+    border:0;
+    box-shadow:none;
+  }
+  body.admin .side .brand{
+    width:100%;max-width:none!important;
+    display:flex;
+    align-items:center;
+    gap:24px;
+    padding:0 8px 22px!important;
+    margin:0!important;
+    border:0;
+  }
+  body.admin .side .brand-mark{
+    width:86px;height:86px;
+    border-radius:0;
+    background:#fff;
+    box-shadow:none;
+  }
+  body.admin .side .brand>span:last-child{
+    color:#174d39;
+    font-size:25px;
+    line-height:1.05;
+    letter-spacing:-.02em;
+  }
+  body.admin .side .brand small{
+    margin-top:9px;
+    color:#a9b7b0;
+    font-size:13px;
+    letter-spacing:.14em;
+  }
+  body.admin .side #logout{
+    position:absolute;
+    right:27px;top:27px;
+    min-height:55px!important;
+    padding:10px 28px!important;
+    border-radius:18px!important;
+    background:rgba(255,255,255,.04)!important;
+    border:2px solid rgba(255,255,255,.13)!important;
+    color:#edf3ef!important;
+    font-size:18px!important;
+    font-weight:500;
+  }
+  body.admin .side nav{
+    display:flex!important;
+    align-items:flex-end;
+    gap:8px!important;
+    width:calc(100% + 0px);
+    margin:0;
+    padding:0;
+    overflow-x:auto;
+    overflow-y:hidden;
+    scrollbar-width:none;
+    border-bottom:0;
+  }
+  body.admin .side nav::-webkit-scrollbar{display:none}
+  body.admin .side nav a{
+    flex:0 0 auto!important;
+    width:auto!important;
+    min-height:72px;
+    padding:18px 23px 16px!important;
+    display:flex!important;
+    align-items:center;
+    justify-content:center;
+    white-space:nowrap!important;
+    border-radius:25px 25px 0 0;
+    color:#d6e0db;
+    font-size:18px;
+    font-weight:600;
+    letter-spacing:-.01em;
+  }
+  body.admin .side nav a::before{display:none!important}
+  body.admin .side nav a.active{
+    background:#397e60;
+    color:#fff;
+    box-shadow:none;
+  }
+
+  body.admin .main{
+    grid-column:auto;
+    width:100%!important;
+    padding:0!important;
+    margin:0!important;
+    background:#f4f6f4;
+  }
+  body.admin .main>.toolbar{
+    position:relative!important;
+    top:auto;
+    margin:0!important;
+    padding:30px 33px 32px!important;
+    min-height:348px;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-rows:auto auto;
+    align-items:start;
+    gap:0 16px;
+    background:#f4f6f4;
+    border:0;
+    box-shadow:none;
+    backdrop-filter:none;
+  }
+  body.admin .main>.toolbar>div:first-child{
+    width:auto!important;
+    min-width:0;
+    grid-column:1/-1;
+  }
+  body.admin .main>.toolbar .eyebrow{
+    margin:0 0 30px;
+    font-size:17px;
+    line-height:1;
+    letter-spacing:.12em;
+    color:#c5a329;
+  }
+  body.admin .main>.toolbar h1{
+    margin:0 0 30px!important;
+    font-size:42px!important;
+    line-height:1.08!important;
+    letter-spacing:-.025em;
+    color:#17221d;
+  }
+  body.admin .main>.toolbar #who{
+    font-size:24px;
+    line-height:1.25;
+    color:#68736d;
+  }
+  body.admin .main>.toolbar #rolePill{
+    grid-column:1;
+    grid-row:2;
+    align-self:end;
+    justify-self:start;
+    margin:34px 0 0!important;
+    padding:10px 17px;
+    border-radius:999px;
+    background:#edf4ef;
+    color:#214b39;
+    font-size:18px;
+    line-height:1;
+  }
+  body.admin .main>.toolbar #notificationBell{
+    grid-column:2;
+    grid-row:2;
+    align-self:end;
+    justify-self:end;
+    margin:16px 0 0!important;
+    width:110px;
+    height:84px;
+    border-radius:20px;
+    background:#fff;
+    border:2px solid #dfe5e1;
+    box-shadow:0 5px 18px rgba(17,35,27,.07);
+    font-size:25px;
+  }
+  body.admin #notificationPanel{
+    position:absolute!important;
+    right:33px;
+    top:275px;
+    width:min(520px,calc(100vw - 66px));
+  }
+
+  body.admin .tab{
+    width:100%;
+    max-width:none;
+    margin:0;
+    padding:0 33px 40px;
+  }
+  body.admin .metrics{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:32px;
+    margin:0 0 32px;
+  }
+  body.admin .metric{
+    min-height:207px;
+    padding:34px 30px;
+    border-radius:28px;
+    border:2px solid #dfe5e1;
+    box-shadow:0 4px 14px rgba(17,35,27,.035);
+    font-size:23px;
+    line-height:1.35;
+  }
+  body.admin .metric b{
+    margin-bottom:22px;
+    font-size:46px;
+    line-height:1;
+  }
+  body.admin #dashboard>.panel{
+    border-radius:28px;
+    padding:42px 32px;
+  }
+  body.admin #dashboard>.panel h2{
+    font-size:43px;
+    margin:0;
+  }
+
+  /* Keep the same visual language on the other admin tabs. */
+  body.admin .panel{
+    border-radius:22px;
+    padding:24px;
+    box-shadow:0 4px 15px rgba(17,35,27,.04);
+  }
+  body.admin .panel>.toolbar h2{font-size:24px}
+  body.admin .btn{font-size:16px}
+  body.admin table{font-size:14px}
+}
+
+@media(max-width:600px){
+  body.admin .side{padding:20px 18px 10px!important}
+  body.admin .side .brand{gap:16px;padding:0 8px 20px!important}
+  body.admin .side .brand-mark{width:76px;height:76px}
+  body.admin .side .brand>span:last-child{font-size:21px}
+  body.admin .side .brand small{font-size:11px;margin-top:7px}
+  body.admin .side #logout{right:18px;top:22px;min-height:50px!important;padding:8px 19px!important;font-size:16px!important}
+  body.admin .side nav a{min-height:62px;padding:15px 17px 13px!important;font-size:16px}
+  body.admin .main>.toolbar{padding:27px 32px 30px!important;min-height:325px}
+  body.admin .main>.toolbar .eyebrow{font-size:15px;margin-bottom:27px}
+  body.admin .main>.toolbar h1{font-size:36px!important;margin-bottom:27px!important}
+  body.admin .main>.toolbar #who{font-size:20px}
+  body.admin .main>.toolbar #rolePill{font-size:16px;padding:9px 15px}
+  body.admin .main>.toolbar #notificationBell{width:94px;height:76px;font-size:22px}
+  body.admin .tab{padding:0 32px 32px}
+  body.admin .metrics{gap:24px}
+  body.admin .metric{min-height:205px;padding:30px 27px;border-radius:25px;font-size:20px}
+  body.admin .metric b{font-size:43px}
+}
