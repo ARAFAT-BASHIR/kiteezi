@@ -20,7 +20,7 @@ const TAB_FALLBACK_PERMISSIONS={
 const hasPermission=code=>profile?.role==='owner'||permissions.has(code);
 const canSeeTab=name=>hasPermission(TAB_PERMISSIONS[name])||(TAB_FALLBACK_PERMISSIONS[name]||[]).some(hasPermission);
 
-const $=(s,r=document)=>r.querySelector(s), $=(s,r=document)=>[...r.querySelectorAll(s)];
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const setHTML=(s,v)=>{const el=$(s);if(el)el.innerHTML=v;};
 const setText=(s,v)=>{const el=$(s);if(el)el.textContent=v;};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
