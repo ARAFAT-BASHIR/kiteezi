@@ -202,7 +202,7 @@
 
           /* Never expose the wa.me URL as visible public text. */
           if (element.dataset.social === 'whatsapp' || element.classList.contains('whatsapp-icon')) {
-            element.textContent = '◉';
+            element.innerHTML = '<i class="fa-brands fa-whatsapp" aria-hidden="true"></i>';
           } else {
             element.textContent = whatsappNumber || cleanWhatsApp(settings.whatsapp);
           }
@@ -227,24 +227,24 @@
       facebook: settings.facebook,
       instagram: settings.instagram,
       youtube: settings.youtube,
-      whatsapp: whatsappLink
+      whatsapp: whatsappLink,
+      tiktok: settings.tiktok,
+      x: settings.x,
+      twitter: settings.twitter || settings.x
     };
 
-    document
-      .querySelectorAll(
-        '[data-social]'
-      )
-      .forEach(element => {
-        const name = element.dataset.social;
-        const link = socialMap[name];
-
-        if (link) {
-          element.href = link;
-          element.hidden = false;
-        } else {
-          element.hidden = true;
-        }
-      });
+    document.querySelectorAll('[data-social]').forEach(element => {
+      const name = String(element.dataset.social || '').toLowerCase();
+      const link = socialMap[name] || (name === 'twitter' ? socialMap.x : '');
+      if (link) {
+        element.href = link;
+        element.target = '_blank';
+        element.rel = 'noopener noreferrer';
+        element.hidden = false;
+      } else {
+        element.hidden = true;
+      }
+    });
 
     /*
       PAYMENT CONTACTS
@@ -385,12 +385,60 @@
   }
 
 
+  function socialIcon(platform) {
+    const name = String(platform || '').trim().toLowerCase();
+    const classes = {
+      facebook: 'fa-brands fa-facebook-f',
+      instagram: 'fa-brands fa-instagram',
+      youtube: 'fa-brands fa-youtube',
+      whatsapp: 'fa-brands fa-whatsapp',
+      tiktok: 'fa-brands fa-tiktok',
+      x: 'fa-brands fa-x-twitter',
+      twitter: 'fa-brands fa-x-twitter'
+    };
+    return classes[name] || 'fa-brands fa-globe';
+  }
+
   async function applySocialLinks() {
-    const response = await fetch(url + '/rest/v1/social_links?select=platform,label,url,icon,sort_order&active=eq.true&order=sort_order.asc', { headers });
+    const response = await fetch(
+      url + '/rest/v1/social_links?select=platform,label,url,icon,sort_order&active=eq.true&order=sort_order.asc',
+      { headers }
+    );
     if (!response.ok) throw new Error('Could not load social links.');
+
     const rows = await response.json();
+    const byPlatform = {};
+    (Array.isArray(rows) ? rows : []).forEach(row => {
+      byPlatform[String(row.platform || '').trim().toLowerCase()] = row;
+    });
+
+    document.querySelectorAll('[data-social]').forEach(element => {
+      const requested = String(element.dataset.social || '').trim().toLowerCase();
+      const keys = requested === 'twitter' ? ['twitter', 'x'] : [requested];
+      const row = keys.map(key => byPlatform[key]).find(Boolean);
+
+      if (!row || !row.url) {
+        element.hidden = true;
+        return;
+      }
+
+      element.hidden = false;
+      element.href = String(row.url);
+      element.target = '_blank';
+      element.rel = 'noopener noreferrer';
+      element.setAttribute('aria-label', row.label || requested);
+      element.title = row.label || requested;
+      element.innerHTML = '<i class="' + socialIcon(row.platform) + '" aria-hidden="true"></i>';
+    });
+
     document.querySelectorAll('[data-social-links]').forEach(container => {
-      container.innerHTML = rows.map(row => '<a href="' + String(row.url).replace(/"/g,'&quot;') + '" target="_blank" rel="noopener noreferrer" aria-label="' + String(row.label).replace(/"/g,'&quot;') + '">' + String(row.icon || row.label).replace(/[<>]/g,'') + '</a>').join('');
+      container.innerHTML = (Array.isArray(rows) ? rows : []).map(row => {
+        const label = String(row.label || row.platform || '');
+        const href = String(row.url || '').replace(/"/g, '&quot;');
+        return '<a class="social-link" href="' + href + '" target="_blank" rel="noopener noreferrer" aria-label="' +
+          label.replace(/"/g, '&quot;') + '" title="' + label.replace(/"/g, '&quot;') +
+          '"><i class="' + socialIcon(row.platform) + '" aria-hidden="true"></i></a>';
+      }).join('');
       container.hidden = rows.length === 0;
     });
   }
