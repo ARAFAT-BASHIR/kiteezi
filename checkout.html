@@ -248,6 +248,7 @@
         </h2>
 
         <div id="cart-lines"></div>
+        <div id="cart-availability" class="notice" hidden></div>
 
         <div class="total">
 
@@ -293,17 +294,9 @@
 
           <div class="field">
 
-            <label for="phone">
-              Phone number *
-            </label>
-
-            <input
-              id="phone"
-              name="phone"
-              required
-              autocomplete="tel"
-              inputmode="tel"
-            >
+            <label for="phone">Phone number *</label>
+            <input id="phone" name="phone" required autocomplete="tel" inputmode="tel" placeholder="+256700190708 or 0700190708">
+            <small class="muted">Uganda local numbers are accepted. International numbers may be entered with +country code.</small>
 
           </div>
 
@@ -629,8 +622,44 @@
   }
 
 
-  let cart =
-    readCart();
+  let cart = readCart();
+
+  const availabilityBox = document.getElementById('cart-availability');
+
+  async function validateCartAvailability() {
+    if (!cart.length) {
+      availabilityBox.hidden = true;
+      return false;
+    }
+    const ids = cart.map(x => x.id).filter(Boolean);
+    const params = ids.map(id => encodeURIComponent(id)).join(',');
+    try {
+      const response = await fetch(
+        SUPABASE_URL + '/rest/v1/menu_items?select=id,name,in_stock,price,price_on_request&id=in.(' + params + ')',
+        { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' } }
+      );
+      const rows = response.ok ? await response.json() : [];
+      const byId = new Map((Array.isArray(rows) ? rows : []).map(x => [String(x.id), x]));
+      const unavailable = cart.filter(item => {
+        const row = byId.get(String(item.id));
+        return !row || row.in_stock !== true || row.price_on_request === true || Number(row.price || 0) <= 0;
+      });
+      if (unavailable.length) {
+        availabilityBox.hidden = false;
+        availabilityBox.innerHTML = '<strong>Action required before submission.</strong><br>' +
+          unavailable.map(x => escapeHtml(x.name) + ' is no longer available at the current online price. Please remove or adjust it yourself.').join('<br>');
+        submitButton.disabled = true;
+        return false;
+      }
+      availabilityBox.hidden = true;
+      return true;
+    } catch (error) {
+      availabilityBox.hidden = false;
+      availabilityBox.textContent = 'We could not verify the current availability of your cart. Please try again.';
+      submitButton.disabled = true;
+      return false;
+    }
+  }
 
 
   function renderCart() {
@@ -727,9 +756,8 @@
       );
 
 
-    cartTotal.textContent =
-      money(total);
-
+    cartTotal.textContent = money(total);
+    validateCartAvailability();
   }
 
 
@@ -866,13 +894,12 @@
   async function submitOrder() {
 
     if (!cart.length) {
-
       renderCart();
+      throw new Error('Your cart is empty.');
+    }
 
-      throw new Error(
-        'Your cart is empty.'
-      );
-
+    if (!(await validateCartAvailability())) {
+      throw new Error('One or more cart items need your attention before the order can be submitted.');
     }
 
 
