@@ -485,6 +485,28 @@
       });
   }
 
+  function ensureSharedFooter() {
+    const footer = document.querySelector('.footer');
+    if (!footer) return;
+    const compact = footer.querySelector('.copyright') && !footer.querySelector('.footer-grid');
+    if (!compact) return;
+    footer.innerHTML = `
+      <div class="container footer-grid">
+        <div>
+          <div class="brand footer-brand">
+            <span class="brand-mark">K</span>
+            <span><span class="brand-name">Kiteezi Recreational Center</span><small>Comfort • Dining • Recreation</small></span>
+          </div>
+          <p>Swimming, dining, sports, gardens, celebrations and everyday relaxation in Kiteezi.</p>
+          <div class="socials" data-social-links aria-label="Social media"></div>
+        </div>
+        <div><h4>Explore</h4><a href="index.html">Home</a><a href="menu.html">Restaurant &amp; Menu</a><a href="events.html">Events &amp; Catering</a><a href="sports.html">Sports</a><a href="about.html">About Kiteezi</a></div>
+        <div><h4>Swimming</h4><a href="booking.html?service=swimming">Public Swimming</a><a href="swimming-schedule.html">School Swimming</a><a href="inquiry.html?type=coaching">Swimming Training</a><a href="inquiry.html?type=swimming">Swimming Enquiries</a></div>
+        <div><h4>Contact</h4><a data-site-setting="phone" href="#">+256 766 529086</a><a data-site-setting="whatsapp" data-site-setting-href="whatsapp_link" href="#" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><span aria-hidden="true">◉</span></a><a href="contact.html">Contact page</a></div>
+      </div>
+      <div class="container copyright">© <span data-year></span> Kiteezi Recreational Center. All rights reserved.</div>`;
+  }
+
   function initMobileNavigation() {
     const button =
       $('[data-mobile]');
@@ -565,6 +587,7 @@
     renderMenuCatalog();
     renderHomeMenu();
     initMobileNavigation();
+    ensureSharedFooter();
     initSiteYear();
     initInquiryAccess();
     preventDeadHashLinks();
