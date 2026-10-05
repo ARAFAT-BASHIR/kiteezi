@@ -258,7 +258,25 @@ async function loadOrders(){
   document.querySelectorAll('[data-confirm-wa]').forEach(x=>x.onclick=()=>setOrderAndWhatsApp(x.dataset.confirmWa,'confirmed',null,x.dataset.wa,x.dataset.watext));
   document.querySelectorAll('[data-paid]').forEach(x=>x.onclick=()=>setOrder(x.dataset.paid,null,'paid'));
   document.querySelectorAll('[data-done-wa]').forEach(x=>x.onclick=()=>setOrderAndWhatsApp(x.dataset.doneWa,'completed',null,x.dataset.wa,x.dataset.watext));
-  document.querySelectorAll('[data-station-status]').forEach(x=>x.onchange=async()=>{try{await api('/rest/v1/rpc/set_order_station_status',{method:'POST',body:JSON.stringify({p_order_id:x.dataset.stationStatus,p_station_id:x.dataset.stationId,p_status:x.value})});await loadOrders();}catch(e){msg(e);await loadOrders();}});
+  document.querySelectorAll('[data-station-status]').forEach(x=>x.onchange=async()=>{
+    const orderId=x.dataset.stationStatus;
+    const newStatus=x.value;
+    try{
+      await api('/rest/v1/rpc/set_order_station_status',{method:'POST',body:JSON.stringify({p_order_id:orderId,p_station_id:x.dataset.stationId,p_status:newStatus})});
+      const fresh=await api('/rest/v1/orders?select=id,status,fulfillment_method,customers(name,phone)&id=eq.'+encodeURIComponent(orderId)+'&limit=1');
+      await loadOrders();
+      const order=fresh?.[0];
+      if(newStatus==='complete' && order?.status==='completed'){
+        const customer=order.customers?.name||'Customer',phone=String(order.customers?.phone||'').replace(/\D/g,'');
+        const canonical=/^07[0-9]{8}$/.test(phone)?'256'+phone.slice(1):/^7[0-9]{8}$/.test(phone)?'256'+phone:/^256[0-9]{9}$/.test(phone)?phone:'';
+        if(canonical){
+          const method=String(order.fulfillment_method||'pickup').toLowerCase();
+          const textMessage=method==='delivery'?'Hello '+customer+', your order is completed and ready for delivery.':method==='dine_in'?'Hello '+customer+', your order is completed and ready. Please proceed for dine-in.':'Hello '+customer+', your order is completed and ready for pickup at Kiteezi Recreational Center.';
+          window.location.href='https://wa.me/'+canonical+'?text='+encodeURIComponent(textMessage);
+        }
+      }
+    }catch(e){msg(e);await loadOrders();}
+  });
   document.querySelectorAll('[data-admin-cancel]').forEach(x=>x.onclick=()=>adminCancelOrder(x.dataset.adminCancel,x.dataset.customer,x.dataset.phone));
   document.querySelectorAll('[data-items]').forEach(x=>x.onclick=()=>loadOrderItems(x.dataset.items));
   document.querySelectorAll('[data-delete-order]').forEach(x=>x.onclick=()=>deleteTestRecord('order',x.dataset.deleteOrder));
