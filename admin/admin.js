@@ -19,7 +19,9 @@ const TAB_FALLBACK_PERMISSIONS={
 const hasPermission=code=>profile?.role==='owner'||permissions.has(code);
 const canSeeTab=name=>hasPermission(TAB_PERMISSIONS[name])||(TAB_FALLBACK_PERMISSIONS[name]||[]).some(hasPermission);
 
-const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const $=(s,r=document)=>r.querySelector(s), $=(s,r=document)=>[...r.querySelectorAll(s)];
+const setHTML=(s,v)=>{const el=$(s);if(el)el.innerHTML=v;};
+const setText=(s,v)=>{const el=$(s);if(el)el.textContent=v;};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>new Intl.NumberFormat('en-UG').format(Number(v)||0);
 async function api(path,opt={},token=session?.access_token||KEY){
@@ -252,7 +254,7 @@ async function editRequisition(id){
 }
 async function loadGeneratedPOs(){
   const rows=await api('/rest/v1/purchase_orders?select=id,po_number,requisition_id,status,supplier,reference,total,payment_status,generated_at&order=generated_at.desc');
-  $('#generatedPOTable').innerHTML=rows.length?'<table><tr><th>PO</th><th>Source requisition</th><th>Status</th><th>Supplier</th><th>Total</th><th>Payment</th><th>Generated</th></tr>'+rows.map(x=>'<tr><td>'+esc(x.po_number||x.id.slice(0,8).toUpperCase())+'</td><td>'+esc(x.reference||x.requisition_id||'')+'</td><td>'+esc(x.status)+'</td><td>'+esc(x.supplier||'')+'</td><td>UGX '+money(x.total)+'</td><td>'+esc(x.payment_status)+'</td><td>'+esc(x.generated_at||'')+'</td></tr>').join('')+'</table>':'<div class="state">No generated purchase orders.</div>';
+  setHTML('#generatedPOTable',rows.length?'<table><tr><th>PO</th><th>Source requisition</th><th>Status</th><th>Supplier</th><th>Total</th><th>Payment</th><th>Generated</th></tr>'+rows.map(x=>'<tr><td>'+esc(x.po_number||x.id.slice(0,8).toUpperCase())+'</td><td>'+esc(x.reference||x.requisition_id||'')+'</td><td>'+esc(x.status)+'</td><td>'+esc(x.supplier||'')+'</td><td>UGX '+money(x.total)+'</td><td>'+esc(x.payment_status)+'</td><td>'+esc(x.generated_at||'')+'</td></tr>').join('')+'</table>':'<div class="state">No generated purchase orders.</div>');
 }
 async function createRequisition(){
   const inv=await api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc');
@@ -263,7 +265,7 @@ async function createRequisition(){
 }
 async function loadServiceTally(){
   const rows=await api('/rest/v1/service_logs?select=id,staff_id,item_id,quantity,recorded_at&order=recorded_at.desc&limit=200');
-  $('#serviceTallyTable').innerHTML=rows.length?'<table><tr><th>When</th><th>Staff</th><th>Menu item</th><th>Quantity</th></tr>'+rows.map(x=>'<tr><td>'+esc(x.recorded_at)+'</td><td>'+esc(x.staff_id)+'</td><td>'+esc(x.item_id)+'</td><td>'+esc(x.quantity)+'</td></tr>').join('')+'</table>':'<div class="state">No service tallies recorded.</div>';
+  setHTML('#serviceTallyTable',rows.length?'<table><tr><th>When</th><th>Staff</th><th>Menu item</th><th>Quantity</th></tr>'+rows.map(x=>'<tr><td>'+esc(x.recorded_at)+'</td><td>'+esc(x.staff_id)+'</td><td>'+esc(x.item_id)+'</td><td>'+esc(x.quantity)+'</td></tr>').join('')+'</table>':'<div class="state">No service tallies recorded.</div>');
 }
 async function newServiceLog(){
   const items=await api('/rest/v1/menu_items?select=id,name&order=name.asc');
@@ -498,17 +500,33 @@ async function loadRecipeMappings(){
 async function loadDailyStock(){const d=$('#stockRunDate').value||today();$('#stockRunDate').value=d;const [items,movs,counts,before]=await Promise.all([api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc'),api('/rest/v1/stock_movements?select=item_id,quantity,movement_type,reason,created_at&created_at=gte.'+d+'T00:00:00&created_at=lte.'+d+'T23:59:59'),api('/rest/v1/inventory_daily_counts?select=inventory_item_id,physical_quantity&count_date=eq.'+d),api('/rest/v1/stock_movements?select=item_id,quantity,movement_type&created_at=lt.'+d+'T00:00:00')]);const opening={};before.forEach(x=>opening[x.item_id]=(opening[x.item_id]||0)+(String(x.movement_type).toLowerCase()==='out'?-1:1)*Number(x.quantity||0));const day={};movs.forEach(x=>{const z=day[x.item_id]||{added:0,pos:0,waste:0,owner:0,other:0};const q=Number(x.quantity||0),r=String(x.reason||'').toLowerCase();if(String(x.movement_type).toLowerCase()!=='out')z.added+=q;else if(r.startsWith('order '))z.pos+=q;else if(r==='waste')z.waste+=q;else if(r==='owner taken home')z.owner+=q;else z.other+=q;day[x.item_id]=z});const counted=Object.fromEntries(counts.map(x=>[x.inventory_item_id,Number(x.physical_quantity)]));$('#dailyStockTable').innerHTML='<table><tr><th>Item</th><th>Opening</th><th>Added</th><th>POS Used</th><th>Waste</th><th>Owner Home</th><th>Other</th><th>Expected</th><th>Physical</th><th>Variance</th></tr>'+items.map(x=>{const z=day[x.id]||{added:0,pos:0,waste:0,owner:0,other:0},op=Number(opening[x.id]||0),expected=op+z.added-z.pos-z.waste-z.owner-z.other,p=counted[x.id];return '<tr><td>'+esc(x.name)+'<br><small>'+esc(x.unit)+'</small></td><td>'+op+'</td><td>'+z.added+'</td><td>'+z.pos+'</td><td>'+z.waste+'</td><td>'+z.owner+'</td><td>'+z.other+'</td><td>'+expected+'</td><td>'+(p==null?'—':p)+'</td><td>'+(p==null?'—':p-expected)+'</td></tr>'}).join('')+'</table>'}
 async function loadPurchases(){
   const orders=await api('/rest/v1/purchase_orders?select=*&order=created_at.desc');
-  $('#purchaseOrdersTable').innerHTML=orders.length?'<table><tr><th>PO</th><th>Supplier</th><th>Reference</th><th>Status</th><th>Received</th><th>Paid</th><th>Total</th><th></th></tr>'+
+  setHTML('#purchaseOrdersTable',orders.length?'<table><tr><th>PO</th><th>Supplier</th><th>Reference</th><th>Status</th><th>Received</th><th>Paid</th><th>Total</th><th>Actions</th></tr>'+
     orders.map(o=>'<tr><td>'+esc(o.po_number||o.id.slice(0,8).toUpperCase())+'</td><td>'+esc(o.supplier||'')+'</td><td>'+esc(o.reference||'')+'</td><td>'+esc(o.status||'ordered')+'</td><td>'+esc(['received','partially_received'].includes(String(o.status))?'Yes':'No')+'</td><td>'+esc(o.payment_status||'unpaid')+'</td><td>UGX '+money(o.total)+'</td><td class="actions">'+
-    (o.status!=='received'&&o.status!=='cancelled'?'<button class="btn" data-receive-po="'+o.id+'">Received</button> ':'')+
-    (String(o.payment_status||'unpaid')!=='paid'&&o.status!=='cancelled'?'<button class="btn" data-paid-po="'+o.id+'">Paid</button> ':'')+
+    (o.status!=='received'&&o.status!=='cancelled'?'<button class="btn" data-receive-po="'+o.id+'">Receive</button> ':'')+
+    (String(o.payment_status||'unpaid')!=='paid'&&o.status!=='cancelled'?'<button class="btn" data-paid-po="'+o.id+'">Mark paid</button> ':'')+
     (profile?.role==='owner'?'<button class="btn danger" data-delete-po="'+o.id+'">Delete test</button>':'')+
-    '</td></tr>').join('')+'</table>':'<div class="state">No generated purchase orders yet.</div>';
-  document.querySelectorAll('[data-receive-po]').forEach(x=>x.onclick=()=>receivePurchase(x.dataset.receivePo));
-  document.querySelectorAll('[data-paid-po]').forEach(x=>x.onclick=async e=>{await api('/rest/v1/purchase_orders?id=eq.'+e.currentTarget.dataset.paidPo,{method:'PATCH',body:JSON.stringify({payment_status:'paid'})});loadPurchases()});
-  document.querySelectorAll('[data-delete-po]').forEach(x=>x.onclick=()=>deleteTestRecord('purchase_order',x.dataset.deletePo));
+    '</td></tr>').join('')+'</table>':'<div class="state">No generated purchase orders yet.</div>');
+  $$('[data-receive-po]').forEach(x=>x.onclick=()=>receivePurchase(x.dataset.receivePo));
+  $$('[data-paid-po]').forEach(x=>x.onclick=async e=>{try{await api('/rest/v1/rpc/mark_purchase_order_paid',{method:'POST',body:JSON.stringify({p_purchase_order_id:e.currentTarget.dataset.paidPo})});await loadPurchases();}catch(err){msg(err)}});
+  $$('[data-delete-po]').forEach(x=>x.onclick=()=>deleteTestRecord('purchase_order',x.dataset.deletePo));
 }
-async function receivePurchase(id){const items=await api('/rest/v1/purchase_order_items?select=*,inventory_items(name,unit)&purchase_order_id=eq.'+id);modal('Receive purchase','<form id="receive" class="form">'+items.map(i=>'<label>'+esc(i.inventory_items?.name||'')+' ('+esc(i.inventory_items?.unit||'')+')<input name="'+i.id+'" type="number" step="0.001" min="0" max="'+i.ordered_quantity+'" value="'+Math.max(0,Number(i.ordered_quantity)-Number(i.received_quantity||0))+'"></label>').join('')+'<button class="btn btn-dark">Receive stock</button></form>');$('#receive').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);for(const i of items){const q=Number(f.get(i.id)||0);if(q>0){await api('/rest/v1/stock_movements',{method:'POST',body:JSON.stringify({item_id:i.inventory_item_id,quantity:q,movement_type:'in',reason:'Purchase '+id,staff_id:session.user.id})});await api('/rest/v1/purchase_order_items?id=eq.'+i.id,{method:'PATCH',body:JSON.stringify({received_quantity:Number(i.received_quantity||0)+q})})}}const fresh=await api('/rest/v1/purchase_order_items?select=ordered_quantity,received_quantity&purchase_order_id=eq.'+id);const done=fresh.every(x=>Number(x.received_quantity)>=Number(x.ordered_quantity)),some=fresh.some(x=>Number(x.received_quantity)>0);await api('/rest/v1/purchase_orders?id=eq.'+id,{method:'PATCH',body:JSON.stringify({status:done?'received':(some?'partially_received':'ordered'),received_at:done?new Date().toISOString():null})});closeModal();loadPurchases();loadDailyStock();loadInventory()}}
+async function receivePurchase(id){
+  const items=await api('/rest/v1/purchase_order_items?select=*,inventory_items(name,unit)&purchase_order_id=eq.'+encodeURIComponent(id));
+  if(!items.length){alert('This purchase order has no line items.');return;}
+  modal('Receive purchase','<form id="receive" class="form"><p class="muted">Enter the quantity actually received. Partial receipts are allowed.</p>'+
+    items.map(i=>'<label>'+esc(i.inventory_items?.name||'')+' ('+esc(i.inventory_items?.unit||'')+')<input name="'+i.id+'" type="number" step="0.001" min="0" max="'+Math.max(0,Number(i.ordered_quantity)-Number(i.received_quantity||0))+'" value="'+Math.max(0,Number(i.ordered_quantity)-Number(i.received_quantity||0))+'"></label>').join('')+
+    '<button class="btn btn-dark">Record receipt</button></form>');
+  const form=$('#receive'); if(!form)return;
+  form.onsubmit=async e=>{
+    e.preventDefault(); const fd=new FormData(form);
+    const received=items.map(i=>({purchase_order_item_id:i.id,quantity:Number(fd.get(i.id)||0)})).filter(x=>x.quantity>0);
+    if(!received.length){alert('Enter at least one received quantity.');return;}
+    try{
+      await api('/rest/v1/rpc/receive_purchase_order',{method:'POST',body:JSON.stringify({p_purchase_order_id:id,p_items:received})});
+      closeModal(); await loadPurchases(); await loadDailyStock(); await loadInventory();
+    }catch(err){msg(err);}
+  };
+}
 async function setOpeningStock(){const inv=await api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc');modal('Set opening stock','<form id="openingStockForm" class="form"><p class="muted">Enter the stock physically available when Kiteezi starts its inventory records. This creates auditable opening-balance movements.</p>'+inv.map(x=>'<label>'+esc(x.name)+' ('+esc(x.unit)+')<input name="'+x.id+'" type="number" step="0.001" min="0" placeholder="Opening quantity"></label>').join('')+'<button class="btn btn-dark">Save opening stock</button></form>');$('#openingStockForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const rows=inv.map(x=>({item_id:x.id,quantity:Number(f.get(x.id)||0)})).filter(x=>x.quantity>0);if(!rows.length)return alert('Enter at least one opening quantity.');for(const x of rows){await api('/rest/v1/stock_movements',{method:'POST',body:JSON.stringify({item_id:x.item_id,quantity:x.quantity,movement_type:'in',reason:'Opening Balance',staff_id:session.user.id})})}closeModal();loadInventory();loadDailyStock()}}
 async function addStockAdjustment(){const inv=await api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc');const ownerOnly=String(profile?.role||'').toLowerCase()==='owner';const homeOption=ownerOnly?'<option>Owner Taken Home</option>':'';modal('Add stock movement','<form id="adj" class="form"><select name="item">'+inv.map(x=>'<option value="'+x.id+'">'+esc(x.name)+' ('+esc(x.unit)+')</option>').join('')+'</select><select name="type"><option value="out">Stock out</option><option value="in">Stock in</option></select><select name="reason"><option>Waste</option>'+homeOption+'<option>Other Adjustment</option></select><input name="qty" type="number" step="0.001" min="0.001" placeholder="Quantity" required><textarea name="notes" placeholder="Notes"></textarea><button class="btn btn-dark">Save movement</button></form>');$('#adj').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);await api('/rest/v1/stock_movements',{method:'POST',body:JSON.stringify({item_id:f.get('item'),quantity:Number(f.get('qty')),movement_type:f.get('type'),reason:f.get('reason')+(f.get('notes')?' — '+f.get('notes'):''),staff_id:session.user.id})});closeModal();loadInventory()}}
 async function loadStockMovements(){
@@ -708,20 +726,20 @@ async function loadReport(){
   const cashIn=b.filter(paid).reduce((a,x)=>a+Number(x.total||0),0)+o.filter(paid).reduce((a,x)=>a+Number(x.total||0),0)+e.reduce((a,x)=>a+Number(x.total||0),0);
   const outstanding=b.filter(x=>!paid(x)).reduce((a,x)=>a+Number(x.total||0),0)+o.filter(x=>!paid(x)).reduce((a,x)=>a+Number(x.total||0),0);
   const net=cashIn-spend;
-  $('#reportRevenue').textContent='UGX '+money(cashIn);$('#reportPurchases').textContent='UGX '+money(spend);
-  $('#reportNet').textContent='UGX '+money(net);$('#reportOutstanding').textContent='UGX '+money(outstanding);
+  setText('#reportRevenue','UGX '+money(cashIn);$('#reportPurchases').textContent='UGX '+money(spend));
+  setText('#reportNet','UGX '+money(net);$('#reportOutstanding').textContent='UGX '+money(outstanding));
   const inOrders=o.filter(paid).reduce((a,x)=>a+Number(x.total||0),0),inBookings=b.filter(paid).reduce((a,x)=>a+Number(x.total||0),0),inEvents=e.reduce((a,x)=>a+Number(x.total||0),0);
-  $('#reportInOrders').textContent='UGX '+money(inOrders);$('#reportInBookings').textContent='UGX '+money(inBookings);$('#reportInEvents').textContent='UGX '+money(inEvents);
-  $('#reportOutstandingOrders').textContent='UGX '+money(o.filter(x=>!paid(x)).reduce((a,x)=>a+Number(x.total||0),0));
-  $('#reportOutstandingBookings').textContent='UGX '+money(b.filter(x=>!paid(x)).reduce((a,x)=>a+Number(x.total||0),0));
+  setText('#reportInOrders','UGX '+money(inOrders);$('#reportInBookings').textContent='UGX '+money(inBookings);$('#reportInEvents').textContent='UGX '+money(inEvents));
+  setText('#reportOutstandingOrders','UGX '+money(o.filter(x=>!paid(x)).reduce((a,x)=>a+Number(x.total||0),0)));
+  setText('#reportOutstandingBookings','UGX '+money(b.filter(x=>!paid(x)).reduce((a,x)=>a+Number(x.total||0),0)));
   const foodSpend=p.filter(x=>/food|kitchen/i.test(String(x.category||x.notes||x.supplier||''))).reduce((a,x)=>a+Number(x.total||0),0);
   const beverageSpend=p.filter(x=>/beverage|bar|drink/i.test(String(x.category||x.notes||x.supplier||''))).reduce((a,x)=>a+Number(x.total||0),0);
   const otherSpend=Math.max(0,spend-foodSpend-beverageSpend);
-  $('#reportFoodPurchases').textContent='UGX '+money(foodSpend);$('#reportBeveragePurchases').textContent='UGX '+money(beverageSpend);$('#reportOtherPurchases').textContent='UGX '+money(otherSpend);
+  setText('#reportFoodPurchases','UGX '+money(foodSpend);$('#reportBeveragePurchases').textContent='UGX '+money(beverageSpend);$('#reportOtherPurchases').textContent='UGX '+money(otherSpend));
   const setLegend=(id,items)=>{$('#'+id).innerHTML=items.map((x,i)=>'<div><i class="'+(['','blue','purple','orange','cyan'][i]||'')+'"></i><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')};
   setLegend('moneyInLegend',[['Orders','UGX '+money(inOrders)],['Bookings','UGX '+money(inBookings)],['Events','UGX '+money(inEvents)],['Other','UGX 0']]);
   setLegend('moneyOutLegend',[['Food Purchases','UGX '+money(foodSpend)],['Beverage Purchases','UGX '+money(beverageSpend)],['Other Purchases','UGX '+money(otherSpend)],['Operating Expenses','UGX 0']]);
-  $('#moneyInDonutValue').textContent=money(cashIn);$('#moneyOutDonutValue').textContent=money(spend);
+  setText('#moneyInDonutValue',money(cashIn);$('#moneyOutDonutValue').textContent=money(spend));
   const max=Math.max(cashIn,spend,Math.abs(net),1);document.querySelectorAll('#cashFlowChart .bar-col').forEach((el,i)=>{const v=[cashIn,spend,Math.abs(net)][i];el.querySelector('span').textContent=money(v);el.querySelector('i').style.height=Math.max(3,(v/max)*78)+'%'});
   const movementRows=m.map(x=>['Stock movement',x.id,String(x.created_at||'').slice(0,10),x.movement_type||'',(invById[x.item_id]?.name||x.item_id)+' — '+(x.reason||''),x.quantity]);
   const balances={};mAll.forEach(x=>{const q=Number(x.quantity||0);balances[x.item_id]=(balances[x.item_id]||0)+(String(x.movement_type||'').toLowerCase()==='out'?-q:q)});
@@ -742,10 +760,10 @@ async function loadReport(){
     inventory:rows.filter(x=>['Stock movement','Physical count','Inventory balance'].includes(x[0]))
   };
   const detailRows=[...o.map(x=>['in','Money In','Order',String(x.created_at||'').slice(0,16),'Restaurant','',Number(x.total||0)]),...b.map(x=>['in','Money In','Booking',x.booking_date,'Sports / Booking','',Number(x.total||0)]),...e.map(x=>['in','Money In','Event',x.event_date,'Event','',Number(x.total||0)]),...p.map(x=>['out','Money Out','Purchase',String(x.created_at||'').slice(0,16),x.supplier||'Purchase','',-Number(x.total||0)])].sort((a,b)=>String(a[3]).localeCompare(String(b[3])));
-  $('#reportTable').innerHTML='<table class="treasury-table"><thead><tr><th>Date & Time</th><th>Type</th><th>Source / Expense</th><th>Service</th><th>Description</th><th>Amount (UGX)</th><th>Running Balance (UGX)</th></tr></thead><tbody>'+(()=>{let bal=0;return detailRows.map(r=>{bal+=r[6];return '<tr class="'+r[0]+'"><td>'+esc(r[3])+'</td><td class="'+(r[0]==='in'?'money-in':'money-out')+'">'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td>'+esc(r[4])+'</td><td>'+esc(r[5])+'</td><td class="'+(r[0]==='in'?'money-in':'money-out')+'">'+(r[6]>=0?'+':'')+money(r[6])+'</td><td>'+money(bal)+'</td></tr>'}).join('')})()+'</tbody></table>';
-  $('#salesServiceTable').innerHTML='<table class="mini-table"><thead><tr><th>Service</th><th>Revenue (UGX)</th><th>% of Total</th></tr></thead><tbody>'+[['Restaurant / Kitchen',inOrders],['Bookings / Sports',inBookings],['Events',inEvents]].map(x=>'<tr><td>'+x[0]+'</td><td>'+money(x[1])+'</td><td>'+((cashIn?x[1]/cashIn*100:0).toFixed(1))+'%</td></tr>').join('')+'<tr><th>Total Revenue</th><th>'+money(cashIn)+'</th><th>100%</th></tr></tbody></table>';
-  $('#inventorySummaryTable').innerHTML='<table class="mini-table"><thead><tr><th>Item / Activity</th><th>Purchases</th><th>Used / Movement</th><th>Closing</th></tr></thead><tbody>'+inv.slice(0,8).map(x=>{const q=m.filter(z=>z.item_id===x.id).reduce((a,z)=>a+Number(z.quantity||0),0);return '<tr><td>'+esc(x.name)+'</td><td>—</td><td>'+money(q)+'</td><td>—</td></tr>'}).join('')+'</tbody></table>';
-  $('#reconciliationSummary').innerHTML='<div class="recon-row"><span>Total Money In</span><strong>'+money(cashIn)+'</strong></div><div class="recon-row"><span>Total Money Out</span><strong>'+money(spend)+'</strong></div><div class="recon-row net"><span>Net Cash Movement</span><strong>'+money(net)+'</strong></div><div class="recon-row warning"><span>Inventory Value Change</span><strong>—</strong></div><div class="recon-row info"><span>Outstanding (Unpaid)</span><strong>'+money(outstanding)+'</strong></div>';
+  setHTML('#reportTable','<table class="treasury-table"><thead><tr><th>Date & Time</th><th>Type</th><th>Source / Expense</th><th>Service</th><th>Description</th><th>Amount (UGX)</th><th>Running Balance (UGX)</th></tr></thead><tbody>'+(()=>{let bal=0;return detailRows.map(r=>{bal+=r[6];return '<tr class="'+r[0]+'"><td>'+esc(r[3])+'</td><td class="'+(r[0]==='in'?'money-in':'money-out')+'">'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td>'+esc(r[4])+'</td><td>'+esc(r[5])+'</td><td class="'+(r[0]==='in'?'money-in':'money-out')+'">'+(r[6]>=0?'+':'')+money(r[6])+'</td><td>'+money(bal)+'</td></tr>'}).join('')})()+'</tbody></table>');
+  setHTML('#salesServiceTable','<table class="mini-table"><thead><tr><th>Service</th><th>Revenue (UGX)</th><th>% of Total</th></tr></thead><tbody>'+[['Restaurant / Kitchen',inOrders],['Bookings / Sports',inBookings],['Events',inEvents]].map(x=>'<tr><td>'+x[0]+'</td><td>'+money(x[1])+'</td><td>'+((cashIn?x[1]/cashIn*100:0).toFixed(1))+'%</td></tr>').join('')+'<tr><th>Total Revenue</th><th>'+money(cashIn)+'</th><th>100%</th></tr></tbody></table>');
+  setHTML('#inventorySummaryTable','<table class="mini-table"><thead><tr><th>Item / Activity</th><th>Purchases</th><th>Used / Movement</th><th>Closing</th></tr></thead><tbody>'+inv.slice(0,8).map(x=>{const q=m.filter(z=>z.item_id===x.id).reduce((a,z)=>a+Number(z.quantity||0),0);return '<tr><td>'+esc(x.name)+'</td><td>—</td><td>'+money(q)+'</td><td>—</td></tr>'}).join('')+'</tbody></table>');
+  setHTML('#reconciliationSummary','<div class="recon-row"><span>Total Money In</span><strong>'+money(cashIn)+'</strong></div><div class="recon-row"><span>Total Money Out</span><strong>'+money(spend)+'</strong></div><div class="recon-row net"><span>Net Cash Movement</span><strong>'+money(net)+'</strong></div><div class="recon-row warning"><span>Inventory Value Change</span><strong>—</strong></div><div class="recon-row info"><span>Outstanding (Unpaid)</span><strong>'+money(outstanding)+'</strong></div>');
   renderReportView('treasury');
 }
 function renderReportView(view){
@@ -753,7 +771,7 @@ function renderReportView(view){
   const titles={treasury:'Treasury / Cash Flow',sales:'Sales & Revenue',purchases:'Purchases & Expenses',inventory:'Inventory & Stock Flow'};
   const reportTitle=$('#reportTableTitle'); if(reportTitle)reportTitle.textContent=titles[view]||titles.treasury;
   const rows=lastReport.views?.[view]||lastReport.rows;
-  $('#reportTable').innerHTML=table(['Type','ID','Date','Status / Type','Item / Supplier','Value / Quantity'],rows,x=>x);
+  setHTML('#reportTable',table(['Type','ID','Date','Status / Type','Item / Supplier','Value / Quantity'],rows,x=>x));
   document.querySelectorAll('[data-report-view]').forEach(b=>b.classList.toggle('active',b.dataset.reportView===view));
 }
 async function loadSettings(){const r=await api('/rest/v1/site_settings?select=key,value&order=key.asc');const logo=r.find(x=>x.key==='logo_url');const logoInput=$('#logoUrl');if(logoInput)logoInput.value=logo?.value||'';const preview=$('#logoPreview');if(preview){const v=logo?.value||'';preview.src=v?(v.startsWith('http')?v:'../'+v.replace(/^\/+/,'')):'';preview.hidden=!v;}$('#settingsTable').innerHTML=r.filter(x=>x.key!=='logo_url').map(x=>'<label>'+esc(x.key)+'<input data-set="'+esc(x.key)+'" value="'+esc(x.value||'')+'"></label>').join('')}
