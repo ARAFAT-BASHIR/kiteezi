@@ -227,7 +227,21 @@ async function loadStationOrders(){
     }catch(e){msg(e);await loadStationOrders();}
   });
 }
+async function loadReceptionOrders(){
+  const rows=await api('/rest/v1/rpc/get_reception_active_orders',{method:'POST'});
+  const filter=$('#orderStatusFilter')?.value||'all';
+  const visible=(rows||[]).filter(x=>filter==='all'||x.order_status===filter);
+  $('#ordersTable').innerHTML=visible.length
+    ? '<table><tr><th>Order</th><th>Received</th><th>Status</th><th>Station Progress</th></tr>'+
+      visible.map(r=>{
+        const stations=Array.isArray(r.stations)?r.stations:[];
+        const html=stations.map(x=>'<span class="pill">'+esc(x.station)+': '+esc(x.status)+'</span>').join(' ');
+        return '<tr><td>#'+esc(r.order_id.slice(0,8).toUpperCase())+'</td><td>'+esc(new Date(r.created_at).toLocaleString())+'</td><td>'+esc(r.order_status)+'</td><td>'+html+'</td></tr>';
+      }).join('')+'</table>'
+    : '<div class="state">No active orders for guest tracking.</div>';
+}
 async function loadOrders(){
+  if(profile?.role==='reception_manager'){await loadReceptionOrders();return;}
   if(['chef','barista'].includes(profile?.role)){await loadStationOrders();return;}
   const filter=$('#orderStatusFilter').value;
   let q='/rest/v1/orders?select=*,customers(name,phone)&order=created_at.desc';
