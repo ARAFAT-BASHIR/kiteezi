@@ -162,7 +162,7 @@ async function loadSwimmingSessions(){
     ? '<table><tr><th>Session</th><th>Type</th><th>School</th><th>Coach</th><th>Attendance</th><th>Notes</th><th></th></tr>'+
       rows.map(x=>'<tr><td>'+esc(x.id.slice(0,8).toUpperCase())+'</td><td>'+esc(x.session_type||'')+'</td><td>'+esc(x.school_name||'')+'</td><td>'+esc(x.coach_id||'Unassigned')+'</td><td>'+esc(x.attendance_count??0)+'</td><td>'+esc(x.notes||'')+'</td><td><button class="btn" data-edit-session="'+x.id+'">Update</button></td></tr>').join('')+'</table>'
     : '<div class="state">No assigned swimming sessions.</div>';
-  $('[data-edit-session]').forEach(b=>b.onclick=()=>editSwimmingSession(rows.find(x=>x.id===b.dataset.editSession),canManage));
+  $$('[data-edit-session]').forEach(b=>b.onclick=()=>editSwimmingSession(rows.find(x=>x.id===b.dataset.editSession),canManage));
 }
 async function editSwimmingSession(row,canManage){
   if(!row)return;
@@ -183,7 +183,7 @@ async function loadTasks(){
     ? '<table><tr><th>Task</th><th>Description</th><th>Due</th><th>Status</th><th>Assigned</th><th></th></tr>'+
       rows.map(x=>'<tr><td>'+esc(x.title)+'</td><td>'+esc(x.description||'')+'</td><td>'+esc(x.due_date||'—')+'</td><td>'+esc(x.status||'open')+'</td><td>'+esc(x.assigned_to||'Unassigned')+'</td><td>'+(canEdit?'<button class="btn" data-edit-task="'+x.id+'">Edit</button>':'')+'</td></tr>').join('')+'</table>'
     : '<div class="state">No facility tasks.</div>';
-  $('[data-edit-task]').forEach(b=>b.onclick=()=>editTask(rows.find(x=>x.id===b.dataset.editTask)));
+  $$('[data-edit-task]').forEach(b=>b.onclick=()=>editTask(rows.find(x=>x.id===b.dataset.editTask)));
 }
 async function editTask(row=null){
   const x=row||{title:'',description:'',due_date:'',status:'open',assigned_to:null};
@@ -239,9 +239,9 @@ async function loadRequisitions(){
       if(r.status==='ceo_pending'&&canCEO) actions='<button class="btn" data-req-approve="'+r.id+'" data-stage="ceo">Confirm & Generate PO</button> <button class="btn" data-req-edit="'+r.id+'">Edit</button> <button class="btn danger" data-req-reject="'+r.id+'">Reject</button>';
       return '<tr><td>'+esc(r.requisition_number)+'</td><td>'+esc(r.requester_id)+'</td><td>'+esc(r.status)+'</td><td>'+items+'</td><td class="actions">'+actions+'</td></tr>';
     }).join('')+'</table>':'<div class="state">No requisitions.</div>';
-  $('[data-req-approve]').forEach(b=>b.onclick=async()=>{try{await api('/rest/v1/rpc/approve_requisition',{method:'POST',body:JSON.stringify({p_requisition_id:b.dataset.reqApprove,p_action:'approved'})});await loadRequisitions();loadGeneratedPOs().catch(()=>{});}catch(e){msg(e)}});
-  $('[data-req-edit]').forEach(b=>b.onclick=()=>editRequisition(b.dataset.reqEdit));
-  $('[data-req-reject]').forEach(b=>b.onclick=async()=>{const reason=prompt('Reason for rejection (required):');if(!reason?.trim())return;try{await api('/rest/v1/rpc/approve_requisition',{method:'POST',body:JSON.stringify({p_requisition_id:b.dataset.reqReject,p_action:'rejected',p_reason:reason.trim()})});await loadRequisitions();}catch(e){msg(e)}});
+  $$('[data-req-approve]').forEach(b=>b.onclick=async()=>{try{await api('/rest/v1/rpc/approve_requisition',{method:'POST',body:JSON.stringify({p_requisition_id:b.dataset.reqApprove,p_action:'approved'})});await loadRequisitions();loadGeneratedPOs().catch(()=>{});}catch(e){msg(e)}});
+  $$('[data-req-edit]').forEach(b=>b.onclick=()=>editRequisition(b.dataset.reqEdit));
+  $$('[data-req-reject]').forEach(b=>b.onclick=async()=>{const reason=prompt('Reason for rejection (required):');if(!reason?.trim())return;try{await api('/rest/v1/rpc/approve_requisition',{method:'POST',body:JSON.stringify({p_requisition_id:b.dataset.reqReject,p_action:'rejected',p_reason:reason.trim()})});await loadRequisitions();}catch(e){msg(e)}});
 }
 async function editRequisition(id){
   const rows=await api('/rest/v1/requisitions?id=eq.'+encodeURIComponent(id)+'&select=*,requisition_items(*)');
@@ -566,7 +566,7 @@ async function loadInventory(){
     box.innerHTML=(low.length?'<div class="low-stock-banner"><strong>Low stock: '+low.length+' item(s)</strong><span>'+low.map(x=>esc(x.name)).join(', ')+'</span></div>':'')+(rows0.length?'<table><thead><tr><th>Item</th><th>Category</th><th>Unit</th><th>Station</th><th>Reorder</th><th>Active</th><th></th></tr></thead><tbody>'+
       rows0.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.category||'')+'</td><td>'+esc(x.unit||'')+'</td><td><span class="pill">'+esc(x.service_stations?.name||'Unassigned')+'</span></td><td>'+esc(x.reorder_level??0)+'</td><td>'+esc(x.active?'Yes':'No')+'</td><td><button class="btn" data-edit-inv="'+x.id+'">Edit</button></td></tr>').join('')+
       '</tbody></table>':'<div class="state">No inventory items found.</div>');
-    $('[data-edit-inv]').forEach(x=>x.onclick=()=>editInventory(x.dataset.editInv));
+    $$('[data-edit-inv]').forEach(x=>x.onclick=()=>editInventory(x.dataset.editInv));
   }catch(e){box.innerHTML='<div class="state">Inventory could not be loaded. '+esc(e.message||'Please try again.')+'</div>'}
 }
 async function editInventory(id=null){
@@ -608,7 +608,7 @@ async function manageRecipe(existingId=null){
     if(!existing){$('#addRecipeIngredient').onclick=()=>{$('#recipeRows').insertAdjacentHTML('beforeend',row());bindRemove()};bindRemove()}
     $('#recipe').onsubmit=async e=>{
       e.preventDefault(); const form=e.currentTarget, fd=new FormData(form), menu=String(fd.get('menu')||''), errorEl=$('#recipeError');
-      const entries=$('.recipe-row',form).map(r=>({inventory_item_id:String($('.recipe-inv',r)?.value||''),quantity:Number($('.recipe-qty',r)?.value||0),recipe_unit:String($('.recipe-unit',r)?.value||'stock').trim()||'stock',stock_units_per_recipe_unit:Number($('.recipe-factor',r)?.value||0)}));
+      const entries=$$('.recipe-row',form).map(r=>({inventory_item_id:String($('.recipe-inv',r)?.value||''),quantity:Number($('.recipe-qty',r)?.value||0),recipe_unit:String($('.recipe-unit',r)?.value||'stock').trim()||'stock',stock_units_per_recipe_unit:Number($('.recipe-factor',r)?.value||0)}));
       if(!menu||!entries.length||entries.some(x=>!x.inventory_item_id||!(x.quantity>0)||!(x.stock_units_per_recipe_unit>0))){errorEl.textContent='Enter a valid amount and stock conversion for every ingredient.';errorEl.style.display='block';return}
       const ids=entries.map(x=>x.inventory_item_id); if(new Set(ids).size!==ids.length){errorEl.textContent='The same ingredient was selected more than once. Combine it into one row.';errorEl.style.display='block';return}
       try{
