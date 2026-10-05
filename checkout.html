@@ -1169,6 +1169,9 @@
          * Only clear the local cart after confirmation.
          */
 
+        localStorage.setItem('kiteezi_track_phone_v1', phone);
+        localStorage.setItem('kiteezi_last_order_id_v1', String(result.order_id));
+
         localStorage.removeItem(
           CART_KEY
         );
