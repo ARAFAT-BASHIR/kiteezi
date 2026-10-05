@@ -371,7 +371,20 @@ async function loadReport(){
   const net=cashIn-spend;
   $('#reportBookings').textContent=b.length;$('#reportOrders').textContent=o.length;$('#reportEvents').textContent=e.length;
   $('#reportRevenue').textContent='UGX '+money(cashIn);$('#reportPurchases').textContent='UGX '+money(spend);
-  $('#reportNet').textContent='UGX '+money(net);$('#reportOutstanding').textContent='UGX '+money(outstanding);$('#reportMovements').textContent=m.length;
+  $('#reportNet').textContent='UGX '+money(net);$('#reportOutstanding').textContent='UGX '+money(outstanding);
+  const inOrders=o.filter(paid).reduce((a,x)=>a+Number(x.total||0),0),inBookings=b.filter(paid).reduce((a,x)=>a+Number(x.total||0),0),inEvents=e.reduce((a,x)=>a+Number(x.total||0),0);
+  $('#reportInOrders').textContent='UGX '+money(inOrders);$('#reportInBookings').textContent='UGX '+money(inBookings);$('#reportInEvents').textContent='UGX '+money(inEvents);
+  $('#reportOutstandingOrders').textContent='UGX '+money(o.filter(x=>!paid(x)).reduce((a,x)=>a+Number(x.total||0),0));
+  $('#reportOutstandingBookings').textContent='UGX '+money(b.filter(x=>!paid(x)).reduce((a,x)=>a+Number(x.total||0),0));
+  const foodSpend=p.filter(x=>/food|kitchen/i.test(String(x.category||x.notes||x.supplier||''))).reduce((a,x)=>a+Number(x.total||0),0);
+  const beverageSpend=p.filter(x=>/beverage|bar|drink/i.test(String(x.category||x.notes||x.supplier||''))).reduce((a,x)=>a+Number(x.total||0),0);
+  const otherSpend=Math.max(0,spend-foodSpend-beverageSpend);
+  $('#reportFoodPurchases').textContent='UGX '+money(foodSpend);$('#reportBeveragePurchases').textContent='UGX '+money(beverageSpend);$('#reportOtherPurchases').textContent='UGX '+money(otherSpend);
+  const setLegend=(id,items)=>{$('#'+id).innerHTML=items.map((x,i)=>'<div><i class="'+(['','blue','purple','orange','cyan'][i]||'')+'"></i><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')};
+  setLegend('moneyInLegend',[['Orders','UGX '+money(inOrders)],['Bookings','UGX '+money(inBookings)],['Events','UGX '+money(inEvents)],['Other','UGX 0']]);
+  setLegend('moneyOutLegend',[['Food Purchases','UGX '+money(foodSpend)],['Beverage Purchases','UGX '+money(beverageSpend)],['Other Purchases','UGX '+money(otherSpend)],['Operating Expenses','UGX 0']]);
+  $('#moneyInDonutValue').textContent=money(cashIn);$('#moneyOutDonutValue').textContent=money(spend);
+  const max=Math.max(cashIn,spend,Math.abs(net),1);document.querySelectorAll('#cashFlowChart .bar-col').forEach((el,i)=>{const v=[cashIn,spend,Math.abs(net)][i];el.querySelector('span').textContent=money(v);el.querySelector('i').style.height=Math.max(3,(v/max)*78)+'%'});
   $('#reportInSummary').textContent='UGX '+money(cashIn);$('#reportOutSummary').textContent='UGX '+money(spend);$('#reportNetSummary').textContent='UGX '+money(net);$('#reportStockSummary').textContent=m.length+' movements';
   const movementRows=m.map(x=>['Stock movement',x.id,String(x.created_at||'').slice(0,10),x.movement_type||'',(invById[x.item_id]?.name||x.item_id)+' — '+(x.reason||''),x.quantity]);
   const balances={};mAll.forEach(x=>{const q=Number(x.quantity||0);balances[x.item_id]=(balances[x.item_id]||0)+(String(x.movement_type||'').toLowerCase()==='out'?-q:q)});
@@ -391,6 +404,11 @@ async function loadReport(){
     purchases:rows.filter(x=>x[0]==='Purchase'),
     inventory:rows.filter(x=>['Stock movement','Physical count','Inventory balance'].includes(x[0]))
   };
+  const detailRows=[...o.map(x=>['in','Money In','Order',String(x.created_at||'').slice(0,16),'Restaurant','',Number(x.total||0)]),...b.map(x=>['in','Money In','Booking',x.booking_date,'Sports / Booking','',Number(x.total||0)]),...e.map(x=>['in','Money In','Event',x.event_date,'Event','',Number(x.total||0)]),...p.map(x=>['out','Money Out','Purchase',String(x.created_at||'').slice(0,16),x.supplier||'Purchase','',-Number(x.total||0)])].sort((a,b)=>String(a[3]).localeCompare(String(b[3])));
+  $('#reportTable').innerHTML='<table class="treasury-table"><thead><tr><th>Date & Time</th><th>Type</th><th>Source / Expense</th><th>Service</th><th>Description</th><th>Amount (UGX)</th><th>Running Balance (UGX)</th></tr></thead><tbody>'+(()=>{let bal=0;return detailRows.map(r=>{bal+=r[6];return '<tr class="'+r[0]+'"><td>'+esc(r[3])+'</td><td class="'+(r[0]==='in'?'money-in':'money-out')+'">'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td>'+esc(r[4])+'</td><td>'+esc(r[5])+'</td><td class="'+(r[0]==='in'?'money-in':'money-out')+'">'+(r[6]>=0?'+':'')+money(r[6])+'</td><td>'+money(bal)+'</td></tr>'}).join('')})()+'</tbody></table>';
+  $('#salesServiceTable').innerHTML='<table class="mini-table"><thead><tr><th>Service</th><th>Revenue (UGX)</th><th>% of Total</th></tr></thead><tbody>'+[['Restaurant / Kitchen',inOrders],['Bookings / Sports',inBookings],['Events',inEvents]].map(x=>'<tr><td>'+x[0]+'</td><td>'+money(x[1])+'</td><td>'+((cashIn?x[1]/cashIn*100:0).toFixed(1))+'%</td></tr>').join('')+'<tr><th>Total Revenue</th><th>'+money(cashIn)+'</th><th>100%</th></tr></tbody></table>';
+  $('#inventorySummaryTable').innerHTML='<table class="mini-table"><thead><tr><th>Item / Activity</th><th>Purchases</th><th>Used / Movement</th><th>Closing</th></tr></thead><tbody>'+inv.slice(0,8).map(x=>{const q=m.filter(z=>z.item_id===x.id).reduce((a,z)=>a+Number(z.quantity||0),0);return '<tr><td>'+esc(x.name)+'</td><td>—</td><td>'+money(q)+'</td><td>—</td></tr>'}).join('')+'</tbody></table>';
+  $('#reconciliationSummary').innerHTML='<div class="recon-row"><span>Total Money In</span><strong>'+money(cashIn)+'</strong></div><div class="recon-row"><span>Total Money Out</span><strong>'+money(spend)+'</strong></div><div class="recon-row net"><span>Net Cash Movement</span><strong>'+money(net)+'</strong></div><div class="recon-row warning"><span>Inventory Value Change</span><strong>—</strong></div><div class="recon-row info"><span>Outstanding (Unpaid)</span><strong>'+money(outstanding)+'</strong></div>';
   renderReportView('treasury');
 }
 function renderReportView(view){
