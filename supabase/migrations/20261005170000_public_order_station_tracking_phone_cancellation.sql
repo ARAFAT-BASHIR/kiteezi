@@ -275,3 +275,44 @@ begin
 end; $$;
 revoke all on function public.admin_cancel_booking(uuid,text) from public,anon;
 grant execute on function public.admin_cancel_booking(uuid,text) to authenticated,service_role;
+
+
+-- Payment must never consume inventory; remove the legacy status/payment trigger.
+drop trigger if exists trg_order_inventory on public.orders;
+create or replace function public.update_order_inventory()
+returns trigger language plpgsql
+set search_path=public,private,pg_catalog,pg_temp as $$
+begin
+  return new;
+end; $$;
+revoke all on function public.update_order_inventory() from public,anon,authenticated;
+
+-- New public tables/functions must have explicit Data API grants as Supabase tightens defaults.
+grant select,update on public.order_station_progress to authenticated;
+revoke all on public.order_station_progress from anon;
+
+-- School swimming submissions use the same canonical phone normalization as all public bookings.
+create or replace function public.submit_school_swimming_booking(p_customer_name text,p_phone text,p_email text,p_day_of_week integer,p_start_time time,p_people integer,p_notes text)
+returns jsonb language plpgsql security definer set search_path=public,private,pg_catalog,pg_temp as $$
+declare v_service uuid;v_date date;v_end time;v_id uuid;v_customer uuid;v_total numeric;v_phone text:=private.normalize_phone(p_phone);
+begin
+ if p_day_of_week not between 1 and 5 then raise exception 'Choose a weekday from Monday to Friday';end if;
+ if p_start_time is null then raise exception 'Choose a swimming time';end if;
+ if extract(minute from p_start_time)<>0 then raise exception 'School swimming sessions must start on the hour';end if;
+ v_end:=p_start_time+interval '1 hour';
+ if p_start_time<time '09:00' or v_end>time '17:00' then raise exception 'School swimming is available between 9:00 AM and 5:00 PM';end if;
+ select id into v_service from public.services where lower(name)='school swimming' and active=true limit 1;
+ if v_service is null then raise exception 'School Swimming service is unavailable';end if;
+ if exists(select 1 from public.swimming_timetable t where t.active and t.day_of_week=p_day_of_week and p_start_time<t.end_time and v_end>t.start_time) then raise exception 'That school swimming period is occupied. Please choose another time.';end if;
+ if exists(select 1 from public.bookings b where b.service_id=v_service and coalesce(b.status,'') not in('cancelled','rejected') and b.recurring_day_of_week=p_day_of_week and p_start_time<coalesce(b.recurring_end_time,b.start_time+interval '1 hour') and v_end>b.start_time) then raise exception 'That weekly school swimming period has already been requested. Please choose another time.';end if;
+ v_date:=current_date+((p_day_of_week-extract(isodow from current_date)::int+7)%7);
+ select id into v_customer from public.customers where phone=v_phone limit 1;
+ if v_customer is null then insert into public.customers(name,phone,email) values(trim(p_customer_name),v_phone,nullif(trim(coalesce(p_email,'')),'')) returning id into v_customer; else update public.customers set name=trim(p_customer_name),email=coalesce(nullif(trim(coalesce(p_email,'')),''),email) where id=v_customer;end if;
+ insert into public.bookings(customer_id,service_id,booking_date,start_time,people,source,status,payment_status,total,total_on_request,notes,recurring_day_of_week,recurring_end_time) values(v_customer,v_service,v_date,p_start_time,greatest(1,p_people),'website','pending','unpaid',0,false,concat('Weekly school swimming: ',case p_day_of_week when 1 then 'Monday' when 2 then 'Tuesday' when 3 then 'Wednesday' when 4 then 'Thursday' when 5 then 'Friday' end,' ',to_char(p_start_time,'HH12:MI AM'),' - ',to_char(v_end,'HH12:MI AM'),case when nullif(trim(p_notes),'') is not null then E'\\n\\nNotes: '||trim(p_notes) else '' end),p_day_of_week,v_end) returning id into v_id;
+ insert into public.booking_components(booking_id,component_type,service_id,name_snapshot,description_snapshot,quantity,unit_price,price_on_request) select v_id,'service',id,name,description,1,price,false from public.services where id=v_service;
+ select coalesce(sum(line_total),0) into v_total from public.booking_components where booking_id=v_id;
+ update public.bookings set total=v_total where id=v_id;
+ return jsonb_build_object('booking_id',v_id,'day_of_week',p_day_of_week,'start_time',p_start_time,'end_time',v_end);
+end; $$;
+revoke all on function public.submit_school_swimming_booking(text,text,text,integer,time,integer,text) from public,authenticated;
+grant execute on function public.submit_school_swimming_booking(text,text,text,integer,time,integer,text) to anon;
