@@ -466,23 +466,4 @@
     applySettings
   };
 
-  getSettings()
-    .then(settings => {
-      window.KiteeziContent.settings =
-        settings;
-
-      applySettings(settings);
-      applyServicePrices().catch(error => console.warn('Service prices unavailable:', error));
-      applyMedia().catch(error => console.warn('Media unavailable:', error));
-      applyCmsPage().catch(error => console.warn('CMS unavailable:', error));
-      applySocialLinks().catch(error => console.warn('Social links unavailable:', error));
-    })
-    .catch(error => {
-      console.warn(
-        'Kiteezi site settings unavailable. ' +
-        'Existing website content remains active.',
-        error
-      );
-    });
-
 })();
