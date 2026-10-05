@@ -393,7 +393,7 @@ async function loadOrders(){
       const deleteBtn=profile?.role==='owner'?'<button class="btn danger" data-delete-order="'+r.id+'">Delete test</button>':'';
       return '<tr><td>#'+esc(r.id.slice(0,8).toUpperCase())+'<br>'+esc(r.source)+'</td><td>'+esc(customerName)+'<br>'+esc(phone)+'</td><td>'+esc(method==='delivery'?'Delivery':method==='dine_in'?'Dine in':'Pickup from Kiteezi')+'</td><td>'+esc(r.status==='pending'||r.status==='open'?'Waiting for Confirmation':r.status==='confirmed'?'In Progress':r.status==='completed'?'Complete':r.status)+'</td><td>'+stationHtml+'</td><td>'+esc(r.payment_status)+'</td><td>UGX '+money(r.total)+'</td><td class="actions">'+confirmBtn+completeBtn+paidBtn+cancelBtn+itemsBtn+deleteBtn+'</td></tr>';
     }).join('')+'</table>';
-  document.querySelectorAll('[data-confirm-wa]').forEach(x=>x.onclick=()=>setOrderAndWhatsApp(x.dataset.confirmWa,'confirmed',null,x.dataset.wa,x.dataset.watext));
+  document.querySelectorAll('[data-confirm-wa]').forEach(x=>x.onclick=()=>confirmOrderWithCocktailChoice(x.dataset.confirmWa,'confirmed',null,x.dataset.wa,x.dataset.watext));
   document.querySelectorAll('[data-paid]').forEach(x=>x.onclick=()=>setOrder(x.dataset.paid,null,'paid'));
   document.querySelectorAll('[data-done-wa]').forEach(x=>x.onclick=()=>setOrderAndWhatsApp(x.dataset.doneWa,'completed',null,x.dataset.wa,x.dataset.watext));
   document.querySelectorAll('[data-station-status]').forEach(x=>x.onchange=async()=>{
@@ -422,6 +422,36 @@ async function loadOrders(){
 async function setOrder(id,status,payment){
   await api('/rest/v1/rpc/admin_set_order_status',{method:'POST',body:JSON.stringify({p_order_id:id,p_status:status,p_payment_status:payment})});
   await loadOrders();
+}
+async function confirmOrderWithCocktailChoice(id,status,payment,phone,textMessage){
+  try{
+    const items=await api('/rest/v1/order_items?select=id,qty,menu_item_id,menu_items(name)&order_id=eq.'+encodeURIComponent(id));
+    const cocktailIds=[...new Set(items.map(x=>x.menu_item_id))];
+    const rules=cocktailIds.length?await api('/rest/v1/shared_pool_menu_rules?select=menu_item_id&menu_item_id=in.('+cocktailIds.join(',')+')&requires_components=eq.true&active=eq.true'):[];
+    const cocktailItemIds=new Set((rules||[]).map(x=>x.menu_item_id));
+    const cocktailItems=items.filter(x=>cocktailItemIds.has(x.menu_item_id));
+    if(!cocktailItems.length){
+      return setOrderAndWhatsApp(id,status,payment,phone,textMessage);
+    }
+    const fruits=await api('/rest/v1/inventory_items?select=id,name,unit&name=in.(Orange,Lemon,Pineapple,"Passion fruit",Beetroot,Watermelon,Mango)&active=eq.true&order=name.asc');
+    if(!fruits.length)throw new Error('No cocktail fruit inventory items are available. Add at least one cocktail fruit before confirming.');
+    const checks=fruits.map(x=>'<label style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #eee"><input type="checkbox" name="cocktailFruit" value="'+x.id+'"><span><strong>'+esc(x.name)+'</strong><small class="muted" style="display:block">'+esc(x.unit||'')+'</small></span></label>').join('');
+    const names=cocktailItems.map(x=>esc(x.menu_items?.name||'Cocktail')).join(', ');
+    modal('Choose cocktail fruit','<form id="cocktailConfirmForm" class="form"><p><strong>'+names+'</strong></p><p class="muted">Choose the fruit(s) that will be used for this cocktail. <strong>At least one fruit is required.</strong> You can select more than one.</p><div>'+checks+'</div><button class="btn btn-dark" type="submit">Confirm Order</button></form>');
+    $('#cocktailConfirmForm').onsubmit=async e=>{
+      e.preventDefault();
+      const selected=[...e.currentTarget.querySelectorAll('input[name="cocktailFruit"]:checked')].map(x=>x.value);
+      if(!selected.length){alert('Select at least one cocktail fruit before confirming the order.');return;}
+      const components=selected.map(inventory_item_id=>({inventory_item_id,dish_type:'cocktail_component'}));
+      try{
+        for(const item of cocktailItems){
+          await api('/rest/v1/order_items?id=eq.'+encodeURIComponent(item.id),{method:'PATCH',body:JSON.stringify({shared_pool_components:components})});
+        }
+        closeModal();
+        await setOrderAndWhatsApp(id,status,payment,phone,textMessage);
+      }catch(err){msg(err);}
+    };
+  }catch(err){msg(err);}
 }
 async function setOrderAndWhatsApp(id,status,payment,phone,textMessage){
   const normalized=String(phone||'').trim().replace(/[^0-9+]/g,'').replace(/^00/,'+');
