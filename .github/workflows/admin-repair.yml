@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Repair inventory renderer
+      - name: Repair known admin renderer defects
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -22,12 +22,22 @@ jobs:
               s=s.replace(old,new,1)
           old2="'</tbody></table>':'<div class=\"state\">No inventory items found.</div>';"
           new2="'</tbody></table>':'<div class=\"state\">No inventory items found.</div>');"
-          if old2 not in s:
-              raise SystemExit('Expected inventory renderer terminator not found')
-          s=s.replace(old2,new2,1)
+          if old2 in s:
+              s=s.replace(old2,new2,1)
+          menu="rows0.map(x=>'<tr><td>'+esc(x.name)"
+          positions=[]
+          start=0
+          while True:
+              i=s.find(menu,start)
+              if i<0: break
+              positions.append(i)
+              start=i+1
+          if len(positions)>=2:
+              i=positions[-1]
+              s=s[:i]+old+s[i+len(menu):]
           p.write_text(s)
           PY
-      - name: Verify JavaScript
+      - name: Verify all JavaScript
         run: |
           set -e
           find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
@@ -36,5 +46,6 @@ jobs:
           git config user.name 'ARAFAT-BASHIR'
           git config user.email 'arafatbashir256@gmail.com'
           git add admin/admin.js
-          git commit -m 'Fix admin inventory renderer [admin-repair]'
+          git diff --cached --quiet && exit 0
+          git commit -m 'Fix admin renderer defects [admin-repair]'
           git push origin HEAD:main
