@@ -453,3 +453,132 @@ body.admin #app.admin-shell>.main>.tab:not(.active){display:none!important}
   body.admin .metric{min-height:205px;padding:30px 27px;border-radius:25px;font-size:20px}
   body.admin .metric b{font-size:43px}
 }
+
+/* === Admin login block fix === */
+/* Login is intentionally independent from the authenticated admin shell.
+   These rules prevent the mobile dashboard/navigation styles from affecting
+   the login card and make every form control occupy a clean, predictable block. */
+body.admin #loginView.login{
+  min-height:100svh;
+  width:100%;
+  display:grid;
+  place-items:center;
+  padding:32px 20px;
+  background:
+    radial-gradient(circle at 20% 10%,rgba(45,106,79,.10),transparent 34%),
+    linear-gradient(180deg,#f7faf8 0%,#eef3ef 100%);
+}
+body.admin #loginView .login-card{
+  width:min(440px,100%);
+  max-width:none;
+  margin:0;
+  padding:34px;
+  background:#fff;
+  border:1px solid #dfe6e1;
+  border-radius:24px;
+  box-shadow:0 18px 55px rgba(16,37,28,.12);
+}
+body.admin #loginView .brand{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin:0 0 30px;
+  color:var(--green);
+}
+body.admin #loginView .brand-mark{
+  flex:0 0 64px;
+  width:64px;
+  height:64px;
+  border-radius:16px;
+  background:#fff;
+  border:1px solid #dfe6e1;
+  color:var(--green);
+  box-shadow:0 5px 16px rgba(16,37,28,.08);
+}
+body.admin #loginView .brand>span:last-child{
+  font-size:23px;
+  line-height:1.15;
+  font-weight:800;
+}
+body.admin #loginView .brand small{
+  display:block;
+  margin-top:5px;
+  color:#68736d;
+  font-size:11px;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+}
+body.admin #loginView h2{
+  margin:0 0 7px;
+  font-size:30px;
+  line-height:1.15;
+  color:#17221d;
+}
+body.admin #loginView>.login-card>p.muted{
+  margin:0 0 25px;
+  font-size:14px;
+  line-height:1.55;
+}
+body.admin #loginView form.form{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:17px;
+}
+body.admin #loginView form.form label{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:7px;
+  width:100%;
+  font-size:14px;
+  font-weight:700;
+  color:#26342d;
+}
+body.admin #loginView form.form input{
+  display:block;
+  width:100%;
+  min-width:0;
+  height:52px;
+  margin:0;
+  padding:0 15px;
+  border:1px solid #d5ded8;
+  border-radius:12px;
+  background:#fff;
+  color:#17221d;
+  font:inherit;
+  font-size:16px;
+  outline:none;
+  transition:border-color .15s,box-shadow .15s;
+}
+body.admin #loginView form.form input:focus{
+  border-color:#2d6a4f;
+  box-shadow:0 0 0 4px rgba(45,106,79,.12);
+}
+body.admin #loginView form.form button[type="submit"]{
+  width:100%;
+  min-height:54px;
+  margin-top:3px;
+  border-radius:12px;
+  background:#1b4332;
+  color:#fff;
+  font-weight:800;
+}
+body.admin #loginView #loginMsg{
+  width:100%;
+  margin-top:1px;
+  overflow-wrap:anywhere;
+}
+@media(max-width:600px){
+  body.admin #loginView.login{
+    place-items:start center;
+    min-height:100svh;
+    padding:24px 16px;
+  }
+  body.admin #loginView .login-card{
+    padding:26px 20px;
+    border-radius:20px;
+  }
+  body.admin #loginView .brand{margin-bottom:25px}
+  body.admin #loginView .brand-mark{flex-basis:58px;width:58px;height:58px}
+  body.admin #loginView .brand>span:last-child{font-size:20px}
+  body.admin #loginView h2{font-size:27px}
+}
