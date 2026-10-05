@@ -1,0 +1,32 @@
+name: Kiteezi admin repair
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  repair:
+    if: github.actor == 'ARAFAT-BASHIR' && !contains(github.event.head_commit.message, '[admin-repair]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair inventory renderer
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('admin/admin.js')
+          s=p.read_text()
+          old="rows.map(x=>'<tr><td>'+esc(x.name)"
+          new="rows0.map(x=>'<tr><td>'+esc(x.name)"
+          if old not in s:
+              raise SystemExit('Expected inventory renderer not found')
+          s=s.replace(old,new,1)
+          p.write_text(s)
+          PY
+      - name: Commit repaired source
+        run: |
+          git config user.name 'ARAFAT-BASHIR'
+          git config user.email 'arafatbashir256@gmail.com'
+          git add admin/admin.js
+          git commit -m 'Fix admin inventory renderer [admin-repair]'
+          git push origin HEAD:main
