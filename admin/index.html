@@ -21,34 +21,39 @@
 <section id="social" class="tab"><div class="panel"><div class="toolbar"><h2>Social links</h2><button id="newSocial" class="btn">Add link</button><button id="refreshSocial" class="btn btn-dark">Refresh</button></div><div id="socialTable" class="state">Ready</div></div></section>
 <section id="staff" class="tab"><div class="panel"><div class="toolbar"><h2>Staff / roles</h2><button id="newStaff" class="btn">Add staff / owner</button><button id="refreshStaff" class="btn btn-dark">Refresh</button></div><p id="staffHelp" class="muted">Owner-managed staff accounts. You can create the account, password, role, photo and background information directly.</p><div id="staffTable" class="state">Ready</div></div><div class="panel"><div class="toolbar"><h2>Public departments & positions</h2><button id="newTeamPosition" class="btn btn-dark" type="button">Add position</button></div><p class="muted">Add departments as the business grows. Each position can have its own person's name and can be edited or removed later.</p><div id="teamPositionsTable" class="state">Ready</div><div id="teamPositionMsg" class="notice" hidden></div></div></section>
 <section id="reports" class="tab">
-<div class="report-workspace">
-  <div class="report-head">
-    <div><div class="eyebrow">Financial & Operations</div><h2>Treasury & Reports</h2><p class="muted">See money coming in, money going out, outstanding amounts and the stock activity behind them.</p></div>
-    <div class="report-actions"><label>From<input id="reportFrom" type="date"></label><label>To<input id="reportTo" type="date"></label><button id="generateReport" class="btn btn-dark">Generate</button><button id="downloadReport" class="btn">Download</button><button id="printReport" class="btn" type="button">Print</button></div>
+<div class="treasury-report">
+  <header class="treasury-header">
+    <div><h1>Treasury &amp; Financial Report</h1><p>Money In · Money Out · Sales · Purchases · Inventory Movement</p></div>
+    <div class="treasury-controls">
+      <label><span>Date range</span><div class="date-range"><input id="reportFrom" type="date"><b>–</b><input id="reportTo" type="date"></div></label>
+      <label><span>Service Filter</span><select id="reportService"><option>All Services</option><option>Orders</option><option>Bookings</option><option>Events</option><option>Purchases</option></select></label>
+      <button id="generateReport" class="treasury-btn primary">Generate</button>
+      <button id="downloadReport" class="treasury-btn success">⇩ Download</button>
+      <button id="printReport" class="treasury-btn blue" type="button">▣ Print</button>
+    </div>
+  </header>
+
+  <div class="treasury-cards">
+    <article class="finance-card inflow"><div class="finance-icon">↑</div><div><h3>Total Money In <small>(Cash Received)</small></h3><strong id="reportRevenue">UGX 0</strong></div><div class="card-lines"><span>Orders <b id="reportInOrders">UGX 0</b></span><span>Bookings <b id="reportInBookings">UGX 0</b></span><span>Events <b id="reportInEvents">UGX 0</b></span><span>Other Income <b>UGX 0</b></span></div></article>
+    <article class="finance-card outflow"><div class="finance-icon">↓</div><div><h3>Total Money Out <small>(Purchases &amp; Expenses)</small></h3><strong id="reportPurchases">UGX 0</strong></div><div class="card-lines"><span>Food Purchases <b id="reportFoodPurchases">UGX 0</b></span><span>Beverage Purchases <b id="reportBeveragePurchases">UGX 0</b></span><span>Other Purchases <b id="reportOtherPurchases">UGX 0</b></span><span>Operating Expenses <b>UGX 0</b></span></div></article>
+    <article class="finance-card netflow"><div class="finance-icon">◉</div><div><h3>Net Cash Movement</h3><strong id="reportNet">UGX 0</strong><small>(Money In - Money Out)</small></div><div class="net-note">Cash movement for selected period</div></article>
+    <article class="finance-card outstanding"><div class="finance-icon">⚠</div><div><h3>Outstanding <small>(Completed but Unpaid)</small></h3><strong id="reportOutstanding">UGX 0</strong></div><div class="card-lines"><span>Orders <b id="reportOutstandingOrders">UGX 0</b></span><span>Bookings <b id="reportOutstandingBookings">UGX 0</b></span><span>Events <b>UGX 0</b></span></div></article>
   </div>
-  <div class="report-nav" role="tablist" aria-label="Report categories">
-    <button class="active" type="button" data-report-view="treasury">Treasury / Cash Flow</button>
-    <button type="button" data-report-view="sales">Sales & Revenue</button>
-    <button type="button" data-report-view="purchases">Purchases & Expenses</button>
-    <button type="button" data-report-view="inventory">Inventory & Stock Flow</button>
+
+  <div class="treasury-charts">
+    <article class="report-panel"><h2>Cash Flow Overview</h2><div class="bar-chart" id="cashFlowChart"><div class="bar-col"><span>0</span><i></i><b>Money In</b></div><div class="bar-col"><span>0</span><i></i><b>Money Out</b></div><div class="bar-col"><span>0</span><i></i><b>Net Movement</b></div></div></article>
+    <article class="report-panel"><h2>Money In by Source</h2><div class="donut-layout"><div class="donut green" id="moneyInDonut"><span>UGX<br><b id="moneyInDonutValue">0</b></span></div><div class="legend" id="moneyInLegend"></div></div></article>
+    <article class="report-panel"><h2>Money Out by Category</h2><div class="donut-layout"><div class="donut orange" id="moneyOutDonut"><span>UGX<br><b id="moneyOutDonutValue">0</b></span></div><div class="legend" id="moneyOutLegend"></div></div></article>
   </div>
-  <div class="metrics report-metrics">
-    <div class="metric"><span>Money In</span><b id="reportRevenue">UGX 0</b><small>Recorded cash/value</small></div>
-    <div class="metric"><span>Money Out</span><b id="reportPurchases">UGX 0</b><small>Purchase spend</small></div>
-    <div class="metric"><span>Net Cash Movement</span><b id="reportNet">UGX 0</b><small>Money in minus money out</small></div>
-    <div class="metric"><span>Outstanding</span><b id="reportOutstanding">UGX 0</b><small>Completed but unpaid</small></div>
-    <div class="metric"><span>Orders</span><b id="reportOrders">0</b><small>Sales records</small></div>
-    <div class="metric"><span>Bookings</span><b id="reportBookings">0</b><small>Booking records</small></div>
-    <div class="metric"><span>Events</span><b id="reportEvents">0</b><small>Event records</small></div>
-    <div class="metric"><span>Stock Movements</span><b id="reportMovements">0</b><small>Inventory activity</small></div>
+
+  <article class="report-panel detail-panel"><div class="panel-heading"><h2>Detailed Transactions (Money In &amp; Out)</h2><span>↑ Money In &nbsp; ↓ Money Out</span></div><div id="reportTable" class="treasury-table-wrap"><div class="state">Generate a report.</div></div></article>
+
+  <div class="treasury-bottom">
+    <article class="report-panel"><h2>Sales &amp; Revenue by Service</h2><div id="salesServiceTable"></div></article>
+    <article class="report-panel"><h2>Inventory &amp; Stock Movement</h2><div id="inventorySummaryTable"></div></article>
+    <article class="report-panel"><h2>Reconciliation Summary</h2><div class="reconciliation" id="reconciliationSummary"></div></article>
   </div>
-  <div class="report-summary">
-    <div class="report-card"><h3>Money In</h3><p>Cash actually received from orders, bookings and events.</p><strong id="reportInSummary">UGX 0</strong></div>
-    <div class="report-card"><h3>Money Out</h3><p>Purchases and recorded expenditure paid during the period.</p><strong id="reportOutSummary">UGX 0</strong></div>
-    <div class="report-card"><h3>Net Cash</h3><p>Money In − Money Out.</p><strong id="reportNetSummary">UGX 0</strong></div>
-    <div class="report-card"><h3>Inventory Cross-check</h3><p>Stock movements and physical counts supporting the financial report.</p><strong id="reportStockSummary">0 movements</strong></div>
-  </div>
-  <div class="panel report-table-panel"><div class="toolbar"><h3 id="reportTableTitle">Treasury / Cash Flow</h3><span class="muted">Generated report</span></div><div id="reportTable" class="state">Generate a report.</div></div>
+  <footer class="treasury-footer">Kiteezi — Treasury &amp; Financial Report</footer>
 </div>
 </section>
 <section id="settings" class="tab"><div class="panel"><div class="toolbar"><h2>Site settings</h2><button id="refreshSettings" class="btn btn-dark">Refresh</button><button id="saveSettings" class="btn">Save changes</button></div><div class="form-grid"><label class="full"><strong>Business logo</strong><input id="logoUrl" data-set="logo_url" placeholder="Example: admin/logo.jpg"><small class="muted">Use a repository image path or a public image URL. The logo is used across the public website and admin.</small></label><div class="full"><img id="logoPreview" hidden alt="Logo preview" style="max-width:220px;max-height:120px;object-fit:contain;border:1px solid #e1e7e2;border-radius:12px;padding:8px;background:#fff"></div></div><hr style="border:0;border-top:1px solid #e1e7e2;margin:20px 0"><div id="settingsTable" class="form-grid"></div></div></section>
