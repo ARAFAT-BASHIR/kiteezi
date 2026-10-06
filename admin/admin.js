@@ -10,7 +10,7 @@ const TAB_PERMISSIONS={
 };
 const TAB_FALLBACK_PERMISSIONS={
   bookings:['bookings.view'],
-  inventory:['inventory.all','inventory.operational','inventory.kitchen','inventory.bar','inventory.cleaning','inventory.swimming'],
+  inventory:['inventory.all','inventory.operational','inventory.kitchen','inventory.bar','inventory.cleaning','inventory.swimming','inventory.service'],
   restaurant:['orders.manage','orders.station_kitchen','orders.station_barista','orders.reception.view'],
   menu:['menu.manage','menu.public_content.manage'],
   inquiries:['inquiries.view','inquiries.catering','inquiries.drinks','inquiries.general','inquiries.swimming'],
