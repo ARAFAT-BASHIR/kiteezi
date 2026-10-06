@@ -769,13 +769,26 @@ function editTeamPosition(id){const load=id?api('/rest/v1/team_positions?id=eq.'
 async function deleteTeamPosition(id){if(!confirm('Remove this public position?'))return;await api('/rest/v1/team_positions?id=eq.'+id,{method:'DELETE'});loadTeamPositions()}
 async function loadStaffPositions(){const rows=await api('/rest/v1/team_positions?select=id,department,position,person_name,active&active=eq.true&order=department.asc,sort_order.asc,position.asc');return Array.isArray(rows)?rows:[]}
 function staffPositionOptions(rows,selected=''){return '<option value="">No position assigned</option>'+rows.map(p=>'<option value="'+esc(p.id)+'" '+(p.id===selected?'selected':'')+'>'+esc(p.position)+(p.department?' — '+esc(p.department):'')+(p.person_name?' ('+esc(p.person_name)+')':'')+'</option>').join('')}
-async function addStaff(){
+let staffPositionEventBound=false;
+function bindStaffPositionRefresh(){
+  if(staffPositionEventBound)return;
+  staffPositionEventBound=true;
+  window.addEventListener('team-positions-updated',async()=>{
+    const latest=await loadStaffPositions();
+    ['#newStaffPosition','#staffPosition'].forEach(sel=>{
+      const el=$(sel);
+      if(el){
+        const current=el.value;
+        el.innerHTML=staffPositionOptions(latest,current);
+      }
+    });
+  });
+}
+
+async function addStaff(){bindStaffPositionRefresh();
   const [roles,positions]=await Promise.all([api('/rest/v1/roles?select=id,name&order=name.asc'),loadStaffPositions()]);
   const options=roles.map(r=>'<option value="'+esc(r.name)+'">'+esc(r.name)+'</option>').join('');
   modal('Add staff / owner','<form id="newStaffForm" class="form"><input name="name" placeholder="Full name" required><input name="email" type="email" placeholder="Email address" required><input name="password" type="password" minlength="8" placeholder="Password (8+ characters)" required><input name="phone" placeholder="Phone"><select name="role" required><option value="">Choose role</option>'+options+'</select><label>Position<select name="position_id" id="newStaffPosition">'+staffPositionOptions(positions)+'</select></label><input name="avatar_url" type="url" placeholder="Profile image URL (optional)"><textarea name="background_info" placeholder="Background information about the person"></textarea><p class="muted">The Owner creates the account directly. Position is organisational; role controls permissions.</p><button class="btn btn-dark">Create account</button></form>');
-  const positionRefreshHandler=async()=>{const latest=await loadStaffPositions();const el=$('#newStaffPosition');if(el)el.innerHTML=staffPositionOptions(latest,el.value)};
-  window.addEventListener('team-positions-updated',positionRefreshHandler,{once:true});
-
   $('#newStaffForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const body={name:String(f.get('name')||'').trim(),email:String(f.get('email')||'').trim(),password:String(f.get('password')||''),phone:String(f.get('phone')||'').trim(),role:String(f.get('role')||'').trim(),position_id:String(f.get('position_id')||'').trim()||null,avatar_url:String(f.get('avatar_url')||'').trim(),background_info:String(f.get('background_info')||'').trim()};try{await api('/functions/v1/create-staff',{method:'POST',body:JSON.stringify(body)});alert('Account created.');closeModal();loadStaff()}catch(err){alert(err.message||'Could not create account.')}}}
 async function loadStaff(){await loadTeamPositions();const [r,roles]=await Promise.all([api('/rest/v1/profiles?select=id,full_name,phone,role,position_id,active,created_at,avatar_url,background_info,team_positions(position,department)&order=full_name.asc'),api('/rest/v1/roles?select=id,name&order=name.asc')]);$('#staffTable').innerHTML='<table><tr><th>Name</th><th>Phone</th><th>Role</th><th>Position</th><th>Active</th><th></th></tr>'+r.map(x=>'<tr><td>'+esc(x.full_name)+'</td><td>'+esc(x.phone||'')+'</td><td>'+esc(x.role)+'</td><td>'+esc(x.team_positions?.position||'')+(x.team_positions?.department?' — '+esc(x.team_positions.department):'')+'</td><td>'+x.active+'</td><td><button class="btn" data-staff="'+x.id+'">Edit</button></td></tr>').join('')+'</table>';document.querySelectorAll('[data-staff]').forEach(x=>x.onclick=()=>editStaff(x.dataset.staff,roles))}
 async function editStaff(id,roles){const x=(await api('/rest/v1/profiles?id=eq.'+id))[0];const positions=await loadStaffPositions();modal('Staff profile','<form id="staffForm" class="form"><input name="name" value="'+esc(x.full_name||'')+'"><input name="phone" value="'+esc(x.phone||'')+'"><input name="avatar_url" type="url" value="'+esc(x.avatar_url||'')+'" placeholder="Profile image URL"><textarea name="background_info" placeholder="Background information">'+esc(x.background_info||'')+'</textarea><select name="role">'+roles.map(r=>'<option '+(r.name===x.role?'selected':'')+' value="'+esc(r.name)+'">'+esc(r.name)+'</option>').join('')+'</select><label>Position<select name="position_id" id="staffPosition">'+staffPositionOptions(positions,x.position_id)+'</select></label><label>Active <input name="active" type="checkbox" '+(x.active?'checked':'')+'></label><button class="btn btn-dark">Save</button></form>');$('#staffForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);await api('/rest/v1/profiles?id=eq.'+id,{method:'PATCH',body:JSON.stringify({full_name:f.get('name'),phone:f.get('phone'),avatar_url:f.get('avatar_url')||null,background_info:f.get('background_info')||null,role:f.get('role'),position_id:String(f.get('position_id')||'').trim()||null,active:f.get('active')==='on'})});closeModal();loadStaff()}}
