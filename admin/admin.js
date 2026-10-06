@@ -604,35 +604,31 @@ async function setBookingAndWhatsApp(id,status,payment,wa,textMessage){
 }
 async function loadStationOrders(){
   const station=profile?.role==='barista'?'Barista':'Kitchen';
-  const rows=await api('/rest/v1/rpc/get_station_order_workflow',{method:'POST',body:JSON.stringify({p_station:station})});
+  const rows=await api('/rest/v1/rpc/get_station_order_details',{method:'POST',body:JSON.stringify({p_station:station})});
   const filter=$('#orderStatusFilter')?.value||'all';
   const visible=(rows||[]).filter(x=>filter==='all'||x.order_status===filter);
   $('#ordersTable').innerHTML=visible.length
-    ? '<table><tr><th>Order</th><th>Customer</th><th>Fulfillment</th><th>Order Status</th><th>Station</th><th>Station Progress</th><th>Action</th></tr>'+
+    ? '<table><tr><th>Order</th><th>Customer</th><th>Items</th><th>Fulfillment</th><th>Status</th><th>Station</th><th>Action</th></tr>'+
       visible.map(r=>{
+        const items=Array.isArray(r.items)?r.items:[];
+        const itemHtml=items.length?items.map(i=>'<div class="order-item"><strong>'+esc(i.name||'Item')+'</strong> × '+esc(i.qty)+((i.notes)?'<br><small>Note: '+esc(i.notes)+'</small>':'')+'</div>').join(''):'<span class="muted">No items assigned</span>';
         const label=r.station_status==='waiting'?'Waiting':r.station_status==='accepted'?'Accepted':r.station_status==='in_progress'?'In Progress':r.station_status==='cancelled'?'Cancelled':'Complete';
         const action=(r.order_status==='pending'||r.order_status==='open'||r.order_status==='confirmed')
           ? '<select data-station-status="'+r.order_id+'" data-station-id="'+r.station_id+'"><option value="waiting" '+(r.station_status==='waiting'?'selected':'')+'>Waiting</option><option value="accepted" '+(r.station_status==='accepted'?'selected':'')+'>Accepted</option><option value="in_progress" '+(r.station_status==='in_progress'?'selected':'')+'>In Progress</option><option value="complete" '+(r.station_status==='complete'?'selected':'')+'>Complete</option><option value="cancelled" '+(r.station_status==='cancelled'?'selected':'')+'>Cancelled</option></select>'+
           ((r.station_status!=='complete'&&r.station_status!=='cancelled')?'<button type="button" class="btn danger" data-station-cancel="'+r.order_id+'" data-station-id="'+r.station_id+'">Cancel</button>':'')
           : '<span class="pill">'+esc(label)+'</span>';
-        return '<tr><td>#'+esc(r.order_id.slice(0,8).toUpperCase())+'<br><small>'+esc(r.source||'Website')+'</small></td><td>'+esc(r.customer_name||'Customer')+'<br><small>'+esc(r.customer_phone||'')+'</small></td><td>'+esc(String(r.fulfillment_method||'pickup').replace('_',' '))+'</td><td>'+esc(r.order_status)+'</td><td>'+esc(r.station_name)+'</td><td><span class="pill">'+esc(label)+'</span></td><td>'+action+'</td></tr>';
+        return '<tr><td>#'+esc(r.order_id.slice(0,8).toUpperCase())+'<br><small>'+esc(r.source||'Website')+'</small></td><td>'+esc(r.customer_name||'Customer')+'<br><small>'+esc(r.customer_phone||'')+'</small></td><td>'+itemHtml+'</td><td>'+esc(String(r.fulfillment_method||'pickup').replace('_',' '))+'</td><td>'+esc(r.order_status)+'</td><td><span class="pill">'+esc(label)+'</span></td><td>'+action+'</td></tr>';
       }).join('')+'</table>'
     : '<div class="state">No active '+esc(station.toLowerCase())+' station orders.</div>';
   document.querySelectorAll('[data-station-cancel]').forEach(x=>x.onclick=async()=>{
-    const reason=prompt('Why is this station cancelling the work?');
-    if(!reason||!reason.trim())return;
-    try{
-      await api('/rest/v1/rpc/set_order_station_status',{method:'POST',body:JSON.stringify({p_order_id:x.dataset.stationCancel,p_station_id:x.dataset.stationId,p_status:'cancelled',p_reason:reason.trim()})});
-      await loadOrders();
-    }catch(e){msg(e);await loadOrders();}
+    const reason=prompt('Why is this station cancelling the work?'); if(!reason||!reason.trim())return;
+    try{await api('/rest/v1/rpc/set_order_station_status',{method:'POST',body:JSON.stringify({p_order_id:x.dataset.stationCancel,p_station_id:x.dataset.stationId,p_status:'cancelled',p_reason:reason.trim()})});await loadStationOrders()}catch(e){msg(e);await loadStationOrders()}
   });
   document.querySelectorAll('[data-station-status]').forEach(x=>x.onchange=async()=>{
-    try{
-      await api('/rest/v1/rpc/set_order_station_status',{method:'POST',body:JSON.stringify({p_order_id:x.dataset.stationStatus,p_station_id:x.dataset.stationId,p_status:x.value})});
-      await loadStationOrders();
-    }catch(e){msg(e);await loadStationOrders();}
+    try{await api('/rest/v1/rpc/set_order_station_status',{method:'POST',body:JSON.stringify({p_order_id:x.dataset.stationStatus,p_station_id:x.dataset.stationId,p_status:x.value})});await loadStationOrders()}catch(e){msg(e);await loadStationOrders()}
   });
 }
+
 async function loadReceptionOrders(){
   const rows=await api('/rest/v1/rpc/get_reception_active_orders',{method:'POST'});
   const filter=$('#orderStatusFilter')?.value||'all';
