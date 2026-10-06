@@ -74,42 +74,7 @@
   <div id="accountingLedger" class="state">Select General Ledger to load.</div>
 </div>
 </section>
-<section id="reports" class="tab">
-<div class="treasury-report">
-  <header class="treasury-header">
-    <div><h1>Treasury &amp; Financial Report</h1><p>Money In · Money Out · Sales · Purchases · Inventory Movement</p></div>
-    <div class="treasury-controls">
-      <label><span>Date range</span><div class="date-range"><input id="reportFrom" type="date"><b>–</b><input id="reportTo" type="date"></div></label>
-      <label><span>Service Filter</span><select id="reportService"><option>All Services</option><option>Orders</option><option>Bookings</option><option>Events</option><option>Purchases</option></select></label>
-      <button id="generateReport" class="treasury-btn primary">Generate</button>
-      <button id="downloadReport" class="treasury-btn success">⇩ Download</button>
-      <button id="printReport" class="treasury-btn blue" type="button">▣ Print</button>
-    </div>
-  </header>
 
-  <div class="treasury-cards">
-    <article class="finance-card inflow"><div class="finance-icon">↑</div><div><h3>Total Money In <small>(Cash Received)</small></h3><strong id="reportRevenue">UGX 0</strong></div><div class="card-lines"><span>Orders <b id="reportInOrders">UGX 0</b></span><span>Bookings <b id="reportInBookings">UGX 0</b></span><span>Events <b id="reportInEvents">UGX 0</b></span><span>Other Income <b>UGX 0</b></span></div></article>
-    <article class="finance-card outflow"><div class="finance-icon">↓</div><div><h3>Total Money Out <small>(Purchases &amp; Expenses)</small></h3><strong id="reportPurchases">UGX 0</strong></div><div class="card-lines"><span>Food Purchases <b id="reportFoodPurchases">UGX 0</b></span><span>Beverage Purchases <b id="reportBeveragePurchases">UGX 0</b></span><span>Other Purchases <b id="reportOtherPurchases">UGX 0</b></span><span>Operating Expenses <b>UGX 0</b></span></div></article>
-    <article class="finance-card netflow"><div class="finance-icon">◉</div><div><h3>Net Cash Movement</h3><strong id="reportNet">UGX 0</strong><small>(Money In - Money Out)</small></div><div class="net-note">Cash movement for selected period</div></article>
-    <article class="finance-card outstanding"><div class="finance-icon">⚠</div><div><h3>Outstanding <small>(Completed but Unpaid)</small></h3><strong id="reportOutstanding">UGX 0</strong></div><div class="card-lines"><span>Orders <b id="reportOutstandingOrders">UGX 0</b></span><span>Bookings <b id="reportOutstandingBookings">UGX 0</b></span><span>Events <b>UGX 0</b></span></div></article>
-  </div>
-
-  <div class="treasury-charts">
-    <article class="report-panel"><h2>Cash Flow Overview</h2><div class="bar-chart" id="cashFlowChart"><div class="bar-col"><span>0</span><i></i><b>Money In</b></div><div class="bar-col"><span>0</span><i></i><b>Money Out</b></div><div class="bar-col"><span>0</span><i></i><b>Net Movement</b></div></div></article>
-    <article class="report-panel"><h2>Money In by Source</h2><div class="donut-layout"><div class="donut green" id="moneyInDonut"><span>UGX<br><b id="moneyInDonutValue">0</b></span></div><div class="legend" id="moneyInLegend"></div></div></article>
-    <article class="report-panel"><h2>Money Out by Category</h2><div class="donut-layout"><div class="donut orange" id="moneyOutDonut"><span>UGX<br><b id="moneyOutDonutValue">0</b></span></div><div class="legend" id="moneyOutLegend"></div></div></article>
-  </div>
-
-  <article class="report-panel detail-panel"><div class="panel-heading"><h2>Detailed Transactions (Money In &amp; Out)</h2><span>↑ Money In &nbsp; ↓ Money Out</span></div><div id="reportTable" class="treasury-table-wrap"><div class="state">Generate a report.</div></div></article>
-
-  <div class="treasury-bottom">
-    <article class="report-panel"><h2>Sales &amp; Revenue by Service</h2><div id="salesServiceTable"></div></article>
-    <article class="report-panel"><h2>Inventory &amp; Stock Movement</h2><div id="inventorySummaryTable"></div></article>
-    <article class="report-panel"><h2>Reconciliation Summary</h2><div class="reconciliation" id="reconciliationSummary"></div></article>
-  </div>
-  <footer class="treasury-footer">Kiteezi — Treasury &amp; Financial Report</footer>
-</div>
-</section>
 <section id="requisitions" class="tab"><div class="panel"><div class="toolbar"><h2>Requisitions</h2><button id="newRequisition" class="btn">New requisition</button><button id="refreshRequisitions" class="btn btn-dark">Refresh</button></div><p class="muted">All requests start at the Manager checkpoint. Approvers may confirm or edit with a mandatory reason. CEO approval generates the purchase order automatically.</p><div id="requisitionsTable" class="state">Ready</div></div></section>
 <section id="purchases" class="tab"><div class="panel"><div class="toolbar"><h2>Purchase Orders</h2><button id="refreshGeneratedPOs" class="btn btn-dark">Refresh</button></div><p class="muted">Purchase orders are generated only from final CEO-approved requisitions. There is no manual PO creation.</p><div id="generatedPOTable" class="state">Ready</div></div></section>
 <section id="service_tally" class="tab"><div class="panel"><div class="toolbar"><h2>Service Tally</h2><button id="newServiceLog" class="btn">Record service</button><button id="refreshServiceTally" class="btn btn-dark">Refresh</button></div><p class="muted">This is for accounting, revenue and service tallies only. It does not count or change physical inventory.</p><div id="serviceTallyTable" class="state">Ready</div></div></section>
