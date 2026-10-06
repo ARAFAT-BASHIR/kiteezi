@@ -553,22 +553,33 @@ async function loadOrderItems(id){let r=await api('/rest/v1/order_items?select=i
 
 async function loadRecipeMappings(){
   const box=$('#recipeTable'); if(!box)return;
-  box.innerHTML='<div class="toolbar"><button class="btn" id="newRecipe">Add recipe</button><button class="btn btn-dark" id="refreshRecipes">Refresh</button></div><div class="state">Loading recipes…</div>';
-  $('#newRecipe').onclick=()=>manageRecipe(); $('#refreshRecipes').onclick=()=>loadRecipeMappings().catch(msg);
+  const toolbar='<div class="toolbar"><button class="btn" id="newRecipe">Add recipe</button><button class="btn btn-dark" id="refreshRecipes">Refresh</button></div>';
+  box.innerHTML=toolbar+'<div class="state">Loading recipes…</div>';
+  const wire=()=>{$('#newRecipe').onclick=()=>manageRecipe();$('#refreshRecipes').onclick=()=>loadRecipeMappings().catch(msg)};
+  wire();
   try{
-    const recipes=await api('/rest/v1/menu_item_recipes?select=id,menu_item_id,inventory_item_id,quantity,recipe_unit,stock_units_per_recipe_unit,menu_items(name,serving_unit,service_stations(name)),inventory_items(name,unit)&order=created_at.asc');
-    box.innerHTML='<div class="toolbar"><button class="btn" id="newRecipe">Add recipe</button><button class="btn btn-dark" id="refreshRecipes">Refresh</button></div>'+
-      (recipes.length?'<table><tr><th>Menu item</th><th>Station</th><th>Ingredient</th><th>Recipe amount</th><th>Stock conversion</th><th></th></tr>'+
-      recipes.map(r=>'<tr><td>'+esc(r.menu_items?.name||r.menu_item_id)+'<br><small>'+esc(r.menu_items?.serving_unit||'')+'</small></td><td><span class="pill">'+esc(r.menu_items?.service_stations?.name||'Unassigned')+'</span></td><td>'+esc(r.inventory_items?.name||r.inventory_item_id)+' ('+esc(r.inventory_items?.unit||'')+')</td><td>'+esc(r.quantity)+' '+esc(r.recipe_unit||'stock')+'</td><td>'+esc(r.stock_units_per_recipe_unit||1)+' stock unit / recipe unit</td><td><button class="btn" data-recipe-edit="'+r.id+'">Edit</button> <button class="btn danger" data-recipe-delete="'+r.id+'">Delete</button></td></tr>').join('')+'</table>':'<div class="state">No recipes yet. Add the ingredients used for each menu item.</div>');
-    $('#newRecipe').onclick=()=>manageRecipe(); $('#refreshRecipes').onclick=()=>loadRecipeMappings().catch(msg);
+    const [recipes,shared]=await Promise.all([
+      api('/rest/v1/menu_item_recipes?select=id,menu_item_id,inventory_item_id,quantity,recipe_unit,stock_units_per_recipe_unit,menu_items(name,serving_unit,service_stations(name)),inventory_items(name,unit)&order=created_at.asc'),
+      api('/rest/v1/shared_pool_menu_rules?select=id,menu_item_id,inventory_item_id,dish_type,fraction_per_menu_unit,allocation_profile,requires_components,requires_profile,requires_components,active,notes,menu_items(name,serving_unit,service_stations(name)),inventory_items(name,unit)&active=eq.true&order=menu_item_id.asc')
+    ]);
+    const direct=Array.isArray(recipes)?recipes:[], pool=Array.isArray(shared)?shared:[];
+    const directHtml=direct.length
+      ?'<h3>Direct recipes</h3><table><tr><th>Menu item</th><th>Station</th><th>Ingredient</th><th>Recipe amount</th><th>Stock conversion</th><th></th></tr>'+
+        direct.map(r=>'<tr><td>'+esc(r.menu_items?.name||r.menu_item_id)+'<br><small>'+esc(r.menu_items?.serving_unit||'')+'</small></td><td><span class="pill">'+esc(r.menu_items?.service_stations?.name||'Unassigned')+'</span></td><td>'+esc(r.inventory_items?.name||r.inventory_item_id)+' ('+esc(r.inventory_items?.unit||'')+')</td><td>'+esc(r.quantity)+' '+esc(r.recipe_unit||'stock')+'</td><td>'+esc(r.stock_units_per_recipe_unit||1)+' stock unit / recipe unit</td><td><button class="btn" data-recipe-edit="'+r.id+'">Edit</button> <button class="btn danger" data-recipe-delete="'+r.id+'">Delete</button></td></tr>').join('')+'</table>'
+      :'<h3>Direct recipes</h3><div class="state">No direct recipe rows.</div>';
+    const poolHtml=pool.length
+      ?'<h3 style="margin-top:28px">Shared inventory &amp; automatic allocation rules</h3><p class="muted">These are production rules, not separate physical stock. Multiple menu items can draw from the same inventory pool.</p><table><tr><th>Menu item</th><th>Shared inventory</th><th>Rule</th><th>Allocation</th><th>Profile / components</th></tr>'+
+        pool.map(r=>'<tr><td>'+esc(r.menu_items?.name||r.menu_item_id)+'<br><small>'+esc(r.menu_items?.serving_unit||'')+'</small></td><td>'+esc(r.inventory_items?.name||r.inventory_item_id)+' ('+esc(r.inventory_items?.unit||'')+')</td><td>'+esc(r.dish_type||'Shared pool')+'</td><td>'+esc(r.fraction_per_menu_unit==null?'Dynamic / supplied at order time':r.fraction_per_menu_unit)+' '+esc(r.fraction_per_menu_unit==null?'':'pool unit per menu unit')+'</td><td>'+esc(r.allocation_profile||'—')+(r.requires_components?' · components required':'')+(r.requires_profile?' · profile required':'')+'<br><small>'+esc(r.notes||'')+'</small></td></tr>').join('')+'</table>'
+      :'<h3 style="margin-top:28px">Shared inventory &amp; automatic allocation rules</h3><div class="state">No shared-pool rules found.</div>';
+    box.innerHTML=toolbar+directHtml+poolHtml;
+    wire();
     $$('[data-recipe-edit]').forEach(x=>x.onclick=()=>manageRecipe(x.dataset.recipeEdit));
     $$('[data-recipe-delete]').forEach(x=>x.onclick=async()=>{if(!confirm('Delete this recipe ingredient?'))return;try{await api('/rest/v1/menu_item_recipes?id=eq.'+encodeURIComponent(x.dataset.recipeDelete),{method:'DELETE'});await loadRecipeMappings()}catch(e){msg(e)}});
   }catch(e){
-    box.innerHTML='<div class="toolbar"><button class="btn" id="newRecipe">Add recipe</button><button class="btn btn-dark" id="refreshRecipes">Refresh</button></div><div class="state">Recipes could not be loaded. '+esc(e.message||'Please try again.')+'</div>';
-    $('#newRecipe').onclick=()=>manageRecipe(); $('#refreshRecipes').onclick=()=>loadRecipeMappings().catch(msg);
+    box.innerHTML=toolbar+'<div class="state">Recipes could not be loaded. '+esc(e.message||'Please try again.')+'</div>';
+    wire();
   }
 }
-
 async function loadDailyStock(){const d=$('#stockRunDate').value||today();$('#stockRunDate').value=d;const [items,movs,counts,before]=await Promise.all([api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc'),api('/rest/v1/stock_movements?select=item_id,quantity,movement_type,reason,created_at&created_at=gte.'+d+'T00:00:00&created_at=lte.'+d+'T23:59:59'),api('/rest/v1/inventory_daily_counts?select=inventory_item_id,physical_quantity&count_date=eq.'+d),api('/rest/v1/stock_movements?select=item_id,quantity,movement_type&created_at=lt.'+d+'T00:00:00')]);const opening={};before.forEach(x=>opening[x.item_id]=(opening[x.item_id]||0)+(String(x.movement_type).toLowerCase()==='out'?-1:1)*Number(x.quantity||0));const day={};movs.forEach(x=>{const z=day[x.item_id]||{added:0,pos:0,waste:0,owner:0,other:0};const q=Number(x.quantity||0),r=String(x.reason||'').toLowerCase();if(String(x.movement_type).toLowerCase()!=='out')z.added+=q;else if(r.startsWith('order '))z.pos+=q;else if(r==='waste')z.waste+=q;else if(r==='owner taken home')z.owner+=q;else z.other+=q;day[x.item_id]=z});const counted=Object.fromEntries(counts.map(x=>[x.inventory_item_id,Number(x.physical_quantity)]));$('#dailyStockTable').innerHTML='<table><tr><th>Item</th><th>Opening</th><th>Added</th><th>POS Used</th><th>Waste</th><th>Owner Home</th><th>Other</th><th>Expected</th><th>Physical</th><th>Variance</th></tr>'+items.map(x=>{const z=day[x.id]||{added:0,pos:0,waste:0,owner:0,other:0},op=Number(opening[x.id]||0),expected=op+z.added-z.pos-z.waste-z.owner-z.other,p=counted[x.id];return '<tr><td>'+esc(x.name)+'<br><small>'+esc(x.unit)+'</small></td><td>'+op+'</td><td>'+z.added+'</td><td>'+z.pos+'</td><td>'+z.waste+'</td><td>'+z.owner+'</td><td>'+z.other+'</td><td>'+expected+'</td><td>'+(p==null?'—':p)+'</td><td>'+(p==null?'—':p-expected)+'</td></tr>'}).join('')+'</table>'}
 async function loadPurchases(){
   if(!(hasPermission('purchase_orders.view')||hasPermission('purchase_orders.manage'))){setHTML('#purchaseOrdersTable','<div class="state">Purchase receiving is not part of this account.</div>');return;}
