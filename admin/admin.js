@@ -5,6 +5,18 @@ const SESSION_KEY='kiteezi_admin_session';
 function readAdminSession(){try{const raw=localStorage.getItem(SESSION_KEY)||sessionStorage.getItem(SESSION_KEY);return raw?JSON.parse(raw):null}catch{return null}}
 function writeAdminSession(value){const raw=JSON.stringify(value);localStorage.setItem(SESSION_KEY,raw);sessionStorage.setItem(SESSION_KEY,raw)}
 function clearAdminSession(){localStorage.removeItem(SESSION_KEY);sessionStorage.removeItem(SESSION_KEY)}
+function setAuthView(authenticated){
+  const loginView=$('#loginView'), app=$('#app');
+  if(authenticated){
+    if(loginView){loginView.classList.add('hide');loginView.hidden=true;loginView.setAttribute('aria-hidden','true');}
+    if(app){app.classList.remove('hide');app.hidden=false;app.setAttribute('aria-hidden','false');}
+    document.body.classList.add('authenticated-shell');
+  }else{
+    if(app){app.classList.add('hide');app.hidden=true;app.setAttribute('aria-hidden','true');}
+    if(loginView){loginView.classList.remove('hide');loginView.hidden=false;loginView.setAttribute('aria-hidden','false');}
+    document.body.classList.remove('authenticated-shell');
+  }
+}
 const TAB_PERMISSIONS={
   dashboard:'dashboard.view', bookings:'bookings.manage', restaurant:'orders.manage',
   inventory:'inventory.operational', menu:'menu.manage', services:'services.manage',
@@ -69,8 +81,7 @@ async function bootAdmin(authSession){
     if(!profile?.active)throw Error('This Kiteezi staff profile is inactive.');
     try{await show()}catch(e){
       console.error('Kiteezi admin display initialization error:',e);
-      $('#loginView')?.classList.add('hide');
-      $('#app')?.classList.remove('hide');
+      setAuthView(true);
       if($('#who'))$('#who').textContent=(profile.full_name||'Staff')+' · '+(profile.role||'staff');
       if($('#rolePill'))$('#rolePill').textContent=profile.role||'staff';
       const dash=$('#dashboard'); if(dash)dash.classList.add('active');
@@ -85,9 +96,7 @@ async function bootAdmin(authSession){
       session=null;
       clearAdminSession();
     }
-    $('#app')?.classList.add('hide');
-    $('#loginView')?.classList.remove('hide');
-    document.body.classList.remove('authenticated-shell');
+    setAuthView(false);
     const el=$('#loginMsg'); if(el){el.hidden=false;el.textContent=e.message||'Unable to open the admin dashboard.';el.className='notice danger'}
     return false;
   }
@@ -95,9 +104,9 @@ async function bootAdmin(authSession){
 window.KITEEZI_ADMIN_BOOT=bootAdmin;
 async function restore(){
   const raw=localStorage.getItem(SESSION_KEY)||sessionStorage.getItem(SESSION_KEY);
-  if(!raw){$('#app')?.classList.add('hide');$('#loginView')?.classList.remove('hide');return}
+  if(!raw){setAuthView(false);return}
   let saved;try{saved=JSON.parse(raw)}catch{saved=null}
-  if(!saved?.access_token){clearAdminSession();$('#app')?.classList.add('hide');$('#loginView')?.classList.remove('hide');return}
+  if(!saved?.access_token){clearAdminSession();setAuthView(false);return}
   try{
     const refresh=window.__KITEEZI_REFRESH_ADMIN_SESSION__;
     if(typeof refresh==='function'){
@@ -109,9 +118,7 @@ async function restore(){
 }
 async function loadAdminLogo(){try{const r=await api('/rest/v1/site_settings?select=value&key=eq.logo_url&limit=1');const v=r?.[0]?.value||'';document.querySelectorAll('.brand-mark').forEach(el=>{if(!v){el.textContent='K';return;}const img=document.createElement('img');img.src=v.startsWith('http')?v:'../'+v.replace(/^\/+/, '');img.alt='Kiteezi Recreational Center';img.loading='eager';el.textContent='';el.appendChild(img);});const p=$('#logoPreview');if(p){p.src=v?(v.startsWith('http')?v:'../'+v.replace(/^\/+/,'')):'';p.hidden=!v;}}catch{}}
 async function show(){
-  $('#loginView')?.classList.add('hide');
-  $('#app')?.classList.remove('hide');
-  document.body.classList.add('authenticated-shell');
+  setAuthView(true);
   if($('#who'))$('#who').textContent=(profile?.full_name||'Staff')+' · '+(profile?.role||'staff');
   if($('#rolePill'))$('#rolePill').textContent=profile?.role||'staff';
   try{loadAdminLogo()}catch(e){console.warn('Admin logo load failed',e)}
@@ -956,14 +963,14 @@ async function loadSocial(){const r=await api('/rest/v1/social_links?select=*&or
 async function editSocial(id){const x=id?(await api('/rest/v1/social_links?id=eq.'+id))[0]:{platform:'',label:'',url:'',sort_order:0,active:true};if(id&&!x)throw Error('The social link could not be found.');modal('Social link','<form id="sl" class="form"><input name="platform" value="'+esc(x.platform)+'" placeholder="Platform" required><input name="label" value="'+esc(x.label)+'" placeholder="Label"><input name="url" type="url" value="'+esc(x.url)+'" placeholder="https://..." required><input name="sort" type="number" value="'+Number(x.sort_order||0)+'"><label>Active <input name="active" type="checkbox" '+(x.active?'checked':'')+'></label><div id="slStatus" class="notice" hidden></div><button id="slSave" class="btn btn-dark" type="submit">Save</button></form>');$('#sl').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget),button=$('#slSave'),status=$('#slStatus');const body={platform:String(f.get('platform')||'').trim(),label:String(f.get('label')||'').trim(),url:String(f.get('url')||'').trim(),sort_order:Number(f.get('sort')||0),active:f.get('active')==='on'};if(!body.platform||!body.url){if(status){status.hidden=false;status.textContent='Platform and URL are required.';status.className='notice danger'}return}if(button){button.disabled=true;button.textContent='Saving…'}if(status){status.hidden=true}try{await api(id?'/rest/v1/social_links?id=eq.'+encodeURIComponent(id):'/rest/v1/social_links',{method:id?'PATCH':'POST',body:JSON.stringify(body)});await loadSocial();closeModal();showAdminToast('Saved','Social link saved successfully.')}catch(err){console.error('Social link save failed:',err);if(status){status.hidden=false;status.textContent=err.message||'The social link could not be saved.';status.className='notice danger'}if(button){button.disabled=false;button.textContent='Save'}}}}
 async function loadRolesAndPermissions(){
   const [roles,perms]=await Promise.all([
-    api('/rest/v1/roles?select=id,name,description,active&order=name.asc'),
+    api('/rest/v1/roles?select=id,name,description&order=name.asc'),
     api('/rest/v1/permissions?select=id,code,name,description&order=code.asc')
   ]);
   const rp=await api('/rest/v1/role_permissions?select=role_id,permission_id');
   const byRole={}; (rp||[]).forEach(x=>(byRole[x.role_id]??=[]).push(x.permission_id));
   const canManage=hasPermission('staff.manage');
-  const roleRows=(roles||[]).map(r=>'<tr><td><strong>'+esc(r.name)+'</strong></td><td>'+esc(r.description||'')+'</td><td>'+((byRole[r.id]||[]).length)+'</td><td>'+esc(r.active?'Active':'Inactive')+'</td><td>'+(canManage?'<button class="btn" data-role-edit="'+r.id+'">Edit permissions</button>':'')+'</td></tr>').join('');
-  const box=$('#rolesTable'); if(box) box.innerHTML=roleRows?'<table><tr><th>Role</th><th>Description</th><th>Permissions</th><th>Status</th><th></th></tr>'+roleRows+'</table>':'<div class="state">No roles found.</div>';
+  const roleRows=(roles||[]).map(r=>'<tr><td><strong>'+esc(r.name)+'</strong></td><td>'+esc(r.description||'')+'</td><td><span class="pill">'+((byRole[r.id]||[]).length)+' permissions</span></td><td>'+(canManage?'<button class="btn" data-role-edit="'+r.id+'">Edit permissions</button>':'')+'</td></tr>').join('');
+  const box=$('#rolesTable'); if(box) box.innerHTML=roleRows?'<div class="table-scroll"><table><thead><tr><th>Role</th><th>Description</th><th>Access</th><th></th></tr></thead><tbody>'+roleRows+'</tbody></table></div>':'<div class="state">No roles found.</div>';
   const edit=async id=>{
     const role=(roles||[]).find(x=>x.id===id); if(!role)return;
     const selected=new Set(byRole[id]||[]);
