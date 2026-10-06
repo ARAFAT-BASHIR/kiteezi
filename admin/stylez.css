@@ -630,3 +630,36 @@ body.admin .tab.is-loading:after{content:"";position:absolute;top:12px;right:16p
   #accounting-panel-cash{display:block!important;border:0!important;box-shadow:none!important}
   #accounting-panel-cash .accounting-section-title{margin-bottom:18px}
 }
+
+/* === Production auth-state hardening === */
+body.admin #loginView[hidden],body.admin #app[hidden],
+body.admin #loginView.hide,body.admin #app.hide{display:none!important}
+
+/* === Professional Accounting / Reporting workspace === */
+body.admin .accounting-shell{padding:0!important;overflow:hidden;background:#fff}
+body.admin .accounting-shell>.toolbar{margin:0!important;padding:26px 28px 20px!important;border-bottom:1px solid #e5ece7;align-items:flex-start}
+body.admin .accounting-shell>.toolbar h2{margin:0 0 5px;color:#173c2d;font-size:28px;letter-spacing:-.02em}
+body.admin .accounting-shell>.toolbar .muted{margin:0;max-width:760px}
+body.admin .accounting-subnav{margin:0!important;padding:8px!important;border:0!important;border-top:1px solid #edf1ee!important;background:#f7f9f8;display:flex;gap:5px;overflow-x:auto;flex-wrap:nowrap}
+body.admin .accounting-subnav button{border:0!important;background:transparent!important;color:#53635b!important;border-radius:9px!important;padding:11px 14px!important;white-space:nowrap;font-weight:800}
+body.admin .accounting-subnav button:hover{background:#edf4ef!important;color:#1b4332!important}
+body.admin .accounting-subnav button.active{background:#1b4332!important;color:#fff!important}
+body.admin .accounting-view{border-radius:16px!important;box-shadow:0 5px 20px rgba(17,35,27,.045)!important}
+body.admin .accounting-view>.metrics{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+body.admin .accounting-view .metric{border-radius:14px;padding:18px;min-height:112px}
+body.admin .accounting-view .metric b{font-size:25px;margin-bottom:7px}
+body.admin .accounting-section-title{padding-bottom:12px;border-bottom:1px solid #e7ece9}
+body.admin .accounting-grid-two>div{min-width:0}
+body.admin .accounting-grid-two>div>h3,body.admin .accounting-view>h3{color:#173c2d;font-size:16px;margin:0 0 12px}
+body.admin .accounting-view th{background:#f1f5f2;color:#29483a;font-size:11px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+body.admin .accounting-view td{font-size:12px}
+body.admin .accounting-view .state{min-height:70px}
+body.admin .accounting-filters{padding:12px;background:#f7f9f8;border:1px solid #e5ece7;border-radius:12px}
+@media(max-width:900px){body.admin .accounting-view>.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){
+ body.admin .accounting-shell>.toolbar{padding:20px!important}
+ body.admin .accounting-shell>.toolbar h2{font-size:23px}
+ body.admin .accounting-view>.metrics{grid-template-columns:1fr}
+ body.admin .accounting-view{padding:16px!important}
+ body.admin .accounting-subnav button{padding:10px 12px!important;font-size:13px}
+}
