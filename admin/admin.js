@@ -185,17 +185,15 @@ function applyRoleNavigation(){
       '</div>';
     }).join('');
     const picker=$('#navCategory');
+    const filterNav=()=>{
+      const value=picker?.value||'all';
+      $$('.nav-group',nav).forEach(g=>g.hidden=!(value==='all'||g.dataset.navCategory===value));
+    };
     if(picker&&!picker.dataset.bound){
       picker.dataset.bound='1';
-      picker.onchange=()=>{
-        const value=picker.value;
-        $$('.nav-group',nav).forEach(g=>g.hidden=!(value==='all'||g.dataset.navCategory===value));
-        if(value!=='all'){
-          const first=nav.querySelector('.nav-group:not([hidden]) a[data-tab]');
-          if(first){first.focus();}
-        }
-      };
+      picker.addEventListener('change',filterNav);
     }
+    if(picker) filterNav();
   }
   // Hide entire module panels, not just their navigation links.
   document.querySelectorAll('.tab[id]').forEach(sec=>{
@@ -291,7 +289,7 @@ async function loadTasks(){
   const canEdit=hasPermission('tasks.manage')||hasPermission('staff.manage'); const canDelete=profile?.role==='owner';
   $('#tasksTable').innerHTML=rows.length
     ? '<table><tr><th>Task</th><th>Description</th><th>Due</th><th>Status</th><th>Assigned</th><th></th></tr>'+
-      rows.map(x=>'<tr><td>'+esc(x.title)+'</td><td>'+esc(x.description||'')+'</td><td>'+esc(x.due_date||'—')+'</td><td>'+esc(x.status||'open')+'</td><td>'+esc(x.assigned_to||'Unassigned')+'</td><td>'+(canEdit?'<button class="btn" data-edit-task="'+x.id+'">Edit</button>':'')+'</td></tr>').join('')+'</table>'
+      rows.map(x=>'<tr><td>'+esc(x.title)+'</td><td>'+esc(x.description||'')+'</td><td>'+esc(x.due_date||'—')+'</td><td>'+esc(x.status||'open')+'</td><td>'+esc(x.assigned_to||'Unassigned')+'</td><td>'+(canEdit?'<button class="btn" data-edit-task="'+x.id+'">Edit</button> ':'')+(canDelete?'<button class="btn danger" data-delete-task="'+x.id+'">Delete test</button>':'')+'</td></tr>').join('')+'</table>'
     : '<div class="state">No facility tasks.</div>';
   $$('[data-edit-task]').forEach(b=>b.onclick=()=>editTask(rows.find(x=>x.id===b.dataset.editTask))); $$('[data-delete-task]').forEach(b=>b.onclick=()=>deleteTestRecord('staff_task',b.dataset.deleteTask));
 }
@@ -501,7 +499,7 @@ async function cancelBooking(id){
   form.onsubmit=async e=>{e.preventDefault();const fd=new FormData(form),reason=String(fd.get('reason')||''),useWa=fd.get('whatsapp')==='on',textMessage=String(fd.get('message')||'').trim();try{await api('/rest/v1/rpc/admin_cancel_booking',{method:'POST',body:JSON.stringify({p_booking_id:id,p_reason:reason})});closeModal();await loadBookings();if(useWa){const digits=String(phone||'').replace(/\D/g,'');const canonical=/^07[0-9]{8}$/.test(digits)?'256'+digits.slice(1):/^7[0-9]{8}$/.test(digits)?'256'+digits:/^256[0-9]{9}$/.test(digits)?digits:'';if(canonical)window.location.href='https://wa.me/'+canonical+'?text='+encodeURIComponent(textMessage);else alert('Booking cancelled. WhatsApp was not opened because the customer phone number is not a valid international number.');}}catch(err){msg(err);}};
   $('#modal').classList.add('open');
 }
-async function deleteTestRecord(type,id){if(profile?.role!=='owner')return;const labels={booking:'booking',order:'order',inquiry:'inquiry',purchase_order:'purchase order',stock_movement:'stock movement',menu_recipe:'recipe',review:'review',gallery_item:'gallery item',media:'website media',announcement:'announcement',service_log:'service tally',staff_task:'staff task',daily_count:'daily inventory count',notification:'notification',email_message:'email message'};const label=labels[type]||'record';if(!confirm('Delete this test '+label+' permanently? This cannot be undone.'))return;try{await api('/rest/v1/rpc/owner_delete_test_record',{method:'POST',body:JSON.stringify({p_type:type,p_id:id})});if(type==='booking')await loadBookings();else if(type==='order')await loadOrders();else if(type==='inquiry')await loadInquiries();else if(type==='purchase_order')await loadPurchases();else if(type==='stock_movement')await loadStockMovements();else if(type==='review')await loadReviews();else if(type==='gallery_item')await loadGallery();else if(type==='media'||type==='announcement')await loadContent();else if(type==='service_log')await loadServiceTally();else if(type==='staff_task')await loadTasks();else if(type==='daily_count')await loadDailyStock();}catch(e){msg(e)}}
+async function deleteTestRecord(type,id){if(profile?.role!=='owner')return;const labels={booking:'booking',order:'order',inquiry:'inquiry',purchase_order:'purchase order',stock_movement:'stock movement',menu_recipe:'recipe',review:'review',gallery_item:'gallery item',media:'website media',announcement:'announcement',service_log:'service tally',staff_task:'staff task',daily_count:'daily inventory count',notification:'notification',email_message:'email message'};const label=labels[type]||'record';if(!confirm('Delete this test '+label+' permanently? This cannot be undone.'))return;try{await api('/rest/v1/rpc/owner_delete_test_record',{method:'POST',body:JSON.stringify({p_type:type,p_id:id})});if(type==='booking')await loadBookings();else if(type==='order')await loadOrders();else if(type==='requisition')await loadRequisitions();else if(type==='inquiry')await loadInquiries();else if(type==='purchase_order')await loadPurchases();else if(type==='stock_movement')await loadStockMovements();else if(type==='review')await loadReviews();else if(type==='gallery_item')await loadGallery();else if(type==='media'||type==='announcement')await loadContent();else if(type==='service_log')await loadServiceTally();else if(type==='staff_task')await loadTasks();else if(type==='daily_count')await loadDailyStock();}catch(e){msg(e)}}
 async function loadBookings(){
   const filter=$('#bookingFilter')?.value||'all';
   let q='/rest/v1/bookings?select=*,customers(name,phone),services(name)&order=booking_date.desc,start_time.asc';
