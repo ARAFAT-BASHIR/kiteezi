@@ -640,10 +640,10 @@ async function editInventory(id=null){
 }
 async function manageRecipe(existingId=null){
   try{
-    const [m,i]=await Promise.all([
+    const [m,i,u]=await Promise.all([
       api('/rest/v1/menu_items?select=id,name,serving_unit,station_id,service_stations(name)&order=name.asc'),
       api('/rest/v1/inventory_items?select=id,name,unit,station_id,service_stations(name)&active=eq.true&order=name.asc'),
-      loadUnitOptions()
+      api('/rest/v1/inventory_unit_conversions?select=id,inventory_item_id,serving_unit,stock_unit,stock_units_per_serving,active&active=eq.true&order=serving_unit.asc')
     ]);
     if(!m.length)throw Error('No menu items exist yet. Add the menu item first.');
     if(!i.length)throw Error('No active inventory ingredients exist yet. Add an inventory item first.');
@@ -653,31 +653,36 @@ async function manageRecipe(existingId=null){
       if(!existing)throw Error('The recipe ingredient could not be found.');
     }
     const menuOptions=m.map(x=>'<option value="'+x.id+'" '+(existing?.menu_item_id===x.id?'selected':'')+'>'+esc(x.name)+' — '+esc(x.service_stations?.name||'Unassigned')+'</option>').join('');
-    const row=(inv='',qty='',unit='stock',factor='1')=>'<div class="recipe-row" style="display:grid;grid-template-columns:minmax(0,1fr) 110px 120px 150px auto;gap:8px;align-items:end;margin-bottom:8px">'+
+    const conversions=Array.isArray(u)?u:[];
+    const row=(inv='',qty='',unit='stock',factor='1',conversionId='')=>'<div class="recipe-row" style="display:grid;grid-template-columns:minmax(0,1fr) 110px 120px 150px auto;gap:8px;align-items:end;margin-bottom:8px">'+
       '<label>Ingredient<select class="recipe-inv" required>'+i.map(x=>'<option value="'+x.id+'" '+(inv===x.id?'selected':'')+'>'+esc(x.name)+' ('+esc(x.unit)+')</option>').join('')+'</select></label>'+
       '<label>Amount<input class="recipe-qty" type="number" step="0.001" min="0.001" value="'+esc(qty)+'" placeholder="1" required></label>'+
       '<label>Recipe unit<select class="recipe-unit" required>'+unitOptionsHtml(unit)+'</select></label>'+
-      '<label>Stock conversion<input class="recipe-factor" type="number" step="0.000001" min="0.000001" value="'+esc(factor)+'" placeholder="1"></label>'+
+      '<label>Conversion<select class="recipe-conversion"><option value="">No conversion</option>'+conversions.filter(cv=>!inv||cv.inventory_item_id===inv).map(cv=>'<option value="'+cv.id+'" '+(cv.id===conversionId?'selected':'')+'>'+esc(cv.serving_unit)+' → '+esc(cv.stock_unit)+' ('+esc(cv.stock_units_per_serving)+')</option>').join('')+'</select></label>'+
       '<button type="button" class="btn recipe-remove">Remove</button></div>';
     modal(existing?'Edit recipe ingredient':'Build recipe',
       '<form id="recipe" class="form"><label>Menu item<select name="menu" required>'+menuOptions+'</select></label>'+
-      (existing?row(existing.inventory_item_id,existing.quantity,existing.recipe_unit||'stock',existing.stock_units_per_recipe_unit||1):'<div id="recipeRows">'+row()+'</div><button type="button" class="btn" id="addRecipeIngredient">+ Add another ingredient</button>')+
+      (existing?row(existing.inventory_item_id,existing.quantity,existing.recipe_unit||'stock',existing.stock_units_per_recipe_unit||1,existing.conversion_id||''):'<div id="recipeRows">'+row()+'</div><button type="button" class="btn" id="addRecipeIngredient">+ Add another ingredient</button>')+
       '<p class="muted">Amount is for ONE menu serving. Recipe unit is the serving measurement. Stock conversion is how many inventory stock units one recipe unit consumes. Example: a 750 ml bottle sold as a 30 ml shot = 1/25 bottle per shot.</p>'+
       '<div id="recipeError" class="state" style="display:none"></div><button class="btn btn-dark" type="submit">'+(existing?'Save recipe ingredient':'Save recipe')+'</button></form>');
     const bindRemove=()=>$('.recipe-remove',$('#recipe')).forEach(btn=>btn.onclick=()=>{const rows=$('.recipe-row',$('#recipe'));if(rows.length===1){alert('A recipe needs at least one ingredient.');return}btn.closest('.recipe-row')?.remove()});
     if(!existing){$('#addRecipeIngredient').onclick=()=>{$('#recipeRows').insertAdjacentHTML('beforeend',row());bindRemove()};bindRemove()}
     $('#recipe').onsubmit=async e=>{
       e.preventDefault(); const form=e.currentTarget, fd=new FormData(form), menu=String(fd.get('menu')||''), errorEl=$('#recipeError');
-      const entries=$$('.recipe-row',form).map(r=>({inventory_item_id:String($('.recipe-inv',r)?.value||''),quantity:Number($('.recipe-qty',r)?.value||0),recipe_unit:String($('.recipe-unit',r)?.value||'stock').trim()||'stock',stock_units_per_recipe_unit:Number($('.recipe-factor',r)?.value||0)}));
+      const entries=$$('.recipe-row',form).map(r=>({inventory_item_id:String($('.recipe-inv',r)?.value||''),quantity:Number($('.recipe-qty',r)?.value||0),recipe_unit:String($('.recipe-unit',r)?.value||'stock').trim()||'stock',stock_units_per_recipe_unit:Number((r.querySelector('.recipe-conversion option:checked')?.textContent.match(/\(([0-9.]+)\)$/)?.[1])||1),conversion_id:String($('.recipe-conversion',r)?.value||'').trim()||null}));
       if(!menu||!entries.length||entries.some(x=>!x.inventory_item_id||!(x.quantity>0)||!(x.stock_units_per_recipe_unit>0))){errorEl.textContent='Enter a valid amount and stock conversion for every ingredient.';errorEl.style.display='block';return}
       const ids=entries.map(x=>x.inventory_item_id); if(new Set(ids).size!==ids.length){errorEl.textContent='The same ingredient was selected more than once. Combine it into one row.';errorEl.style.display='block';return}
       try{
+        for(const e of entries){
+          const invItem=i.find(q=>q.id===e.inventory_item_id);
+          if(invItem && String(e.recipe_unit).toLowerCase()!==String(invItem.unit).toLowerCase() && !e.conversion_id) throw Error('Select the configured serving-unit conversion for '+invItem.name+'.');
+        }
         if(existing){
-          await api('/rest/v1/menu_item_recipes?id=eq.'+encodeURIComponent(existingId),{method:'PATCH',body:JSON.stringify({menu_item_id:menu,inventory_item_id:entries[0].inventory_item_id,quantity:entries[0].quantity,recipe_unit:entries[0].recipe_unit,stock_units_per_recipe_unit:entries[0].stock_units_per_recipe_unit})});
+          await api('/rest/v1/menu_item_recipes?id=eq.'+encodeURIComponent(existingId),{method:'PATCH',body:JSON.stringify({menu_item_id:menu,inventory_item_id:entries[0].inventory_item_id,quantity:entries[0].quantity,recipe_unit:entries[0].recipe_unit,stock_units_per_recipe_unit:entries[0].stock_units_per_recipe_unit,conversion_id:entries[0].conversion_id})});
         }else{
           const old=await api('/rest/v1/menu_item_recipes?select=id,inventory_item_id&menu_item_id=eq.'+encodeURIComponent(menu));
           const oldIds=new Set((old||[]).map(x=>x.inventory_item_id)); if(entries.some(x=>oldIds.has(x.inventory_item_id))){errorEl.textContent='One or more ingredients are already mapped to this menu item.';errorEl.style.display='block';return}
-          const result=await api('/rest/v1/menu_item_recipes',{method:'POST',body:JSON.stringify(entries.map(x=>({menu_item_id:menu,inventory_item_id:x.inventory_item_id,quantity:x.quantity,recipe_unit:x.recipe_unit,stock_units_per_recipe_unit:x.stock_units_per_recipe_unit})))});
+          const result=await api('/rest/v1/menu_item_recipes',{method:'POST',body:JSON.stringify(entries.map(x=>({menu_item_id:menu,inventory_item_id:x.inventory_item_id,quantity:x.quantity,recipe_unit:x.recipe_unit,stock_units_per_recipe_unit:x.stock_units_per_recipe_unit,conversion_id:x.conversion_id})))});
           if(!Array.isArray(result)&&!result?.id)throw Error('The recipe was not returned after saving.');
         }
         closeModal(); await loadRecipeMappings();
