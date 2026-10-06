@@ -54,9 +54,23 @@
   </div>
 </div>
 <div id="accounting-panel-cash" class="accounting-view panel" hidden>
-  <div class="accounting-section-title"><h3>Cash &amp; Sales</h3><span class="muted">Detailed money in, money out, sales and reconciliation.</span></div>
-
-</div>
+  <div class="accounting-section-title"><h3>Cash &amp; Sales</h3><span class="muted">Money received, money spent, outstanding balances and transaction detail.</span></div>
+  <div class="accounting-filters">
+    <label>From <input id="accountingCashFrom" type="date"></label>
+    <label>To <input id="accountingCashTo" type="date"></label>
+    <label>Source <select id="accountingCashSource"><option>All</option><option>Orders</option><option>Bookings</option><option>Events</option><option>Purchases</option></select></label>
+    <button id="accountingCashGenerate" class="btn btn-dark" type="button">Generate</button>
+    <button id="accountingCashDownload" class="btn" type="button">Download CSV</button>
+    <button id="accountingCashPrint" class="btn" type="button">Print</button>
+  </div>
+  <div class="metrics accounting-cash-metrics">
+    <div class="metric"><b id="accountingCashIn">UGX 0</b>Money in</div>
+    <div class="metric"><b id="accountingCashOut">UGX 0</b>Money out</div>
+    <div class="metric"><b id="accountingCashNet">UGX 0</b>Net movement</div>
+    <div class="metric"><b id="accountingCashOutstanding">UGX 0</b>Outstanding</div>
+  </div>
+  <div id="accountingCashTable" class="state">Choose Cash &amp; Sales to load this report.</div>
+</div></div>
 <div id="accounting-panel-purchases" class="accounting-view panel" hidden>
   <div class="accounting-grid-two">
     <div><h3>Purchases &amp; Accounts Payable</h3><div id="accountingPurchases" class="state">Select Purchases &amp; Inventory to load.</div></div>
