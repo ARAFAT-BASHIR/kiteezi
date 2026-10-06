@@ -130,27 +130,33 @@ async function loadPermissions(){
 }
 function applyRoleNavigation(){
   const nav=$('#nav');
+  const modules=[
+    ['dashboard','Dashboard',['dashboard.view']],
+    ['restaurant','POS / Orders',['orders.view','orders.manage','orders.station_kitchen','orders.station_barista','orders.reception.view']],
+    ['bookings','Bookings',['bookings.view','bookings.manage']],
+    ['inventory','Inventory',['inventory.all','inventory.operational','inventory.manage','inventory.kitchen','inventory.bar','inventory.cleaning','inventory.swimming']],
+    ['menu','Menu',['menu.manage','menu.public_content.manage']],
+    ['services','Services',['services.manage']],
+    ['inquiries','Inquiries',['inquiries.view','inquiries.catering','inquiries.drinks','inquiries.general','inquiries.swimming']],
+    ['swimming_timetable','Swimming Timetable',['swimming.manage']],
+    ['swimming_sessions','Swimming Sessions',['swimming.assigned','swimming.manage']],
+    ['tasks','Grounds / Tasks',['tasks.manage']],
+    ['content','Content / Media',['content.manage']],
+    ['reviews','Reviews',['reviews.view','reviews.moderate']],
+    ['social','Social Links',['social.manage']],
+    ['staff','Staff / Roles',['staff.manage']],
+    ['reports','Reports',['reports.view','reports.reservations.view']],
+    ['requisitions','Requisitions',['requisitions.view','requisitions.create','requisitions.approve.manager','requisitions.approve.gm','requisitions.approve.ceo']],
+    ['purchases','Purchase Orders',['purchase_orders.view','purchase_orders.manage']],
+    ['service_tally','Service Tally',['service_logs.create']],
+    ['settings','Settings',['site_settings.manage']]
+  ];
   if(nav){
-    const role=String(profile?.role||'').toLowerCase();
-    const trees={
-      chef:[['dashboard','Dashboard'],['restaurant','POS'],['service_tally','Service Tally'],['inventory','Inventory'],['menu','Menu'],['inquiries','Inquiries'],['bookings','Bookings'],['reviews','Reviews']],
-      waitstaff:[['dashboard','Dashboard'],['restaurant','POS'],['service_tally','Service Tally'],['inquiries','Inquiries'],['bookings','Bookings'],['reviews','Reviews']],
-      barista:[['dashboard','Dashboard'],['restaurant','POS'],['inventory','Inventory'],['inquiries','Inquiries']],
-      grounds_cleaning:[['dashboard','Dashboard'],['inventory','Inventory'],['tasks','Tasks'],['inquiries','Inquiries']],
-      swimming_coach:[['dashboard','Dashboard'],['swimming_sessions','My Swimming Sessions']],
-      head_swimming_coach:[['dashboard','Dashboard'],['bookings','School Swimming'],['swimming_timetable','Swimming Timetable'],['swimming_sessions','Swimming Sessions'],['inquiries','Inquiries'],['inventory','Inventory']],
-      manager:[['dashboard','Dashboard'],['service_tally','Service Tally'],['bookings','Bookings'],['restaurant','POS / Orders'],['inventory','Inventory'],['menu','Menu'],['services','Services'],['inquiries','Inquiries'],['swimming_timetable','Swimming Timetable'],['tasks','Tasks'],['reports','Reports'],['requisitions','Requisitions'],['purchases','Purchase Orders']],
-      general_manager:[['dashboard','Dashboard'],['service_tally','Service Tally'],['bookings','Bookings'],['restaurant','POS / Orders'],['inventory','Inventory'],['menu','Menu'],['services','Services'],['inquiries','Inquiries'],['content','Content / Media'],['reviews','Reviews'],['reports','Reports'],['requisitions','Requisitions'],['purchases','Purchase Orders'],['staff','Staff / Roles']],
-      gm:[['dashboard','Dashboard'],['service_tally','Service Tally'],['bookings','Bookings'],['restaurant','POS / Orders'],['inventory','Inventory'],['menu','Menu'],['services','Services'],['inquiries','Inquiries'],['content','Content / Media'],['reviews','Reviews'],['reports','Reports'],['requisitions','Requisitions'],['purchases','Purchase Orders'],['staff','Staff / Roles']],
-      ceo:[['dashboard','Dashboard'],['service_tally','Service Tally'],['bookings','Bookings'],['restaurant','POS / Orders'],['inventory','Inventory'],['menu','Menu'],['services','Services'],['inquiries','Inquiries'],['content','Content / Media'],['reviews','Reviews'],['social','Social Links'],['reports','Reports'],['requisitions','Requisitions'],['purchases','Purchase Orders'],['staff','Staff / Roles'],['settings','Settings']],
-      owner:[['dashboard','Dashboard'],['service_tally','Service Tally'],['bookings','Bookings'],['restaurant','POS / Orders'],['inventory','Inventory'],['menu','Menu'],['services','Services'],['inquiries','Inquiries'],['swimming_timetable','Swimming Timetable'],['swimming_sessions','Swimming Sessions'],['tasks','Grounds / Tasks'],['content','Content / Media'],['reviews','Reviews'],['social','Social Links'],['staff','Staff / Roles'],['reports','Reports'],['requisitions','Requisitions'],['purchases','Purchase Orders'],['settings','Settings']]
-    };
-    const tree=trees[role]||[['dashboard','Dashboard']];
-    const visibleTree=tree.filter(([id])=>canSeeTab(id));
+    const visibleTree=modules.filter(([,label,needed])=>Array.isArray(needed)&&needed.some(hasPermission));
     nav.innerHTML=visibleTree.map(([id,label])=>'<a href="#'+id+'" data-tab="'+id+'">'+label+'</a>').join('');
   }
-  if(!hasPermission(TAB_PERMISSIONS.staff)) $('#staffHelp').textContent='Staff accounts are managed by the owner.';
-  const newMenu=$('#newMenu'); if(newMenu) newMenu.hidden=!hasPermission('menu.manage');
+  const staffHelp=$('#staffHelp'); if(staffHelp&&!hasPermission('staff.manage'))staffHelp.textContent='Staff accounts are managed by the owner or authorized managers.';
+  const newMenu=$('#newMenu'); if(newMenu)newMenu.hidden=!hasPermission('menu.manage');
 }
 function canOpenTab(name){return canSeeTab(name);}
 function inquiryTypesForRole(){
@@ -218,7 +224,7 @@ async function loadInquiries(){
       const num=String(x.contact_number||'').replace(/[^0-9+]/g,'');
       const wa=num.replace(/^\+/,'');
       const msgText=encodeURIComponent('Hello '+String(x.customer_name||'')+', this is Kiteezi Recreational Center regarding your enquiry: '+String(x.message||''));
-      const deleteBtn=profile?.role==='owner'?'<button class="btn danger" data-delete-inquiry="'+x.id+'">Delete</button> ':'';return '<tr><td>'+esc(new Date(x.created_at).toLocaleString())+'</td><td>'+esc(x.customer_name)+'</td><td>'+esc(x.contact_number)+'<br><small>'+esc(x.contact_method)+'</small></td><td>'+esc(x.inquiry_type)+'</td><td>'+esc(x.message)+'</td><td>'+deleteBtn+'<select data-inquiry-status="'+x.id+'"><option '+(x.status==='new'?'selected':'')+'>new</option><option '+(x.status==='in_progress'?'selected':'')+'>in_progress</option><option '+(x.status==='replied'?'selected':'')+'>replied</option><option '+(x.status==='closed'?'selected':'')+'>closed</option></select></td><td><div class="actions"><a class="btn" href="https://wa.me/'+wa+'?text='+msgText+'" target="_blank" rel="noopener">WhatsApp</a><a class="btn" href="tel:'+num+'">Call</a></div></td></tr>';
+      const deleteBtn=hasPermission('orders.delete')?'<button class="btn danger" data-delete-inquiry="'+x.id+'">Delete</button> ':'';return '<tr><td>'+esc(new Date(x.created_at).toLocaleString())+'</td><td>'+esc(x.customer_name)+'</td><td>'+esc(x.contact_number)+'<br><small>'+esc(x.contact_method)+'</small></td><td>'+esc(x.inquiry_type)+'</td><td>'+esc(x.message)+'</td><td>'+deleteBtn+'<select data-inquiry-status="'+x.id+'"><option '+(x.status==='new'?'selected':'')+'>new</option><option '+(x.status==='in_progress'?'selected':'')+'>in_progress</option><option '+(x.status==='replied'?'selected':'')+'>replied</option><option '+(x.status==='closed'?'selected':'')+'>closed</option></select></td><td><div class="actions"><a class="btn" href="https://wa.me/'+wa+'?text='+msgText+'" target="_blank" rel="noopener">WhatsApp</a><a class="btn" href="tel:'+num+'">Call</a></div></td></tr>';
     }).join('')+'</table>':'<div class="state">No inquiries for your role.</div>';
   document.querySelectorAll('#inquiriesTable [data-delete-inquiry]').forEach(x=>x.onclick=()=>deleteTestRecord('inquiry',x.dataset.deleteInquiry));document.querySelectorAll('#inquiriesTable [data-inquiry-status]').forEach(el=>el.onchange=async()=>{await api('/rest/v1/inquiries?id=eq.'+encodeURIComponent(el.dataset.inquiryStatus),{method:'PATCH',body:JSON.stringify({status:el.value,updated_at:new Date().toISOString()})});});
 }
@@ -232,9 +238,9 @@ async function markNotificationsRead(){await api('/rest/v1/notifications?recipie
 async function loadRequisitions(){
   const rows=await api('/rest/v1/requisitions?select=*,requisition_items(*,inventory_items(name,unit))&order=created_at.desc');
   const role=String(profile?.role||'').toLowerCase();
-  const canManager=role==='manager'||role==='owner';
-  const canGM=role==='general_manager'||role==='gm'||role==='owner';
-  const canCEO=role==='ceo'||role==='owner';
+  const canManager=hasPermission('requisitions.approve.manager');
+  const canGM=hasPermission('requisitions.approve.gm');
+  const canCEO=hasPermission('requisitions.approve.ceo');
   $('#requisitionsTable').innerHTML=rows.length?'<table><tr><th>Number</th><th>Requester</th><th>Status</th><th>Items</th><th>Action</th></tr>'+
     rows.map(r=>{
       const items=(r.requisition_items||[]).map(i=>esc(i.inventory_items?.name||i.inventory_item_id)+' × '+esc(i.quantity)).join('<br>');
@@ -296,9 +302,14 @@ function route(x){
   const requested=x||'dashboard';
   tab=canOpenTab(requested)?requested:(canOpenTab('dashboard')?'dashboard':Object.keys(TAB_PERMISSIONS).find(canOpenTab)||'dashboard');
   document.querySelectorAll('[data-tab]').forEach(a=>a.classList.toggle('active',a.dataset.tab===tab));
-  document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('active',s.id===tab));
+  document.querySelectorAll('.tab').forEach(sec=>{
+    const active=sec.id===tab;
+    sec.classList.toggle('active',active);
+    sec.hidden=!active;
+    sec.setAttribute('aria-hidden',active?'false':'true');
+  });
   const f={dashboard:loadDashboard,bookings:loadBookings,restaurant:loadOrders,inventory:loadInventory,menu:loadMenu,services:loadServices,inquiries:loadInquiries,swimming_timetable:loadSwimmingTimetable,swimming_sessions:loadSwimmingSessions,tasks:loadTasks,content:loadContent,reviews:loadReviews,social:loadSocial,staff:loadStaff,reports:loadReport,settings:loadSettings,requisitions:loadRequisitions,purchases:loadGeneratedPOs,service_tally:loadServiceTally};
-  (f[tab]||loadDashboard)().catch(msg);
+  Promise.resolve((f[tab]||loadDashboard)()).catch(msg);
 }
 async function loadDashboard(){const d=today();const [b,o,i,sm]=await Promise.all([api('/rest/v1/bookings?select=id,status&booking_date=eq.'+d),api('/rest/v1/orders?select=id,status&status=not.eq.completed&status=not.eq.cancelled'),api('/rest/v1/inventory_items?select=id,reorder_level'),api('/rest/v1/stock_movements?select=item_id,quantity,movement_type')]);const stock={};sm.forEach(x=>stock[x.item_id]=(stock[x.item_id]||0)+(String(x.movement_type).toLowerCase()==='out'?-1:1)*Number(x.quantity||0));$('#mBookings').textContent=b.length;$('#mPending').textContent=b.filter(x=>x.status==='pending').length;$('#mOrders').textContent=o.length;$('#mLow').textContent=i.filter(x=>(stock[x.id]||0)<=Number(x.reorder_level||0)).length;$('#todayOps').textContent='Live data connected.'}
 function today(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Kampala'}).format(new Date())}
@@ -312,8 +323,42 @@ async function cancelBooking(id){
   $('#modal').classList.add('open');
 }
 async function deleteTestRecord(type,id){if(profile?.role!=='owner')return;const labels={booking:'booking',order:'order',inquiry:'inquiry',purchase_order:'purchase order',stock_movement:'stock movement',menu_recipe:'recipe'};const label=labels[type]||'record';if(!confirm('Delete this test '+label+' permanently? This cannot be undone.'))return;try{await api('/rest/v1/rpc/owner_delete_test_record',{method:'POST',body:JSON.stringify({p_type:type,p_id:id})});if(type==='booking')await loadBookings();else if(type==='order')await loadOrders();else if(type==='inquiry')await loadInquiries();else if(type==='purchase_order')await loadPurchases();else if(type==='stock_movement')await loadStockMovements();}catch(e){msg(e)}}
-async function loadBookings(){const filter=$('#bookingFilter').value;let q='/rest/v1/bookings?select=*,customers(name,phone),services(name)&order=booking_date.desc,start_time.asc';if(filter!=='all')q+='&status=eq.'+filter;let rows=await api(q);if(['head_swimming_coach','swimming_coach'].includes(profile?.role))rows=rows.filter(r=>/swim/i.test(r.services?.name||''));$('#bookingTable').innerHTML=rows.length?'<table><tr><th>Date</th><th>Customer</th><th>People</th><th>Total</th><th>Status</th><th>Payment</th><th></th></tr>'+rows.map(r=>{const active=r.status!=='cancelled'&&r.status!=='completed'; const role=String(profile?.role||'').toLowerCase(); const isSchool=/school swimming/i.test(r.services?.name||'')||r.booking_type==='school_swimming'; const bookingTransactional=(role==='owner'||role==='manager'||role==='general_manager'||role==='gm'||role==='ceo'||(role==='head_swimming_coach'&&isSchool));const num=String(r.customers?.phone||'').replace(/[^0-9+]/g,'').replace(/^\\+/,'');const customer=String(r.customers?.name||'');const waText=encodeURIComponent('Hello '+customer+', your booking request has been confirmed by Kiteezi Recreational Center.');const confirmBtn=bookingTransactional&&r.status==='pending'?'<button class="btn" data-confirm-booking="'+r.id+'" data-wa="'+num+'" data-watext="'+waText+'">Confirm</button> ':'';const paidBtn=bookingTransactional&&r.payment_status!=='paid'&&r.status!=='cancelled'?'<button class="btn" data-paid-booking="'+r.id+'">Paid</button> ':'';const completeBtn=bookingTransactional&&active?'<button class="btn" data-complete-booking="'+r.id+'">Completed</button> ':'';const cancelBtn=bookingTransactional&&active?'<button class="btn" data-cancel-booking="'+r.id+'">Cancel</button> ':'';const deleteBtn=profile?.role==='owner'?'<button class="btn danger" data-delete-booking="'+r.id+'">Delete test</button> ':'';return '<tr><td>'+esc(r.booking_date)+' '+esc(r.start_time||'')+'</td><td>'+esc(customer)+'<br>'+esc(r.customers?.phone||'')+'</td><td>'+r.people+'</td><td>UGX '+money(r.total)+'</td><td>'+esc(r.status)+'</td><td>'+esc(r.payment_status||'unpaid')+'</td><td class="actions">'+confirmBtn+paidBtn+completeBtn+cancelBtn+deleteBtn+'</td></tr>'}).join('')+'</table>':'<div class="state">No bookings.</div>';document.querySelectorAll('[data-confirm-booking]').forEach(x=>x.onclick=()=>setBookingAndWhatsApp(x.dataset.confirmBooking,'confirmed',null,x.dataset.wa,x.dataset.watext));document.querySelectorAll('[data-paid-booking]').forEach(x=>x.onclick=()=>setBookingStatus(x.dataset.paidBooking,null,'paid'));document.querySelectorAll('[data-complete-booking]').forEach(x=>x.onclick=()=>setBookingStatus(x.dataset.completeBooking,'completed',null));document.querySelectorAll('[data-cancel-booking]').forEach(x=>x.onclick=()=>cancelBooking(x.dataset.cancelBooking));document.querySelectorAll('[data-delete-booking]').forEach(x=>x.onclick=()=>deleteTestRecord('booking',x.dataset.deleteBooking));loadBuffets().catch(msg)}
-async function setBookingStatus(id,status,payment){const body={};if(status)body.status=status;if(payment)body.payment_status=payment;try{await api('/rest/v1/bookings?id=eq.'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify(body)});await loadBookings()}catch(e){msg(e)}}
+async function loadBookings(){
+  const filter=$('#bookingFilter')?.value||'all';
+  let q='/rest/v1/bookings?select=*,customers(name,phone),services(name)&order=booking_date.desc,start_time.asc';
+  if(filter!=='all')q+='&status=eq.'+encodeURIComponent(filter);
+  let rows=await api(q);
+  if(['head_swimming_coach','swimming_coach'].includes(String(profile?.role||'')))rows=rows.filter(r=>/swim/i.test(r.services?.name||'')||r.booking_type==='school_swimming');
+  const todayDate=today();
+  const todayRows=rows.filter(r=>String(r.booking_date)===todayDate);
+  const previousRows=rows.filter(r=>String(r.booking_date)<todayDate);
+  if(!(hasPermission('bookings.view')||hasPermission('bookings.manage'))){setHTML('#bookingTable','<div class="state">You do not have permission to view bookings.</div>');return;}
+  const renderRows=list=>{
+    if(!list.length)return '<div class="state">No bookings.</div>';
+    return '<table><tr><th>Date</th><th>Customer</th><th>People</th><th>Total</th><th>Status</th><th>Payment</th><th>Actions</th></tr>'+
+      list.map(r=>{
+        const active=r.status!=='cancelled'&&r.status!=='completed';
+        const isSchool=/school swimming/i.test(r.services?.name||'')||r.booking_type==='school_swimming';
+        const actionAllowed=perm=>hasPermission(perm)&&(!isSchool||['manager','head_swimming_coach','owner'].includes(String(profile?.role||'')));
+        const num=String(r.customers?.phone||'').replace(/[^0-9+]/g,'').replace(/^\+/,'');
+        const customer=String(r.customers?.name||'');
+        const waText=encodeURIComponent('Hello '+customer+', your booking request has been confirmed by Kiteezi Recreational Center.');
+        const confirmBtn=actionAllowed('bookings.confirm')&&r.status==='pending'?'<button class="btn" data-confirm-booking="'+r.id+'" data-wa="'+num+'" data-watext="'+waText+'">Confirm</button> ':'';
+        const paidBtn=actionAllowed('bookings.pay')&&r.payment_status!=='paid'&&r.status!=='cancelled'?'<button class="btn" data-paid-booking="'+r.id+'">Paid</button> ':'';
+        const completeBtn=actionAllowed('bookings.complete')&&active?'<button class="btn" data-complete-booking="'+r.id+'">Completed</button> ':'';
+        const cancelBtn=actionAllowed('bookings.cancel')&&active?'<button class="btn" data-cancel-booking="'+r.id+'">Cancel</button> ':'';
+        const deleteBtn=hasPermission('bookings.delete')?'<button class="btn danger" data-delete-booking="'+r.id+'">Delete</button> ':'';
+        return '<tr><td>'+esc(r.booking_date)+' '+esc(r.start_time||'')+'</td><td>'+esc(customer)+'<br>'+esc(r.customers?.phone||'')+'</td><td>'+esc(r.people)+'</td><td>UGX '+money(r.total)+'</td><td>'+esc(r.status)+'</td><td>'+esc(r.payment_status||'unpaid')+'</td><td class="actions">'+confirmBtn+paidBtn+completeBtn+cancelBtn+deleteBtn+'</td></tr>';
+      }).join('')+'</table>';
+  };
+  setHTML('#bookingTable','<h3>Today\'s bookings</h3>'+renderRows(todayRows)+'<h3 style="margin-top:24px">Previous bookings</h3>'+renderRows(previousRows));
+}
+async function setBookingStatus(id,status,payment){
+  try{
+    await api('/rest/v1/rpc/admin_update_booking',{method:'POST',body:JSON.stringify({p_booking_id:id,p_status:status||null,p_payment_status:payment||null})});
+    await loadBookings();
+  }catch(e){msg(e)}
+}
 function openWhatsApp(phone,textMessage){const raw=String(phone||'').trim();let digits=raw.replace(/\D/g,'');if(digits.startsWith('00'))digits=digits.slice(2);if(digits.startsWith('0'))digits='256'+digits.slice(1);if(!digits.startsWith('256')&&digits.length===9)digits='256'+digits;if(!/^2567\d{8}$/.test(digits)){msg(new Error('This booking does not have a valid Uganda WhatsApp number.'));return false;}window.location.href='https://wa.me/'+digits+'?text='+textMessage;return true}
 async function setBookingAndWhatsApp(id,status,payment,wa,textMessage){
   const raw=String(wa||'').trim();
@@ -379,7 +424,7 @@ async function loadOrders(){
   const ids=rows.map(x=>x.id);
   const progress=ids.length?await api('/rest/v1/order_station_progress?select=order_id,station_id,status,service_stations(name,sort_order)&order=order_id.asc,station_id.asc'):[]; 
   const byOrder={};progress.forEach(x=>(byOrder[x.order_id]??=[]).push(x));
-  const canGlobalComplete=!['chef','barista'].includes(profile?.role);
+  const canGlobalComplete=hasPermission('orders.complete');
   const stationRows=(id)=>byOrder[id]||[];
   const normalizePhone=value=>{
     let v=String(value||'').trim().replace(/[^0-9+]/g,'');
@@ -406,10 +451,10 @@ async function loadOrders(){
       const allComplete=station.length>0&&station.every(s=>s.status==='complete');
       const confirmText='Hello '+customerName+', your order has been confirmed by Kiteezi Recreational Center. Your order is now being prepared.';
       const readyText=method==='delivery'?'Hello '+customerName+', your order is completed and ready for delivery.':method==='dine_in'?'Hello '+customerName+', your order is completed and ready. Please proceed for dine-in.':'Hello '+customerName+', your order is completed and ready for pickup at Kiteezi Recreational Center.';
-      const confirmBtn=(r.status==='pending'||r.status==='open')?'<button class="btn" data-confirm-wa="'+r.id+'" data-wa="'+esc(phone)+'" data-watext="'+esc(confirmText)+'">Confirm</button> ':'';
+      const confirmBtn=hasPermission('orders.confirm')&&(r.status==='pending'||r.status==='open')?'<button class="btn" data-confirm-wa="'+r.id+'" data-wa="'+esc(phone)+'" data-watext="'+esc(confirmText)+'">Confirm</button> ':'';
       const completeBtn=(r.status==='confirmed'&&canGlobalComplete&&(!station.length||allComplete))?'<button class="btn" data-done-wa="'+r.id+'" data-wa="'+esc(phone)+'" data-watext="'+esc(readyText)+'">Complete</button> ':'';
-      const paidBtn=(r.status!=='cancelled'&&r.payment_status!=='paid')?'<button class="btn" data-paid="'+r.id+'">Paid</button> ':'';
-      const cancelBtn=(r.status!=='completed'&&r.status!=='cancelled')?'<button class="btn" data-admin-cancel="'+r.id+'" data-customer="'+esc(customerName)+'" data-phone="'+esc(phone)+'">Cancel</button> ':'';
+      const paidBtn=hasPermission('orders.pay')&&(r.status!=='cancelled'&&r.payment_status!=='paid')?'<button class="btn" data-paid="'+r.id+'">Paid</button> ':'';
+      const cancelBtn=hasPermission('orders.cancel')&&(r.status!=='completed'&&r.status!=='cancelled')?'<button class="btn" data-admin-cancel="'+r.id+'" data-customer="'+esc(customerName)+'" data-phone="'+esc(phone)+'">Cancel</button> ':'';
       const itemsBtn='<button class="btn" data-items="'+r.id+'">Items</button> ';
       const deleteBtn=profile?.role==='owner'?'<button class="btn danger" data-delete-order="'+r.id+'">Delete test</button>':'';
       return '<tr><td>#'+esc(r.id.slice(0,8).toUpperCase())+'<br>'+esc(r.source)+'</td><td>'+esc(customerName)+'<br>'+esc(phone)+'</td><td>'+esc(method==='delivery'?'Delivery':method==='dine_in'?'Dine in':'Pickup from Kiteezi')+'</td><td>'+esc(r.status==='pending'||r.status==='open'?'Waiting for Confirmation':r.status==='confirmed'?'In Progress':r.status==='completed'?'Complete':r.status)+'</td><td>'+stationHtml+'</td><td>'+esc(r.payment_status)+'</td><td>UGX '+money(r.total)+'</td><td class="actions">'+confirmBtn+completeBtn+paidBtn+cancelBtn+itemsBtn+deleteBtn+'</td></tr>';
