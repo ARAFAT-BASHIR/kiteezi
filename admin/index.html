@@ -1,8 +1,7 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Kiteezi Admin</title><link rel="stylesheet" href="stylez.css?v=20261006-13"></head><body class="admin">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Kiteezi Admin</title><link rel="stylesheet" href="stylez.css?v=20261006-20"></head><body class="admin">
 <div id="loginView" class="login"><div class="login-card"><div class="brand"><span class="brand-mark">K</span><span>Kiteezi Admin<small>Private Operations</small></span></div><h2>Staff sign in</h2><p class="muted">Only an active Kiteezi staff profile can enter.</p><form id="loginForm" class="form"><label>Email<input name="email" type="email" required autocomplete="username"></label><label>Password<input name="password" type="password" required autocomplete="current-password"></label><button type="submit" class="btn btn-dark">Sign in</button><div id="loginMsg" class="notice" hidden></div></form></div></div>
-<div id="app" class="admin-shell hide"><aside class="side"><div class="brand"><span class="brand-mark">K</span><span>Kiteezi Admin<small>Operations</small></span></div><nav id="nav">
-<a href="#dashboard" data-tab="dashboard">Dashboard</a><a href="#bookings" data-tab="bookings">Bookings</a><a href="#restaurant" data-tab="restaurant">POS / Orders</a><a href="#inventory" data-tab="inventory">Inventory</a><a href="#menu" data-tab="menu">Menu</a><a href="#services" data-tab="services">Services</a><a href="#inquiries" data-tab="inquiries">Inquiries</a><a href="#swimming_timetable" data-tab="swimming_timetable">Swimming Timetable</a><a href="#swimming_sessions" data-tab="swimming_sessions">My Swimming Sessions</a><a href="#tasks" data-tab="tasks">Grounds / Tasks</a><a href="#content" data-tab="content">Content / Media</a><a href="#reviews" data-tab="reviews">Reviews</a><a href="#social" data-tab="social">Social Links</a><a href="#staff" data-tab="staff">Staff / Roles</a><a href="#reports" data-tab="reports">Reports</a><a href="#settings" data-tab="settings">Settings</a></nav><button id="logout" class="btn">Sign out</button></aside>
+<div id="app" class="admin-shell hide"><aside class="side"><div class="brand"><span class="brand-mark">K</span><span>Kiteezi Admin<small>Operations</small></span></div><nav id="nav" aria-label="Admin sections"></nav><button id="logout" class="btn">Sign out</button></aside>
 <main class="main"><div class="toolbar"><div><div class="eyebrow">Operations</div><h1>Kiteezi Management System</h1><div id="who" class="muted"></div></div><span id="rolePill" class="pill"></span><button id="notificationBell" class="btn" type="button" aria-label="Notifications">🔔 <span id="notificationCount">0</span></button><div id="notificationPanel" class="panel" style="display:none"><div class="toolbar"><h2>Notifications</h2><button id="markNotificationsRead" class="btn">Mark all read</button></div><div id="notificationList" class="state">No notifications.</div></div></div>
 <section id="dashboard" class="tab"><div class="metrics"><div class="metric"><b id="mBookings">0</b>Today's bookings</div><div class="metric"><b id="mPending">0</b>Pending bookings</div><div class="metric"><b id="mOrders">0</b>Open orders</div><div class="metric"><b id="mLow">0</b>Low stock</div></div><div class="panel"><h2>Today</h2><div id="todayOps" class="state">Ready</div></div></section>
 <section id="bookings" class="tab"><div class="panel"><div class="toolbar"><h2>Bookings</h2><select id="bookingFilter"><option value="all">All</option><option>pending</option><option>confirmed</option><option>completed</option><option>cancelled</option></select><button id="refreshBookings" class="btn btn-dark">Refresh</button></div><div id="bookingTable" class="state">Ready</div></div></section>
@@ -21,7 +20,60 @@
 <section id="reviews" class="tab"><div class="panel"><div class="toolbar"><h2>Public reviews</h2><button id="refreshReviews" class="btn btn-dark">Refresh</button></div><p class="muted">Customers submit reviews. Staff can remove them; staff do not edit or create reviews.</p><div id="reviewsTable" class="state">Ready</div></div></section>
 <section id="social" class="tab"><div class="panel"><div class="toolbar"><h2>Social links</h2><button id="newSocial" class="btn">Add link</button><button id="refreshSocial" class="btn btn-dark">Refresh</button></div><div id="socialTable" class="state">Ready</div></div></section>
 <section id="staff" class="tab"><div class="panel"><div class="toolbar"><h2>Staff / roles</h2><button id="newStaff" class="btn">Add staff / owner</button><button id="refreshStaff" class="btn btn-dark">Refresh</button></div><p id="staffHelp" class="muted">Owner-managed staff accounts. You can create the account, password, role, photo and background information directly.</p><div id="staffTable" class="state">Ready</div></div><div class="panel"><div class="toolbar"><h2>Public departments & positions</h2><button id="newTeamPosition" class="btn btn-dark" type="button">Add position</button></div><p class="muted">Add departments as the business grows. Each position can have its own person's name and can be edited or removed later.</p><div id="teamPositionsTable" class="state">Ready</div></div><div class="panel"><div class="toolbar"><h2>Roles & Permissions</h2><button id="refreshRoles" class="btn btn-dark">Refresh</button></div><p class="muted">Your existing roles and permission assignments are preserved. Edit access without changing staff records.</p><div id="rolesTable" class="state">Ready</div><div id="teamPositionMsg" class="notice" hidden></div></div></section>
-<section id="accounting" class="tab"><div class="panel"><div class="toolbar"><h2>Accounting &amp; Finance</h2><button id="refreshAccounting" class="btn btn-dark">Refresh</button></div><p class="muted">Ledger-derived financial statements. Operational transactions post into accounting automatically; this screen is read-only reporting.</p><div class="metrics"><div class="metric"><b id="acctRevenue">UGX 0</b>Revenue</div><div class="metric"><b id="acctExpenses">UGX 0</b>Expenses</div><div class="metric"><b id="acctNet">UGX 0</b>Net result</div><div class="metric"><b id="acctCash">UGX 0</b>Cash movement</div></div></div><div class="panel"><h2>Income Statement</h2><div id="accountingIncome" class="state">Ready</div></div><div class="panel"><h2>Balance Sheet</h2><div id="accountingBalance" class="state">Ready</div></div><div class="panel"><h2>Department Performance</h2><div id="accountingDepartments" class="state">Ready</div></div><div class="panel"><h2>General Ledger</h2><div id="accountingLedger" class="state">Ready</div></div><div class="panel"><h2>Cash Flow</h2><div id="accountingCashFlow" class="state">Ready</div></div></section>
+<section id="accounting" class="tab">
+<div class="panel accounting-shell">
+  <div class="toolbar">
+    <div>
+      <h2>Accounting &amp; Finance</h2>
+      <p class="muted">One financial workspace. Statements, cash, sales, purchases, inventory flow, operational actions and the ledger are all derived from the system records.</p>
+    </div>
+    <button id="refreshAccounting" class="btn btn-dark">Refresh current section</button>
+  </div>
+  <div class="accounting-subnav" id="accountingSubnav" role="tablist" aria-label="Accounting sections">
+    <button type="button" class="active" data-accounting-view="overview">Overview</button>
+    <button type="button" data-accounting-view="statements">Statements</button>
+    <button type="button" data-accounting-view="cash">Cash &amp; Sales</button>
+    <button type="button" data-accounting-view="purchases">Purchases &amp; Inventory</button>
+    <button type="button" data-accounting-view="operations">Actions &amp; Performance</button>
+    <button type="button" data-accounting-view="ledger">General Ledger</button>
+  </div>
+</div>
+<div id="accounting-panel-overview" class="accounting-view panel">
+  <div class="metrics">
+    <div class="metric"><b id="acctRevenue">UGX 0</b>Revenue</div>
+    <div class="metric"><b id="acctExpenses">UGX 0</b>Expenses</div>
+    <div class="metric"><b id="acctNet">UGX 0</b>Net result</div>
+    <div class="metric"><b id="acctCash">UGX 0</b>Cash movement</div>
+  </div>
+  <div class="panel-inner"><h3>Department performance</h3><div id="accountingDepartments" class="state">Loading overview…</div></div>
+</div>
+<div id="accounting-panel-statements" class="accounting-view panel" hidden>
+  <div class="accounting-grid-two">
+    <div><h3>Income Statement</h3><div id="accountingIncome" class="state">Select Statements to load.</div></div>
+    <div><h3>Balance Sheet</h3><div id="accountingBalance" class="state">Select Statements to load.</div></div>
+  </div>
+</div>
+<div id="accounting-panel-cash" class="accounting-view panel" hidden>
+  <div class="accounting-section-title"><h3>Cash &amp; Sales</h3><span class="muted">Detailed money in, money out, sales and reconciliation.</span></div>
+
+</div>
+<div id="accounting-panel-purchases" class="accounting-view panel" hidden>
+  <div class="accounting-grid-two">
+    <div><h3>Purchases &amp; Accounts Payable</h3><div id="accountingPurchases" class="state">Select Purchases &amp; Inventory to load.</div></div>
+    <div><h3>Inventory &amp; Stock Flow</h3><div id="accountingInventory" class="state">Select Purchases &amp; Inventory to load.</div></div>
+  </div>
+</div>
+<div id="accounting-panel-operations" class="accounting-view panel" hidden>
+  <div class="accounting-grid-two">
+    <div><h3>Operational Actions</h3><div id="accountingActions" class="state">Select Actions &amp; Performance to load.</div></div>
+    <div><h3>Performance</h3><div id="accountingPerformance" class="state">Select Actions &amp; Performance to load.</div></div>
+  </div>
+</div>
+<div id="accounting-panel-ledger" class="accounting-view panel" hidden>
+  <h3>General Ledger</h3>
+  <div id="accountingLedger" class="state">Select General Ledger to load.</div>
+</div>
+</section>
 <section id="reports" class="tab">
 <div class="treasury-report">
   <header class="treasury-header">
@@ -70,4 +122,4 @@
 </div></section>
 </main></div>
 <div id="modal" class="modal"><div class="modal-card"><div class="toolbar"><h2 id="modalTitle">Edit</h2><button id="modalClose" class="btn">Close</button></div><div id="modalBody"></div></div></div>
-<script src="../config.js?v=20261004-2"></script><script src="admin-login.js?v=20261005-3"></script><script src="admin.js?v=20261006-11"></script><script src="admin-hardening.js?v=20261006-16"></script></body></html>
+<script src="../config.js?v=20261004-2"></script><script src="admin-login.js?v=20261006-20"></script><script src="admin.js?v=20261006-20"></script><script src="admin-hardening.js?v=20261006-21"></script></body></html>
