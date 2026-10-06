@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gallery | Kiteezi Recreational Center</title><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"></head>
+<body>
+<header class="nav"><div class="container navin"><a class="brand" href="index.html"><span class="brand-mark">K</span><span><span class="brand-name">Kiteezi Recreational Center</span><small>Comfort • Dining • Recreation</small></span></a>
+<nav class="links" aria-label="Main navigation"><a href="index.html">Home</a><a href="swimming.html">Swimming</a><a href="sports.html">Sports</a><a href="menu.html">Menu</a><a href="events.html">Events</a><a href="gallery.html" class="active" aria-current="page">Gallery</a><a href="contact.html">Contact</a></nav></div></header>
+<main>
+<section class="page-hero"><div class="container"><div class="eyebrow">Kiteezi Gallery</div><h1>Moments at Kiteezi.</h1><p>Photos and videos from the center, our activities and our guests.</p></div></section>
+<section class="section"><div class="container">
+<div class="section-head"><h2>Gallery</h2><p>Only approved media is published.</p></div>
+<div id="galleryGrid" class="grid grid-3" aria-live="polite"><p class="muted">Loading gallery…</p></div>
+</div></section>
+<section class="section sand"><div class="container"><div class="section-head"><div class="eyebrow">Share your experience</div><h2>Have a Kiteezi photo or video?</h2><p>Choose a photo or video from your device. Every customer submission is reviewed before it can appear publicly.</p></div>
+<form id="galleryForm" class="form-card" style="max-width:760px;padding:24px;background:#fff;border-radius:16px;border:1px solid #e5e8e4">
+<label>Your name<input name="name" maxlength="120" required></label>
+<label>Email (optional)<input name="email" type="email" maxlength="160"></label>
+<label>Phone / WhatsApp (optional)<input name="phone" type="tel" maxlength="40"></label>
+<label>Caption (optional)<textarea name="caption" maxlength="500" rows="3"></textarea></label>
+<label>Category<select name="category"><option>General</option><option>Events</option><option>Food & Drinks</option><option>Sports</option><option>Swimming</option><option>Recreation</option><option>Facility</option></select></label>
+<label>Photo or video<input id="galleryFile" name="file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,video/mp4,video/webm,video/quicktime" required><small class="muted">Maximum 50 MB. Images: JPG, PNG, WebP, GIF, AVIF. Videos: MP4, WebM or MOV.</small></label>
+<label style="display:flex;gap:10px;align-items:flex-start"><input name="consent" type="checkbox" required style="width:auto;margin-top:5px"><span>I confirm I have permission to share this media and consent to Kiteezi reviewing it for publication.</span></label>
+<button class="btn btn-dark" type="submit">Submit for review</button><div id="galleryStatus" class="notice" hidden></div>
+</form></div></section>
+</main>
+<footer class="footer"><div class="container copyright">© <span data-year></span> Kiteezi Recreational Center. All rights reserved.</div></footer>
+<script src="config.js"></script><script src="content.js"></script><script src="site.js"></script>
+<script>
+(function(){
+const C=window.KITEEZI_CONFIG||{},u=String(C.SUPABASE_URL||'').replace(/\/+$/,''),k=C.SUPABASE_ANON_KEY,MAX=50*1024*1024;
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function load(){const g=document.getElementById('galleryGrid');try{const r=await fetch(u+'/rest/v1/gallery_items?select=id,title,caption,category,media_type,storage_bucket,storage_path&status=eq.approved&active=eq.true&order=sort_order.asc,created_at.desc',{headers:{apikey:k,Authorization:'Bearer '+k}});if(!r.ok)throw Error('Gallery could not be loaded.');const rows=await r.json();g.innerHTML=rows.length?rows.map(x=>{const url=u+'/storage/v1/object/public/'+encodeURIComponent(x.storage_bucket)+'/'+x.storage_path.split('/').map(encodeURIComponent).join('/');const media=x.media_type==='video'?'<video class="photo" src="'+esc(url)+'" controls preload="metadata" playsinline></video>':'<img class="photo" src="'+esc(url)+'" alt="'+esc(x.title||'Kiteezi gallery')+'" loading="lazy">';return '<article class="card">'+media+'<div class="card-body"><span class="badge">'+esc(x.category)+'</span><h3>'+esc(x.title||'Kiteezi')+'</h3>'+(x.caption?'<p>'+esc(x.caption)+'</p>':'')+'</div></article>'}).join(''):'<p class="muted">No gallery media has been published yet.</p>'}catch(e){g.innerHTML='<p class="muted">Gallery is temporarily unavailable.</p>'}}
+load();
+const f=document.getElementById('galleryForm'),s=document.getElementById('galleryStatus');
+f.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(f),file=fd.get('file');if(!file||!file.size)return;s.hidden=true;if(file.size>MAX){s.hidden=false;s.textContent='That file is larger than 50 MB. Please choose a smaller file.';return}const imageTypes=['image/jpeg','image/png','image/webp','image/gif','image/avif'],videoTypes=['video/mp4','video/webm','video/quicktime'];if(![...imageTypes,...videoTypes].includes(file.type)){s.hidden=false;s.textContent='Unsupported file type.';return}const mediaType=imageTypes.includes(file.type)?'image':'video';const ext=(file.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'');const path='pending/'+crypto.randomUUID()+'.'+ext;const submit=document.querySelector('#galleryForm button[type=submit]');submit.disabled=true;submit.textContent='Uploading…';try{const up=await fetch(u+'/storage/v1/object/gallery-private/'+path,{method:'POST',headers:{apikey:k,Authorization:'Bearer '+k,'Content-Type':file.type,'x-upsert':'false'},body:file});if(!up.ok){const t=await up.text();throw Error(t||'Upload failed.')}const orgRows=await fetch(u+'/rest/v1/organizations?select=id&status=eq.active&order=created_at.asc&limit=1',{headers:{apikey:k,Authorization:'Bearer '+k}});const org=await orgRows.json();if(!org[0]?.id)throw Error('Organization configuration is missing.');const row=await fetch(u+'/rest/v1/gallery_items',{method:'POST',headers:{apikey:k,Authorization:'Bearer '+k,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({organization_id:org[0].id,title:null,caption:fd.get('caption')||null,category:fd.get('category')||'General',media_type:mediaType,storage_bucket:'gallery-private',storage_path:path,source:'customer',submitter_name:fd.get('name'),submitter_email:fd.get('email')||null,submitter_phone:fd.get('phone')||null,consent_given:fd.get('consent')==='on',status:'pending'})});if(!row.ok)throw Error('Upload was received but the moderation record could not be created. Please contact Kiteezi.');f.reset();s.hidden=false;s.textContent='Thank you. Your media was submitted for review and will only appear after approval.'}catch(err){s.hidden=false;s.textContent=err.message||'The media could not be submitted.'}finally{submit.disabled=false;submit.textContent='Submit for review'}});
+})();
+</script></body></html>
