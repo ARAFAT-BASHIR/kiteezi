@@ -41,6 +41,18 @@ begin
  when 'daily_count' then delete from inventory_daily_counts where id=p_id;
  when 'notification' then delete from notifications where id=p_id;
  when 'email_message' then delete from email_messages where id=p_id;
+ when 'requisition' then
+   delete from approval_audit_trail where requisition_id=p_id;
+   delete from purchase_orders where requisition_id=p_id;
+   delete from requisition_version_items where version_id in (select id from requisition_versions where requisition_id=p_id);
+   delete from requisition_versions where requisition_id=p_id;
+   delete from requisition_items where requisition_id=p_id;
+   delete from requisitions where id=p_id;
+ when 'team_position' then
+   if exists(select 1 from profiles where position_id=p_id) then
+     raise exception 'Position is assigned to a staff profile; remove the assignment first';
+   end if;
+   delete from team_positions where id=p_id;
  else raise exception 'Unsupported test record type';
  end case;
  return true;
