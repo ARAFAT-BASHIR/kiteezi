@@ -1042,7 +1042,7 @@ async function loadRolesAndPermissions(){
   const edit=async id=>{
     const role=(roles||[]).find(x=>x.id===id); if(!role)return;
     const selected=new Set(byRole[id]||[]);
-    modal('Role permissions — '+role.name,'<form id="rolePermForm" class="form"><p class="muted">Existing permissions are preserved. Changes affect access only; they do not delete operational data.</p><div class="permission-list">'+(perms||[]).map(p=>'<label><input type="checkbox" value="'+p.id+'" '+(selected.has(p.id)?'checked':'')+'>'+esc(p.code)+(p.name?' — '+esc(p.name):'')+'</label>').join('')+'</div><button class="btn btn-dark">Save permissions</button></form>');
+    modal('Role permissions — '+role.name,'<form id="rolePermForm" class="form"><p class="muted">Existing permissions are preserved. Changes affect access only; they do not delete operational data.</p><div class="permission-list">'+(perms||[]).map(p=>'<label><input type="checkbox" value="'+p.id+'" '+(selected.has(p.id)?'checked':'')+'>'+esc(p.code)+(p.description?' — '+esc(p.description):'')+'</label>').join('')+'</div><button class="btn btn-dark">Save permissions</button></form>');
     $('#rolePermForm').onsubmit=async e=>{e.preventDefault();const ids=[...e.currentTarget.querySelectorAll('input:checked')].map(x=>x.value);try{
       const current=await api('/rest/v1/role_permissions?select=permission_id&role_id=eq.'+encodeURIComponent(id));
       for(const x of current||[]) if(!ids.includes(String(x.permission_id))) await api('/rest/v1/role_permissions?role_id=eq.'+encodeURIComponent(id)+'&permission_id=eq.'+encodeURIComponent(x.permission_id),{method:'DELETE'});
