@@ -663,3 +663,52 @@ body.admin .accounting-filters{padding:12px;background:#f7f9f8;border:1px solid 
  body.admin .accounting-view{padding:16px!important}
  body.admin .accounting-subnav button{padding:10px 12px!important;font-size:13px}
 }
+
+/* === Responsive admin/report production hardening === */
+html,body{max-width:100%;overflow-x:hidden}
+.admin *{box-sizing:border-box}
+.admin img,.admin video,.admin iframe{max-width:100%;height:auto}
+.admin table{width:100%}
+.admin .table-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.report-export-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #e5ece7}
+.report-export-bar>div{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:900px){
+ body.admin .side{overflow:hidden}
+ body.admin .main{min-width:0}
+ body.admin .toolbar{align-items:flex-start}
+ body.admin .toolbar h2,body.admin .toolbar h1{min-width:0;overflow-wrap:anywhere}
+ body.admin .form-grid{grid-template-columns:1fr 1fr}
+ body.admin .panel{max-width:100%;overflow-x:auto}
+ body.admin .panel>.toolbar{min-width:0}
+ .report-export-bar{align-items:flex-start}
+}
+@media(max-width:600px){
+ body.admin .main{padding:0 10px 24px!important}
+ body.admin .main>.toolbar{margin:0 -10px 14px!important;padding:12px 10px!important}
+ body.admin .panel{padding:14px!important;border-radius:12px}
+ body.admin .form-grid{grid-template-columns:1fr}
+ body.admin .metrics{grid-template-columns:1fr!important}
+ body.admin .actions{flex-direction:column}
+ body.admin .actions .btn,body.admin .toolbar .btn{width:auto;min-width:44px}
+ body.admin .accounting-subnav{margin-inline:-14px!important;padding-inline:10px!important}
+ body.admin .accounting-filters{display:grid!important;grid-template-columns:1fr}
+ body.admin .accounting-filters .btn{width:100%}
+ .report-export-bar{display:grid;grid-template-columns:1fr;gap:8px}
+ .report-export-bar>div{display:grid;grid-template-columns:1fr 1fr}
+ .report-export-bar .btn{width:100%;font-size:12px;padding-inline:8px}
+}
+@media(max-width:380px){
+ body.admin .main{padding-inline:8px!important}
+ body.admin .main>.toolbar{margin-inline:-8px!important;padding-inline:8px!important}
+ .report-export-bar>div{grid-template-columns:1fr}
+}
+@media print{
+ body.admin .side,body.admin .main>.toolbar,#accountingSubnav,.accounting-filters,#notificationPanel,.report-export-bar{display:none!important}
+ body.admin .main{padding:0!important;margin:0!important}
+ body.admin .tab{display:none!important}
+ body.admin .tab.active{display:block!important}
+ body.admin .accounting-view{display:none!important;border:0!important;box-shadow:none!important;padding:0!important}
+ body.admin .accounting-view.report-print-target{display:block!important}
+ body.admin .accounting-view.report-print-target .table-scroll{overflow:visible!important}
+ body.admin .accounting-view.report-print-target table{font-size:9pt}
+}
