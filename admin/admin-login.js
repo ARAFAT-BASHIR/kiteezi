@@ -13,9 +13,9 @@
     statusEl.textContent=message;
     statusEl.className='notice'+(kind==='error'?' danger':'');
   }
-  function saveSession(data){sessionStorage.setItem('kiteezi_admin_session',JSON.stringify(data));}
+  function saveSession(data){const raw=JSON.stringify(data);localStorage.setItem('kiteezi_admin_session',raw);sessionStorage.setItem('kiteezi_admin_session',raw);}
   async function refreshSession(){
-    const raw=sessionStorage.getItem('kiteezi_admin_session');
+    const raw=localStorage.getItem('kiteezi_admin_session')||sessionStorage.getItem('kiteezi_admin_session');
     if(!raw||!URL||!KEY)return null;
     let old;try{old=JSON.parse(raw)}catch{return null}
     if(!old?.refresh_token)return null;
