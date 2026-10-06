@@ -1032,7 +1032,7 @@ async function editSocial(id){const x=id?(await api('/rest/v1/social_links?id=eq
 async function loadRolesAndPermissions(){
   const [roles,perms]=await Promise.all([
     api('/rest/v1/roles?select=id,name,description&order=name.asc'),
-    api('/rest/v1/permissions?select=id,code,name,description&order=code.asc')
+    api('/rest/v1/permissions?select=id,code,description&order=code.asc')
   ]);
   const rp=await api('/rest/v1/role_permissions?select=role_id,permission_id');
   const byRole={}; (rp||[]).forEach(x=>(byRole[x.role_id]??=[]).push(x.permission_id));
