@@ -132,10 +132,10 @@ function applyRoleNavigation(){
   const nav=$('#nav');
   const modules=[
     ['dashboard','Dashboard',['dashboard.view']],
-    ['restaurant','POS / Orders',['orders.view','orders.manage','orders.station_kitchen','orders.station_barista','orders.reception.view']],
+    ['restaurant','POS / Orders',['orders.view','orders.manage','orders.create','orders.station_kitchen','orders.station_barista','orders.reception.view']],
     ['bookings','Bookings',['bookings.view','bookings.manage']],
-    ['inventory','Inventory',['inventory.all','inventory.operational','inventory.manage','inventory.kitchen','inventory.bar','inventory.cleaning','inventory.swimming']],
-    ['menu','Menu',['menu.manage','menu.public_content.manage']],
+    ['inventory','Inventory',['inventory.view','inventory.all','inventory.operational','inventory.manage','inventory.kitchen','inventory.bar','inventory.cleaning','inventory.swimming','inventory.count','inventory.adjust']],
+    ['menu','Menu',['menu.view','menu.manage','menu.public_content.manage']],
     ['services','Services',['services.manage']],
     ['inquiries','Inquiries',['inquiries.view','inquiries.catering','inquiries.drinks','inquiries.general','inquiries.swimming']],
     ['swimming_timetable','Swimming Timetable',['swimming.manage']],
@@ -146,29 +146,74 @@ function applyRoleNavigation(){
     ['reviews','Reviews',['reviews.view','reviews.moderate']],
     ['social','Social Links',['social.manage']],
     ['staff','Staff / Roles',['staff.manage']],
-    ['reports','Reports',['reports.view','reports.reservations.view']],
-    ['requisitions','Requisitions',['requisitions.view','requisitions.create','requisitions.approve.manager','requisitions.approve.gm','requisitions.approve.ceo']],
-    ['purchases','Purchase Orders',['purchase_orders.view','purchase_orders.manage']],
+    ['reports','Reports',['reports.view','reports.reservations.view','reports.financial','reports.inventory.view']],
+    ['requisitions','Requisitions',['requisitions.view','requisitions.create','requisitions.approve.manager','requisitions.approve.gm','requisitions.approve.ceo','requisitions.approve.finance']],
+    ['purchases','Purchase Orders',['purchase_orders.view','purchase_orders.manage','purchase_orders.create','purchase_orders.receive']],
     ['service_tally','Service Tally',['service_logs.create']],
     ['settings','Settings',['site_settings.manage']]
   ];
-  if(nav){
-    const visibleTree=modules.filter(([,label,needed])=>Array.isArray(needed)&&needed.some(hasPermission));
-    nav.innerHTML=visibleTree.map(([id,label])=>'<a href="#'+id+'" data-tab="'+id+'">'+label+'</a>').join('');
-  }
+  const visibleIds=new Set(modules.filter(([,label,needed])=>needed.some(hasPermission)).map(([id])=>id));
+  if(nav) nav.innerHTML=modules.filter(([id])=>visibleIds.has(id)).map(([id,label])=>'<a href="#'+id+'" data-tab="'+id+'">'+label+'</a>').join('');
+
+  // Hide entire module panels, not just their navigation links.
+  document.querySelectorAll('.tab[id]').forEach(sec=>{
+    const allowed=visibleIds.has(sec.id);
+    sec.hidden=!allowed;
+    sec.setAttribute('aria-hidden',allowed?'false':'true');
+    if(!allowed)sec.classList.remove('active');
+  });
+
   const staffHelp=$('#staffHelp'); if(staffHelp&&!hasPermission('staff.manage'))staffHelp.textContent='Staff accounts are managed by the owner or authorized managers.';
   const newMenu=$('#newMenu'); if(newMenu)newMenu.hidden=!hasPermission('menu.manage');
   const newReq=$('#newRequisition'); if(newReq)newReq.hidden=!hasPermission('requisitions.create');
-  const newOrder=$('#newOrder'); if(newOrder)newOrder.hidden=!hasPermission('orders.manage');
+  const newOrder=$('#newOrder'); if(newOrder)newOrder.hidden=!(hasPermission('orders.create')||hasPermission('orders.manage'));
   const newInv=$('#newInventoryItem'); if(newInv)newInv.hidden=!hasPermission('inventory.manage');
   const newTask=$('#newTask'); if(newTask)newTask.hidden=!hasPermission('tasks.manage');
   const newServiceLogBtn=$('#newServiceLog'); if(newServiceLogBtn)newServiceLogBtn.hidden=!hasPermission('service_logs.create');
-  const actionPermissions={newOrder:'orders.manage',newInventoryItem:'inventory.manage',newTask:'tasks.manage',newSwimmingSlot:'swimming.manage',newMedia:'content.manage',newAnnouncement:'content.manage',newSocial:'social.manage',newStaff:'staff.manage',newTeamPosition:'site_settings.manage',newService:'services.manage',newSport:'services.manage',newRequisition:'requisitions.create',newServiceLog:'service_logs.create',newGalleryMedia:'gallery.upload',saveSettings:'site_settings.manage'};
-  Object.entries(actionPermissions).forEach(([id,perm])=>{const el=$('#'+id);if(el)el.hidden=!hasPermission(perm)});
+
+  const actionPermissions={
+    newOrder:'orders.create',newInventoryItem:'inventory.manage',newTask:'tasks.manage',
+    newSwimmingSlot:'swimming.manage',newMedia:'content.manage',newAnnouncement:'content.manage',
+    newSocial:'social.manage',newStaff:'staff.manage',newTeamPosition:'site_settings.manage',
+    newService:'services.manage',newSport:'sports.manage',newRequisition:'requisitions.create',
+    newServiceLog:'service_logs.create',newGalleryMedia:'gallery.upload',saveSettings:'site_settings.manage'
+  };
+  Object.entries(actionPermissions).forEach(([id,perm])=>{
+    const el=$('#'+id);
+    if(el)el.hidden=!hasPermission(perm);
+  });
+
+  // Inventory sub-sections are independently permissioned.
+  const invTabs={
+    items:['inventory.view','inventory.all','inventory.operational','inventory.manage','inventory.kitchen','inventory.bar','inventory.cleaning','inventory.swimming'],
+    daily:['inventory.count','inventory.manage'],
+    purchases:['purchase_orders.view','purchase_orders.manage','purchase_orders.receive','purchase_orders.create'],
+    movements:['inventory.adjust','inventory.manage'],
+    recipes:['recipes.view','recipes.manage']
+  };
+  Object.entries(invTabs).forEach(([key,needed])=>{
+    const b=document.querySelector('[data-inv-tab="'+key+'"]');
+    if(b)b.hidden=!needed.some(hasPermission);
+  });
+
+  const dailyActions={
+    setOpeningStock:hasPermission('inventory.manage'),
+    countStock:hasPermission('inventory.count'),
+    newStockAdjustment:hasPermission('inventory.adjust')||hasPermission('inventory.manage')
+  };
+  Object.entries(dailyActions).forEach(([id,allowed])=>{const el=$('#'+id);if(el)el.hidden=!allowed;});
+
+  const recipeAdd=$('#newRecipe');
+  if(recipeAdd)recipeAdd.hidden=!hasPermission('recipes.manage');
+
   const purchaseSubnav=document.querySelector('[data-inv-tab="purchases"]');
-  if(purchaseSubnav)purchaseSubnav.hidden=!(hasPermission('purchase_orders.view')||hasPermission('purchase_orders.manage'));
+  if(purchaseSubnav)purchaseSubnav.hidden=!['purchase_orders.view','purchase_orders.manage','purchase_orders.receive','purchase_orders.create'].some(hasPermission);
 
-
+  // Never leave a user sitting on a hidden module after permissions refresh.
+  if(tab && !visibleIds.has(tab)){
+    const fallback=visibleIds.has('dashboard')?'dashboard':modules.map(x=>x[0]).find(id=>visibleIds.has(id));
+    if(fallback) route(fallback);
+  }
 }
 function canOpenTab(name){return canSeeTab(name);}
 function inquiryTypesForRole(){
@@ -554,7 +599,7 @@ async function loadOrderItems(id){let r=await api('/rest/v1/order_items?select=i
 
 async function loadRecipeMappings(){
   const box=$('#recipeTable'); if(!box)return;
-  const toolbar='<div class="toolbar"><button class="btn" id="newRecipe">Add recipe</button><button class="btn btn-dark" id="refreshRecipes">Refresh</button></div>';
+  const toolbar='<div class="toolbar">'+(hasPermission('recipes.manage')?'<button class="btn" id="newRecipe">Add recipe</button>':'')+'<button class="btn btn-dark" id="refreshRecipes">Refresh</button></div>';
   box.innerHTML=toolbar+'<div class="state">Loading recipes…</div>';
   const wire=()=>{$('#newRecipe').onclick=()=>manageRecipe();$('#refreshRecipes').onclick=()=>loadRecipeMappings().catch(msg)};
   wire();
@@ -581,7 +626,7 @@ async function loadRecipeMappings(){
     wire();
   }
 }
-async function loadDailyStock(){const d=$('#stockRunDate').value||today();$('#stockRunDate').value=d;const [items,movs,counts,before]=await Promise.all([api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc'),api('/rest/v1/stock_movements?select=item_id,quantity,movement_type,reason,created_at&created_at=gte.'+d+'T00:00:00&created_at=lte.'+d+'T23:59:59'),api('/rest/v1/inventory_daily_counts?select=inventory_item_id,physical_quantity&count_date=eq.'+d),api('/rest/v1/stock_movements?select=item_id,quantity,movement_type&created_at=lt.'+d+'T00:00:00')]);const opening={};before.forEach(x=>opening[x.item_id]=(opening[x.item_id]||0)+(String(x.movement_type).toLowerCase()==='out'?-1:1)*Number(x.quantity||0));const day={};movs.forEach(x=>{const z=day[x.item_id]||{added:0,pos:0,waste:0,owner:0,other:0};const q=Number(x.quantity||0),r=String(x.reason||'').toLowerCase();if(String(x.movement_type).toLowerCase()!=='out')z.added+=q;else if(r.startsWith('order '))z.pos+=q;else if(r==='waste')z.waste+=q;else if(r==='owner taken home')z.owner+=q;else z.other+=q;day[x.item_id]=z});const counted=Object.fromEntries(counts.map(x=>[x.inventory_item_id,Number(x.physical_quantity)]));$('#dailyStockTable').innerHTML='<table><tr><th>Item</th><th>Opening</th><th>Added</th><th>POS Used</th><th>Waste</th><th>Owner Home</th><th>Other</th><th>Expected</th><th>Physical</th><th>Variance</th></tr>'+items.map(x=>{const z=day[x.id]||{added:0,pos:0,waste:0,owner:0,other:0},op=Number(opening[x.id]||0),expected=op+z.added-z.pos-z.waste-z.owner-z.other,p=counted[x.id];return '<tr><td>'+esc(x.name)+'<br><small>'+esc(x.unit)+'</small></td><td>'+op+'</td><td>'+z.added+'</td><td>'+z.pos+'</td><td>'+z.waste+'</td><td>'+z.owner+'</td><td>'+z.other+'</td><td>'+expected+'</td><td>'+(p==null?'—':p)+'</td><td>'+(p==null?'—':p-expected)+'</td></tr>'}).join('')+'</table>'}
+async function loadDailyStock(){const d=$('#stockRunDate').value||today();$('#stockRunDate').value=d;const [itemsAll,movs,counts,before]=await Promise.all([api('/rest/v1/inventory_items?select=id,name,unit,inventory_scope&active=eq.true&order=name.asc'),api('/rest/v1/stock_movements?select=item_id,quantity,movement_type,reason,created_at&created_at=gte.'+d+'T00:00:00&created_at=lte.'+d+'T23:59:59'),api('/rest/v1/inventory_daily_counts?select=inventory_item_id,physical_quantity&count_date=eq.'+d),api('/rest/v1/stock_movements?select=item_id,quantity,movement_type&created_at=lt.'+d+'T00:00:00')]);const scopeForRole={chef:'kitchen',barista:'bar',grounds_cleaning:'cleaning',head_swimming_coach:'swimming'}[profile?.role];const items=scopeForRole?itemsAll.filter(x=>x.inventory_scope===scopeForRole):itemsAll;const opening={};before.forEach(x=>opening[x.item_id]=(opening[x.item_id]||0)+(String(x.movement_type).toLowerCase()==='out'?-1:1)*Number(x.quantity||0));const day={};movs.forEach(x=>{const z=day[x.item_id]||{added:0,pos:0,waste:0,owner:0,other:0};const q=Number(x.quantity||0),r=String(x.reason||'').toLowerCase();if(String(x.movement_type).toLowerCase()!=='out')z.added+=q;else if(r.startsWith('order '))z.pos+=q;else if(r==='waste')z.waste+=q;else if(r==='owner taken home')z.owner+=q;else z.other+=q;day[x.item_id]=z});const counted=Object.fromEntries(counts.map(x=>[x.inventory_item_id,Number(x.physical_quantity)]));$('#dailyStockTable').innerHTML='<table><tr><th>Item</th><th>Opening</th><th>Added</th><th>POS Used</th><th>Waste</th><th>Owner Home</th><th>Other</th><th>Expected</th><th>Physical</th><th>Variance</th></tr>'+items.map(x=>{const z=day[x.id]||{added:0,pos:0,waste:0,owner:0,other:0},op=Number(opening[x.id]||0),expected=op+z.added-z.pos-z.waste-z.owner-z.other,p=counted[x.id];return '<tr><td>'+esc(x.name)+'<br><small>'+esc(x.unit)+'</small></td><td>'+op+'</td><td>'+z.added+'</td><td>'+z.pos+'</td><td>'+z.waste+'</td><td>'+z.owner+'</td><td>'+z.other+'</td><td>'+expected+'</td><td>'+(p==null?'—':p)+'</td><td>'+(p==null?'—':p-expected)+'</td></tr>'}).join('')+'</table>'}
 async function loadPurchases(){
   if(!(hasPermission('purchase_orders.view')||hasPermission('purchase_orders.manage'))){setHTML('#purchaseOrdersTable','<div class="state">Purchase receiving is not part of this account.</div>');return;}
   const orders=await api('/rest/v1/purchase_orders?select=*&order=created_at.desc');
@@ -615,11 +660,13 @@ async function receivePurchase(id){
 async function setOpeningStock(){const inv=await api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc');modal('Set opening stock','<form id="openingStockForm" class="form"><p class="muted">Enter the stock physically available when Kiteezi starts its inventory records. This creates auditable opening-balance movements.</p>'+inv.map(x=>'<label>'+esc(x.name)+' ('+esc(x.unit)+')<input name="'+x.id+'" type="number" step="0.001" min="0" placeholder="Opening quantity"></label>').join('')+'<button class="btn btn-dark">Save opening stock</button></form>');$('#openingStockForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const rows=inv.map(x=>({item_id:x.id,quantity:Number(f.get(x.id)||0)})).filter(x=>x.quantity>0);if(!rows.length)return alert('Enter at least one opening quantity.');for(const x of rows){await api('/rest/v1/stock_movements',{method:'POST',body:JSON.stringify({item_id:x.item_id,quantity:x.quantity,movement_type:'in',reason:'Opening Balance',staff_id:session.user.id})})}closeModal();loadInventory();loadDailyStock()}}
 async function addStockAdjustment(){const inv=await api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc');const ownerOnly=String(profile?.role||'').toLowerCase()==='owner';const homeOption=ownerOnly?'<option>Owner Taken Home</option>':'';modal('Add stock movement','<form id="adj" class="form"><select name="item">'+inv.map(x=>'<option value="'+x.id+'">'+esc(x.name)+' ('+esc(x.unit)+')</option>').join('')+'</select><select name="type"><option value="out">Stock out</option><option value="in">Stock in</option></select><select name="reason"><option>Waste</option>'+homeOption+'<option>Other Adjustment</option></select><input name="qty" type="number" step="0.001" min="0.001" placeholder="Quantity" required><textarea name="notes" placeholder="Notes"></textarea><button class="btn btn-dark">Save movement</button></form>');$('#adj').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);await api('/rest/v1/stock_movements',{method:'POST',body:JSON.stringify({item_id:f.get('item'),quantity:Number(f.get('qty')),movement_type:f.get('type'),reason:f.get('reason')+(f.get('notes')?' — '+f.get('notes'):''),staff_id:session.user.id})});closeModal();loadInventory()}}
 async function loadStockMovements(){
-  const r=await api('/rest/v1/stock_movements?select=*,inventory_items(name,unit)&order=created_at.desc&limit=100');
+  const scopeForRole={chef:'kitchen',barista:'bar',grounds_cleaning:'cleaning',head_swimming_coach:'swimming'}[profile?.role];
+  const r=await api('/rest/v1/stock_movements?select=*,inventory_items(name,unit,inventory_scope)&order=created_at.desc&limit=100');
+  const visibleRows=scopeForRole?r.filter(x=>x.inventory_items?.inventory_scope===scopeForRole):r;
   const owner=profile?.role==='owner';
-  $('#stockMovementTable').innerHTML=r.length
+  $('#stockMovementTable').innerHTML=visibleRows.length
     ?'<table><tr><th>Date</th><th>Item</th><th>Movement</th><th>Qty</th><th>Reason</th><th></th></tr>'+
-      r.map(x=>'<tr><td>'+esc(x.created_at?.slice(0,16)||'')+'</td><td>'+esc(x.inventory_items?.name||x.item_id)+'</td><td>'+esc(x.movement_type)+'</td><td>'+esc(x.quantity)+'</td><td>'+esc(x.reason||'')+'</td><td>'+(owner?'<button class="btn danger" data-delete-movement="'+x.id+'">Delete</button>':'')+'</td></tr>').join('')+
+      visibleRows.map(x=>'<tr><td>'+esc(x.created_at?.slice(0,16)||'')+'</td><td>'+esc(x.inventory_items?.name||x.item_id)+'</td><td>'+esc(x.movement_type)+'</td><td>'+esc(x.quantity)+'</td><td>'+esc(x.reason||'')+'</td><td>'+(owner?'<button class="btn danger" data-delete-movement="'+x.id+'">Delete</button>':'')+'</td></tr>').join('')+
       '</table>'
     :'<div class="state">No stock movements yet.</div>';
   if(owner) $$('[data-delete-movement]').forEach(b=>b.onclick=()=>deleteTestRecord('stock_movement',b.dataset.deleteMovement));
@@ -646,7 +693,7 @@ async function loadInventory(){
     const rows0=scopeForRole?rows.filter(x=>x?.inventory_scope===scopeForRole):rows;
     const low=rows0.filter(x=>Number(stock[x.id]||0)<=Number(x.reorder_level||0));
     box.innerHTML=(low.length?'<div class="low-stock-banner"><strong>Low stock: '+low.length+' item(s)</strong><span>'+low.map(x=>esc(x.name)).join(', ')+'</span></div>':'')+(rows0.length?'<table><thead><tr><th>Item</th><th>Category</th><th>Unit</th><th>Station</th><th>Reorder</th><th>Active</th><th></th></tr></thead><tbody>'+
-      rows0.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.category||'')+'</td><td>'+esc(x.unit||'')+'</td><td><span class="pill">'+esc(x.service_stations?.name||'Unassigned')+'</span></td><td>'+esc(x.reorder_level??0)+'</td><td>'+esc(x.active?'Yes':'No')+'</td><td><button class="btn" data-edit-inv="'+x.id+'">Edit</button></td></tr>').join('')+
+      rows0.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.category||'')+'</td><td>'+esc(x.unit||'')+'</td><td><span class="pill">'+esc(x.service_stations?.name||'Unassigned')+'</span></td><td>'+esc(x.reorder_level??0)+'</td><td>'+esc(x.active?'Yes':'No')+'</td><td>'+(hasPermission('inventory.manage')?'<button class="btn" data-edit-inv="'+x.id+'">Edit</button>':'')+'</td></tr>').join('')+
       '</tbody></table>':'<div class="state">No inventory items found.</div>');
     $('[data-edit-inv]').forEach(x=>x.onclick=()=>editInventory(x.dataset.editInv));
   }catch(e){
