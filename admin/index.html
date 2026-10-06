@@ -39,6 +39,7 @@
   </div>
 </div>
 <div id="accounting-panel-overview" class="accounting-view panel">
+  <div class="report-export-bar"><span class="muted">Report output</span><div><button type="button" class="btn" data-report-export="overview">Download CSV</button><button type="button" class="btn" data-report-print="overview">Print / Save PDF</button></div></div>
   <div class="metrics">
     <div class="metric"><b id="acctRevenue">UGX 0</b>Revenue</div>
     <div class="metric"><b id="acctExpenses">UGX 0</b>Expenses</div>
@@ -48,6 +49,7 @@
   <div class="panel-inner"><h3>Department performance</h3><div id="accountingDepartments" class="state">Loading overview…</div></div>
 </div>
 <div id="accounting-panel-statements" class="accounting-view panel" hidden>
+  <div class="report-export-bar"><span class="muted">Financial statements</span><div><button type="button" class="btn" data-report-export="statements">Download CSV</button><button type="button" class="btn" data-report-print="statements">Print / Save PDF</button></div></div>
   <div class="accounting-grid-two">
     <div><h3>Income Statement</h3><div id="accountingIncome" class="state">Select Statements to load.</div></div>
     <div><h3>Balance Sheet</h3><div id="accountingBalance" class="state">Select Statements to load.</div></div>
@@ -61,7 +63,7 @@
     <label>Source <select id="accountingCashSource"><option>All</option><option>Orders</option><option>Bookings</option><option>Events</option><option>Purchases</option></select></label>
     <button id="accountingCashGenerate" class="btn btn-dark" type="button">Generate</button>
     <button id="accountingCashDownload" class="btn" type="button">Download CSV</button>
-    <button id="accountingCashPrint" class="btn" type="button">Print</button>
+    <button id="accountingCashPrint" class="btn" type="button">Print / Save PDF</button>
   </div>
   <div class="metrics accounting-cash-metrics">
     <div class="metric"><b id="accountingCashIn">UGX 0</b>Money in</div>
@@ -72,18 +74,21 @@
   <div id="accountingCashTable" class="state">Choose Cash &amp; Sales to load this report.</div>
 </div></div>
 <div id="accounting-panel-purchases" class="accounting-view panel" hidden>
+  <div class="report-export-bar"><span class="muted">Purchases &amp; inventory</span><div><button type="button" class="btn" data-report-export="purchases">Download CSV</button><button type="button" class="btn" data-report-print="purchases">Print / Save PDF</button></div></div>
   <div class="accounting-grid-two">
     <div><h3>Purchases &amp; Accounts Payable</h3><div id="accountingPurchases" class="state">Select Purchases &amp; Inventory to load.</div></div>
     <div><h3>Inventory &amp; Stock Flow</h3><div id="accountingInventory" class="state">Select Purchases &amp; Inventory to load.</div></div>
   </div>
 </div>
 <div id="accounting-panel-operations" class="accounting-view panel" hidden>
+  <div class="report-export-bar"><span class="muted">Operational actions &amp; performance</span><div><button type="button" class="btn" data-report-export="operations">Download CSV</button><button type="button" class="btn" data-report-print="operations">Print / Save PDF</button></div></div>
   <div class="accounting-grid-two">
     <div><h3>Operational Actions</h3><div id="accountingActions" class="state">Select Actions &amp; Performance to load.</div></div>
     <div><h3>Performance</h3><div id="accountingPerformance" class="state">Select Actions &amp; Performance to load.</div></div>
   </div>
 </div>
 <div id="accounting-panel-ledger" class="accounting-view panel" hidden>
+  <div class="report-export-bar"><span class="muted">General ledger</span><div><button type="button" class="btn" data-report-export="ledger">Download CSV</button><button type="button" class="btn" data-report-print="ledger">Print / Save PDF</button></div></div>
   <h3>General Ledger</h3>
   <div id="accountingLedger" class="state">Select General Ledger to load.</div>
 </div>
