@@ -120,3 +120,16 @@ table{min-width:0}
   .btn{width:100%}
   .cta .btn{margin-top:12px}
 }
+
+/* === Persistent public-site navigation === */
+.nav{
+  position:sticky!important;
+  top:0!important;
+  z-index:1000!important;
+  isolation:isolate;
+  box-shadow:0 2px 14px rgba(16,37,28,.08);
+}
+@media(max-width:620px){
+  .nav{top:0!important}
+  .navin{position:relative}
+}
