@@ -617,16 +617,30 @@ async function loadInventory(){
   box.innerHTML='<div class="state">Loading inventory…</div>';
   try{
     const r=await api('/rest/v1/inventory_items?select=id,name,unit,category,reorder_level,active,station_id,inventory_scope,service_stations(name)&order=name.asc');
-    const mov=await api('/rest/v1/stock_movements?select=item_id,quantity,movement_type');
-    const stock={};mov.forEach(x=>stock[x.item_id]=(stock[x.item_id]||0)+(String(x.movement_type).toLowerCase()==='out'?-1:1)*Number(x.quantity||0));
+    const rows=Array.isArray(r)?r:[];
+    let mov=[];
+    try{
+      const movementResponse=await api('/rest/v1/stock_movements?select=item_id,quantity,movement_type');
+      mov=Array.isArray(movementResponse)?movementResponse:[];
+    }catch(e){
+      console.warn('Inventory movement totals unavailable:',e);
+    }
+    const stock={};
+    mov.forEach(x=>{
+      if(!x||!x.item_id)return;
+      stock[x.item_id]=(stock[x.item_id]||0)+(String(x.movement_type).toLowerCase()==='out'?-1:1)*Number(x.quantity||0);
+    });
     const scopeForRole={chef:'kitchen',barista:'bar',grounds_cleaning:'cleaning',head_swimming_coach:'swimming'}[profile?.role];
-    const rows0=scopeForRole?r.filter(x=>x.inventory_scope===scopeForRole):r;
+    const rows0=scopeForRole?rows.filter(x=>x?.inventory_scope===scopeForRole):rows;
     const low=rows0.filter(x=>Number(stock[x.id]||0)<=Number(x.reorder_level||0));
     box.innerHTML=(low.length?'<div class="low-stock-banner"><strong>Low stock: '+low.length+' item(s)</strong><span>'+low.map(x=>esc(x.name)).join(', ')+'</span></div>':'')+(rows0.length?'<table><thead><tr><th>Item</th><th>Category</th><th>Unit</th><th>Station</th><th>Reorder</th><th>Active</th><th></th></tr></thead><tbody>'+
       rows0.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.category||'')+'</td><td>'+esc(x.unit||'')+'</td><td><span class="pill">'+esc(x.service_stations?.name||'Unassigned')+'</span></td><td>'+esc(x.reorder_level??0)+'</td><td>'+esc(x.active?'Yes':'No')+'</td><td><button class="btn" data-edit-inv="'+x.id+'">Edit</button></td></tr>').join('')+
       '</tbody></table>':'<div class="state">No inventory items found.</div>');
-    $$('[data-edit-inv]').forEach(x=>x.onclick=()=>editInventory(x.dataset.editInv));
-  }catch(e){box.innerHTML='<div class="state">Inventory could not be loaded. '+esc(e.message||'Please try again.')+'</div>'}
+    $('[data-edit-inv]').forEach(x=>x.onclick=()=>editInventory(x.dataset.editInv));
+  }catch(e){
+    console.error('Inventory load failed:',e);
+    box.innerHTML='<div class="state">Inventory could not be loaded. '+esc(e.message||'Please try again.')+'</div>';
+  }
 }
 async function editInventory(id=null){
   const [stations]=await Promise.all([api('/rest/v1/service_stations?select=id,name&active=eq.true&order=sort_order.asc'),loadUnitOptions()]);
