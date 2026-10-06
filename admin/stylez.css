@@ -806,3 +806,139 @@ body.admin .nav-group[hidden]{display:none!important}
 @media print{
   body.admin #app.admin-shell>.side{position:static!important}
 }
+
+/* === Production mobile navigation + staff directory repair === */
+@media (max-width: 900px){
+  body.admin.authenticated-shell{padding-top:0!important}
+  body.admin #app.admin-shell>.side{
+    position:fixed!important;
+    inset:0 0 auto 0!important;
+    width:100%!important;
+    height:auto!important;
+    max-height:none!important;
+    padding:10px 12px 8px!important;
+    overflow:visible!important;
+    z-index:5000!important;
+    box-shadow:0 8px 24px rgba(0,0,0,.20)!important;
+    border-right:0!important;
+  }
+  body.admin #app.admin-shell>.side .brand{
+    display:flex!important;
+    align-items:center!important;
+    min-height:42px!important;
+    padding:0 2px 8px!important;
+    margin:0!important;
+    border-bottom:0!important;
+  }
+  body.admin #app.admin-shell>.side .brand-mark{
+    width:38px!important;height:38px!important;font-size:20px!important;
+  }
+  body.admin #app.admin-shell>.side .brand>span:last-child{
+    font-size:15px!important;line-height:1.1!important;
+  }
+  body.admin #app.admin-shell>.side .brand small{font-size:8px!important;margin-top:2px!important}
+  body.admin #app.admin-shell>.side #logout{
+    position:absolute!important;right:12px!important;top:10px!important;
+    width:auto!important;min-height:38px!important;margin:0!important;
+    padding:7px 12px!important;font-size:12px!important;
+  }
+  body.admin #app.admin-shell>.side .nav-category-picker{
+    display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;
+    align-items:center!important;gap:8px!important;
+    margin:0 0 7px!important;padding:6px 8px!important;
+  }
+  body.admin #app.admin-shell>.side .nav-category-picker label{
+    margin:0!important;font-size:9px!important;white-space:nowrap!important;
+  }
+  body.admin #app.admin-shell>.side .nav-category-picker select{
+    min-height:36px!important;font-size:12px!important;
+  }
+  body.admin #app.admin-shell>.side nav{
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    gap:6px!important;
+    max-height:none!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    padding:0 0 3px!important;
+    -webkit-overflow-scrolling:touch!important;
+    scrollbar-width:none!important;
+  }
+  body.admin #app.admin-shell>.side nav::-webkit-scrollbar{display:none!important}
+  body.admin #app.admin-shell>.side nav .nav-group{
+    display:contents!important;
+  }
+  body.admin #app.admin-shell>.side nav .nav-group-title{display:none!important}
+  body.admin #app.admin-shell>.side nav a{
+    display:inline-flex!important;
+    flex:0 0 auto!important;
+    width:auto!important;
+    min-height:38px!important;
+    padding:8px 12px!important;
+    border-radius:9px!important;
+    white-space:nowrap!important;
+    font-size:12px!important;
+  }
+  body.admin #app.admin-shell>.main{
+    margin-left:0!important;
+    padding:0 12px 32px!important;
+    padding-top:188px!important;
+    min-width:0!important;
+  }
+  body.admin #app.admin-shell>.main>.toolbar{
+    margin:0 -12px 16px!important;
+    padding:12px!important;
+  }
+  body.admin #app.admin-shell>.main .tab{
+    min-width:0!important;
+  }
+  body.admin #app.admin-shell>.main .panel{
+    max-width:100%!important;
+    min-width:0!important;
+  }
+  body.admin #staffTable{
+    overflow:visible!important;
+  }
+  body.admin #staffTable table{
+    width:100%!important;
+    min-width:0!important;
+    border-collapse:separate!important;
+    border-spacing:0 10px!important;
+    background:transparent!important;
+  }
+  body.admin #staffTable table tr:first-child{
+    display:none!important;
+  }
+  body.admin #staffTable table tr{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    gap:0!important;
+    background:#fff!important;
+    border:1px solid #e3e9e5!important;
+    border-radius:14px!important;
+    overflow:hidden!important;
+    box-shadow:0 3px 12px rgba(16,37,28,.06)!important;
+  }
+  body.admin #staffTable table tr td{
+    display:block!important;
+    width:auto!important;
+    min-width:0!important;
+    padding:10px 12px!important;
+    border-bottom:1px solid #edf1ee!important;
+    overflow-wrap:anywhere!important;
+    word-break:normal!important;
+  }
+  body.admin #staffTable table tr td:nth-child(1){grid-column:1 / -1;font-weight:800;font-size:15px;color:#173c2d}
+  body.admin #staffTable table tr td:nth-child(2)::before{content:'Phone';display:block;font-size:9px;font-weight:800;text-transform:uppercase;color:#82958b;letter-spacing:.08em;margin-bottom:3px}
+  body.admin #staffTable table tr td:nth-child(3)::before{content:'Access role';display:block;font-size:9px;font-weight:800;text-transform:uppercase;color:#82958b;letter-spacing:.08em;margin-bottom:3px}
+  body.admin #staffTable table tr td:nth-child(4)::before{content:'Position / department';display:block;font-size:9px;font-weight:800;text-transform:uppercase;color:#82958b;letter-spacing:.08em;margin-bottom:3px}
+  body.admin #staffTable table tr td:nth-child(5)::before{content:'Employment';display:block;font-size:9px;font-weight:800;text-transform:uppercase;color:#82958b;letter-spacing:.08em;margin-bottom:3px}
+  body.admin #staffTable table tr td:nth-child(6)::before{content:'Reports to';display:block;font-size:9px;font-weight:800;text-transform:uppercase;color:#82958b;letter-spacing:.08em;margin-bottom:3px}
+  body.admin #staffTable table tr td:nth-child(7)::before{content:'Status';display:block;font-size:9px;font-weight:800;text-transform:uppercase;color:#82958b;letter-spacing:.08em;margin-bottom:3px}
+  body.admin #staffTable table tr td:nth-child(8){grid-column:1 / -1;border-bottom:0}
+}
+@media (max-width:380px){
+  body.admin #app.admin-shell>.side{padding-left:8px!important;padding-right:8px!important}
+  body.admin #app.admin-shell>.side #logout{right:8px!important;padding-inline:9px!important}
+  body.admin #app.admin-shell>.main{padding-left:8px!important;padding-right:8px!important;padding-top:188px!important}
+}
