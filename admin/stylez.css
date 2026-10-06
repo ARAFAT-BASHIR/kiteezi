@@ -614,3 +614,9 @@ body.admin #loginView #loginMsg{
  body.admin #app.admin-shell>.side #logout{right:18px!important;top:22px!important}
  body.admin #app.admin-shell>.main>.tab{padding-left:20px!important;padding-right:20px!important}
 }
+
+html:has(#loginView:not(.hide)),body.admin:has(#loginView:not(.hide)){min-height:100%;}
+body.admin:has(#loginView:not(.hide)){overflow:hidden;}
+#loginView{min-height:100dvh;width:100%;}
+#loginView.hide{display:none!important;}
+#app.hide{display:none!important;}
