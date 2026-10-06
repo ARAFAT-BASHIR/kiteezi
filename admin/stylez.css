@@ -620,3 +620,8 @@ body.admin:has(#loginView:not(.hide)){overflow:hidden;}
 #loginView{min-height:100dvh;width:100%;}
 #loginView.hide{display:none!important;}
 #app.hide{display:none!important;}
+
+/* === Professional grouped admin navigation and settings === */
+.admin .nav-group{margin:0 0 12px;padding:0 4px}.admin .nav-group-title{padding:7px 10px 5px;color:#82958b;font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}.admin .nav-group nav{display:grid}.admin .nav-group a{margin:1px 0!important}
+.admin .settings-page{max-width:1180px;margin:0 auto}.admin .settings-header{display:flex;justify-content:space-between;align-items:center;gap:20px}.admin .settings-header h2{margin:4px 0;font-size:28px}.admin .toolbar-actions{display:flex;gap:8px;flex-wrap:wrap}.admin .settings-card h3{margin:0 0 6px;color:#173c2d;font-size:18px}.admin .settings-card code{background:#f0f4f1;padding:2px 5px;border-radius:5px}.admin .settings-section{padding-top:18px}.admin .settings-card input{min-width:0}
+@media(max-width:900px){.admin .nav-group{display:contents}.admin .nav-group-title{display:none}.admin .side nav{align-items:flex-start!important}.admin .settings-header{display:block}.admin .toolbar-actions{margin-top:12px}}
