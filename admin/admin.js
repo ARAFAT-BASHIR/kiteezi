@@ -435,13 +435,21 @@ async function loadStationOrders(){
   $('#ordersTable').innerHTML=visible.length
     ? '<table><tr><th>Order</th><th>Customer</th><th>Fulfillment</th><th>Order Status</th><th>Station</th><th>Station Progress</th><th>Action</th></tr>'+
       visible.map(r=>{
-        const label=r.station_status==='waiting'?'Waiting':r.station_status==='in_progress'?'In Progress':'Complete';
+        const label=r.station_status==='waiting'?'Waiting':r.station_status==='accepted'?'Accepted':r.station_status==='in_progress'?'In Progress':r.station_status==='cancelled'?'Cancelled':'Complete';
         const action=r.order_status==='confirmed'
           ? '<select data-station-status="'+r.order_id+'" data-station-id="'+r.station_id+'"><option value="waiting" '+(r.station_status==='waiting'?'selected':'')+'>Waiting</option><option value="in_progress" '+(r.station_status==='in_progress'?'selected':'')+'>In Progress</option><option value="complete" '+(r.station_status==='complete'?'selected':'')+'>Complete</option></select>'
           : '<span class="pill">'+esc(label)+'</span>';
         return '<tr><td>#'+esc(r.order_id.slice(0,8).toUpperCase())+'<br><small>'+esc(r.source||'Website')+'</small></td><td>'+esc(r.customer_name||'Customer')+'<br><small>'+esc(r.customer_phone||'')+'</small></td><td>'+esc(String(r.fulfillment_method||'pickup').replace('_',' '))+'</td><td>'+esc(r.order_status)+'</td><td>'+esc(r.station_name)+'</td><td><span class="pill">'+esc(label)+'</span></td><td>'+action+'</td></tr>';
       }).join('')+'</table>'
     : '<div class="state">No active '+esc(station.toLowerCase())+' station orders.</div>';
+  document.querySelectorAll('[data-station-cancel]').forEach(x=>x.onclick=async()=>{
+    const reason=prompt('Why is this station cancelling the work?');
+    if(!reason||!reason.trim())return;
+    try{
+      await api('/rest/v1/rpc/set_order_station_status',{method:'POST',body:JSON.stringify({p_order_id:x.dataset.stationCancel,p_station_id:x.dataset.stationId,p_status:'cancelled',p_reason:reason.trim()})});
+      await loadOrders();
+    }catch(e){msg(e);await loadOrders();}
+  });
   document.querySelectorAll('[data-station-status]').forEach(x=>x.onchange=async()=>{
     try{
       await api('/rest/v1/rpc/set_order_station_status',{method:'POST',body:JSON.stringify({p_order_id:x.dataset.stationStatus,p_station_id:x.dataset.stationId,p_status:x.value})});
@@ -499,7 +507,11 @@ async function loadOrders(){
       const station=stationRows(r.id);
       const stationHtml=station.length?station.map(s=>{
         const name=s.service_stations?.name||'Station',label=s.status==='waiting'?'Waiting':s.status==='in_progress'?'In Progress':'Complete';
-        const stationAction=(r.status==='confirmed' && (profile?.role==='owner'||profile?.role==='manager'||profile?.role==='general_manager'||profile?.role==='ceo'||profile?.role==='reception_manager'||(profile?.role==='chef'&&name==='Kitchen')||(profile?.role==='barista'&&name==='Barista')))?'<select data-station-status="'+r.id+'" data-station-id="'+s.station_id+'"><option value="waiting" '+(s.status==='waiting'?'selected':'')+'>Waiting</option><option value="in_progress" '+(s.status==='in_progress'?'selected':'')+'>In Progress</option><option value="complete" '+(s.status==='complete'?'selected':'')+'>Complete</option></select>':'<span class="pill">'+esc(label)+'</span>';
+        const canOperateStation=(profile?.role==='owner'||profile?.role==='manager'||profile?.role==='general_manager'||profile?.role==='ceo'||profile?.role==='reception_manager'||(profile?.role==='chef'&&name==='Kitchen')||(profile?.role==='barista'&&name==='Barista'));
+        const stationAction=(canOperateStation && (r.status==='pending'||r.status==='open'||r.status==='confirmed'))?
+          '<select data-station-status="'+r.id+'" data-station-id="'+s.station_id+'"><option value="waiting" '+(s.status==='waiting'?'selected':'')+'>Waiting</option><option value="accepted" '+(s.status==='accepted'?'selected':'')+'>Accepted</option><option value="in_progress" '+(s.status==='in_progress'?'selected':'')+'>In Progress</option><option value="complete" '+(s.status==='complete'?'selected':'')+'>Complete</option><option value="cancelled" '+(s.status==='cancelled'?'selected':'')+'>Cancelled</option></select>'+
+          ((s.status!=='complete'&&s.status!=='cancelled'&&(profile?.role==='chef'||profile?.role==='barista'))?'<button type="button" class="btn danger" data-station-cancel="'+r.id+'" data-station-id="'+s.station_id+'">Cancel</button>':'')
+          :'<span class="pill">'+esc(s.status==='accepted'?'Accepted':s.status==='cancelled'?'Cancelled':label)+'</span>';
         return '<div style="display:flex;gap:8px;align-items:center;margin:3px 0"><span>'+esc(name)+'</span>'+stationAction+'</div>';
       }).join(''):'<span class="muted">Waiting</span>';
       const allComplete=station.length>0&&station.every(s=>s.status==='complete');
@@ -626,7 +638,7 @@ async function loadRecipeMappings(){
     wire();
   }
 }
-async function loadDailyStock(){const d=$('#stockRunDate').value||today();$('#stockRunDate').value=d;const [itemsAll,movs,counts,before]=await Promise.all([api('/rest/v1/inventory_items?select=id,name,unit,inventory_scope&active=eq.true&order=name.asc'),api('/rest/v1/stock_movements?select=item_id,quantity,movement_type,reason,created_at&created_at=gte.'+d+'T00:00:00&created_at=lte.'+d+'T23:59:59'),api('/rest/v1/inventory_daily_counts?select=inventory_item_id,physical_quantity&count_date=eq.'+d),api('/rest/v1/stock_movements?select=item_id,quantity,movement_type&created_at=lt.'+d+'T00:00:00')]);const scopeForRole={chef:'kitchen',barista:'bar',grounds_cleaning:'cleaning',head_swimming_coach:'swimming'}[profile?.role];const items=scopeForRole?itemsAll.filter(x=>x.inventory_scope===scopeForRole):itemsAll;const opening={};before.forEach(x=>opening[x.item_id]=(opening[x.item_id]||0)+(String(x.movement_type).toLowerCase()==='out'?-1:1)*Number(x.quantity||0));const day={};movs.forEach(x=>{const z=day[x.item_id]||{added:0,pos:0,waste:0,owner:0,other:0};const q=Number(x.quantity||0),r=String(x.reason||'').toLowerCase();if(String(x.movement_type).toLowerCase()!=='out')z.added+=q;else if(r.startsWith('order '))z.pos+=q;else if(r==='waste')z.waste+=q;else if(r==='owner taken home')z.owner+=q;else z.other+=q;day[x.item_id]=z});const counted=Object.fromEntries(counts.map(x=>[x.inventory_item_id,Number(x.physical_quantity)]));$('#dailyStockTable').innerHTML='<table><tr><th>Item</th><th>Opening</th><th>Added</th><th>POS Used</th><th>Waste</th><th>Owner Home</th><th>Other</th><th>Expected</th><th>Physical</th><th>Variance</th></tr>'+items.map(x=>{const z=day[x.id]||{added:0,pos:0,waste:0,owner:0,other:0},op=Number(opening[x.id]||0),expected=op+z.added-z.pos-z.waste-z.owner-z.other,p=counted[x.id];return '<tr><td>'+esc(x.name)+'<br><small>'+esc(x.unit)+'</small></td><td>'+op+'</td><td>'+z.added+'</td><td>'+z.pos+'</td><td>'+z.waste+'</td><td>'+z.owner+'</td><td>'+z.other+'</td><td>'+expected+'</td><td>'+(p==null?'—':p)+'</td><td>'+(p==null?'—':p-expected)+'</td></tr>'}).join('')+'</table>'}
+async function loadDailyStock(){const d=$('#stockRunDate').value||today();$('#stockRunDate').value=d;const [itemsAll,movs,counts,before]=await Promise.all([api('/rest/v1/inventory_items?select=id,name,unit,inventory_scope&active=eq.true&order=name.asc'),api('/rest/v1/stock_movements?select=item_id,quantity,movement_type,reason,created_at&created_at=gte.'+d+'T00:00:00&created_at=lte.'+d+'T23:59:59'),api('/rest/v1/inventory_daily_counts?select=inventory_item_id,physical_quantity&count_date=eq.'+d),api('/rest/v1/stock_movements?select=item_id,quantity,movement_type&created_at=lt.'+d+'T00:00:00')]);const scopeForRole={chef:'kitchen',head_chef:'kitchen',barista:'bar',bartender:'bar',grounds_cleaning:'cleaning',head_swimming_coach:'swimming',swimming_coach:'swimming',waitstaff:'service'}[profile?.role];const items=scopeForRole?itemsAll.filter(x=>x.inventory_scope===scopeForRole):itemsAll;const opening={};before.forEach(x=>opening[x.item_id]=(opening[x.item_id]||0)+(String(x.movement_type).toLowerCase()==='out'?-1:1)*Number(x.quantity||0));const day={};movs.forEach(x=>{const z=day[x.item_id]||{added:0,pos:0,waste:0,owner:0,other:0};const q=Number(x.quantity||0),r=String(x.reason||'').toLowerCase();if(String(x.movement_type).toLowerCase()!=='out')z.added+=q;else if(r.startsWith('order '))z.pos+=q;else if(r==='waste')z.waste+=q;else if(r==='owner taken home')z.owner+=q;else z.other+=q;day[x.item_id]=z});const counted=Object.fromEntries(counts.map(x=>[x.inventory_item_id,Number(x.physical_quantity)]));$('#dailyStockTable').innerHTML='<table><tr><th>Item</th><th>Opening</th><th>Added</th><th>POS Used</th><th>Waste</th><th>Owner Home</th><th>Other</th><th>Expected</th><th>Physical</th><th>Variance</th></tr>'+items.map(x=>{const z=day[x.id]||{added:0,pos:0,waste:0,owner:0,other:0},op=Number(opening[x.id]||0),expected=op+z.added-z.pos-z.waste-z.owner-z.other,p=counted[x.id];return '<tr><td>'+esc(x.name)+'<br><small>'+esc(x.unit)+'</small></td><td>'+op+'</td><td>'+z.added+'</td><td>'+z.pos+'</td><td>'+z.waste+'</td><td>'+z.owner+'</td><td>'+z.other+'</td><td>'+expected+'</td><td>'+(p==null?'—':p)+'</td><td>'+(p==null?'—':p-expected)+'</td></tr>'}).join('')+'</table>'}
 async function loadPurchases(){
   if(!(hasPermission('purchase_orders.view')||hasPermission('purchase_orders.manage'))){setHTML('#purchaseOrdersTable','<div class="state">Purchase receiving is not part of this account.</div>');return;}
   const orders=await api('/rest/v1/purchase_orders?select=*&order=created_at.desc');
@@ -658,7 +670,10 @@ async function receivePurchase(id){
   };
 }
 async function setOpeningStock(){const inv=await api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc');modal('Set opening stock','<form id="openingStockForm" class="form"><p class="muted">Enter the stock physically available when Kiteezi starts its inventory records. This creates auditable opening-balance movements.</p>'+inv.map(x=>'<label>'+esc(x.name)+' ('+esc(x.unit)+')<input name="'+x.id+'" type="number" step="0.001" min="0" placeholder="Opening quantity"></label>').join('')+'<button class="btn btn-dark">Save opening stock</button></form>');$('#openingStockForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const rows=inv.map(x=>({item_id:x.id,quantity:Number(f.get(x.id)||0)})).filter(x=>x.quantity>0);if(!rows.length)return alert('Enter at least one opening quantity.');for(const x of rows){await api('/rest/v1/stock_movements',{method:'POST',body:JSON.stringify({item_id:x.item_id,quantity:x.quantity,movement_type:'in',reason:'Opening Balance',staff_id:session.user.id})})}closeModal();loadInventory();loadDailyStock()}}
-async function addStockAdjustment(){const inv=await api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc');const ownerOnly=String(profile?.role||'').toLowerCase()==='owner';const homeOption=ownerOnly?'<option>Owner Taken Home</option>':'';modal('Add stock movement','<form id="adj" class="form"><select name="item">'+inv.map(x=>'<option value="'+x.id+'">'+esc(x.name)+' ('+esc(x.unit)+')</option>').join('')+'</select><select name="type"><option value="out">Stock out</option><option value="in">Stock in</option></select><select name="reason"><option>Waste</option>'+homeOption+'<option>Other Adjustment</option></select><input name="qty" type="number" step="0.001" min="0.001" placeholder="Quantity" required><textarea name="notes" placeholder="Notes"></textarea><button class="btn btn-dark">Save movement</button></form>');$('#adj').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);await api('/rest/v1/stock_movements',{method:'POST',body:JSON.stringify({item_id:f.get('item'),quantity:Number(f.get('qty')),movement_type:f.get('type'),reason:f.get('reason')+(f.get('notes')?' — '+f.get('notes'):''),staff_id:session.user.id})});closeModal();loadInventory()}}
+async function addStockAdjustment(){
+  const scopeForRole={chef:'kitchen',head_chef:'kitchen',barista:'bar',bartender:'bar',grounds_cleaning:'cleaning',head_swimming_coach:'swimming',swimming_coach:'swimming',waitstaff:'service'}[profile?.role];
+  const inv=await api('/rest/v1/inventory_items?select=id,name,unit,inventory_scope&active=eq.true&order=name.asc');
+  const scoped=scopeForRole?inv.filter(x=>x.inventory_scope===scopeForRole):inv;const ownerOnly=String(profile?.role||'').toLowerCase()==='owner';const homeOption=ownerOnly?'<option>Owner Taken Home</option>':'';modal('Add stock movement','<form id="adj" class="form"><select name="item">'+scoped.map(x=>'<option value="'+x.id+'">'+esc(x.name)+' ('+esc(x.unit)+')</option>').join('')+'</select><select name="type"><option value="out">Stock out</option><option value="in">Stock in</option></select><select name="reason"><option>Waste</option>'+homeOption+'<option>Other Adjustment</option></select><input name="qty" type="number" step="0.001" min="0.001" placeholder="Quantity" required><textarea name="notes" placeholder="Notes"></textarea><button class="btn btn-dark">Save movement</button></form>');$('#adj').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);await api('/rest/v1/stock_movements',{method:'POST',body:JSON.stringify({item_id:f.get('item'),quantity:Number(f.get('qty')),movement_type:f.get('type'),reason:f.get('reason')+(f.get('notes')?' — '+f.get('notes'):''),staff_id:session.user.id})});closeModal();loadInventory()}}
 async function loadStockMovements(){
   const scopeForRole={chef:'kitchen',barista:'bar',grounds_cleaning:'cleaning',head_swimming_coach:'swimming'}[profile?.role];
   const r=await api('/rest/v1/stock_movements?select=*,inventory_items(name,unit,inventory_scope)&order=created_at.desc&limit=100');
@@ -875,13 +890,14 @@ async function loadReport(){
   const from=$('#reportFrom').value||today(),to=$('#reportTo').value||today();
   if(from>to){alert('The report start date cannot be after the end date.');return}
   const service=$('#reportService')?.value||'All Services';
+  const reportFetch=(path,fallback=[])=>api(path).catch(err=>{console.warn('Report source unavailable',path,err);return fallback});
   const [b,o,e,p,m,d]=await Promise.all([
-    api('/rest/v1/bookings?select=id,total,booking_date,status,payment_status&booking_date=gte.'+from+'&booking_date=lte.'+to+'&status=neq.cancelled'),
-    api('/rest/v1/orders?select=id,total,created_at,status,payment_status&created_at=gte.'+from+'T00:00:00&created_at=lte.'+to+'T23:59:59&status=neq.cancelled'),
-    api('/rest/v1/events?select=id,total,event_date,status&event_date=gte.'+from+'&event_date=lte.'+to+'&status=neq.cancelled'),
-    api('/rest/v1/purchase_orders?select=id,supplier,reference,total,created_at,status&created_at=gte.'+from+'T00:00:00&created_at=lte.'+to+'T23:59:59&status=neq.cancelled'),
-    api('/rest/v1/stock_movements?select=id,item_id,quantity,movement_type,reason,supplier,staff_id,created_at&created_at=gte.'+from+'T00:00&created_at=lte.'+to+'T23:59:59&order=created_at.desc'),
-    api('/rest/v1/inventory_daily_counts?select=id,inventory_item_id,count_date,physical_quantity,counted_by,notes&count_date=gte.'+from+'&count_date=lte.'+to+'&order=count_date.desc')
+    reportFetch('/rest/v1/bookings?select=id,total,booking_date,status,payment_status&booking_date=gte.'+from+'&booking_date=lte.'+to+'&status=neq.cancelled'),
+    reportFetch('/rest/v1/orders?select=id,total,created_at,status,payment_status&created_at=gte.'+from+'T00:00:00&created_at=lte.'+to+'T23:59:59&status=neq.cancelled'),
+    reportFetch('/rest/v1/events?select=id,total,event_date,status&event_date=gte.'+from+'&event_date=lte.'+to+'&status=neq.cancelled'),
+    reportFetch('/rest/v1/purchase_orders?select=id,supplier,reference,total,created_at,status&created_at=gte.'+from+'T00:00:00&created_at=lte.'+to+'T23:59:59&status=neq.cancelled'),
+    reportFetch('/rest/v1/stock_movements?select=id,item_id,quantity,movement_type,reason,supplier,staff_id,created_at&created_at=gte.'+from+'T00:00&created_at=lte.'+to+'T23:59:59&order=created_at.desc'),
+    reportFetch('/rest/v1/inventory_daily_counts?select=id,inventory_item_id,count_date,physical_quantity,counted_by,notes&count_date=gte.'+from+'&count_date=lte.'+to+'&order=count_date.desc')
   ]);
   if(service!=='All Services'){
     if(service==='Bookings'){o.length=0;e.length=0;p.length=0}
@@ -890,8 +906,8 @@ async function loadReport(){
     else if(service==='Purchases'){b.length=0;o.length=0;e.length=0}
   }
   const [inv,mAll]=await Promise.all([
-    api('/rest/v1/inventory_items?select=id,name,unit,category,station_id&active=eq.true&order=name.asc'),
-    api('/rest/v1/stock_movements?select=item_id,quantity,movement_type')
+    reportFetch('/rest/v1/inventory_items?select=id,name,unit,category,station_id&active=eq.true&order=name.asc'),
+    reportFetch('/rest/v1/stock_movements?select=item_id,quantity,movement_type')
   ]);
   const invById=Object.fromEntries(inv.map(x=>[x.id,x]));
   const value=b.reduce((a,x)=>a+Number(x.total||0),0)+o.reduce((a,x)=>a+Number(x.total||0),0)+e.reduce((a,x)=>a+Number(x.total||0),0);
@@ -955,6 +971,7 @@ function modal(title,body){$('#modalTitle').textContent=title;$('#modalBody').in
 function printReport(){if(!lastReport){return alert('Generate a report first.')}window.print()}
 function downloadReport(){
   if(!lastReport)return alert('Generate a report first.');
+  // Download the generated report as a self-contained HTML document; this works on desktop and mobile browsers.
   const escHtml=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const rows=[['Type','ID','Date','Status / Type','Item / Supplier','Value / Quantity'],...lastReport.rows];
   const header=rows[0].map(v=>'<th>'+escHtml(v)+'</th>').join('');
