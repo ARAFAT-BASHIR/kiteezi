@@ -696,7 +696,7 @@ async function loadInventory(){
       rows0.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.category||'')+'</td><td>'+esc(x.unit||'')+'</td><td><span class="pill">'+esc(x.service_stations?.name||'Unassigned')+'</span></td><td>'+esc(x.reorder_level??0)+'</td><td>'+esc(x.active?'Yes':'No')+'</td><td>'+(hasPermission('inventory.manage')?'<button class="btn" data-edit-inv="'+x.id+'">Edit</button>':'')+'</td></tr>').join('')+
       '</tbody></table>':'<div class="state">No inventory items found.</div>');
     // Use querySelectorAll here: inventory can contain many editable rows.
-    $('[data-edit-inv]').forEach(x=>x.onclick=()=>editInventory(x.dataset.editInv));
+    Array.from(document.querySelectorAll('[data-edit-inv]')).forEach(x=>x.onclick=()=>editInventory(x.dataset.editInv));
   }catch(e){
     console.error('Inventory load failed:',e);
     box.innerHTML='<div class="state">Inventory could not be loaded. '+esc(e.message||'Please try again.')+'</div>';
