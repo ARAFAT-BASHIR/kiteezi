@@ -19,7 +19,6 @@ const TAB_FALLBACK_PERMISSIONS={
   menu:['menu.manage','menu.public_content.manage'],
   inquiries:['inquiries.view','inquiries.catering','inquiries.drinks','inquiries.general','inquiries.swimming'],
   swimming_sessions:['swimming.manage','swimming.assigned'],
-  reports:['reports.view','reports.reservations.view'],
   accounting:['reports.financial','reports.view']
 };
 const hasPermission=code=>profile?.role==='owner'||permissions.has(code);
