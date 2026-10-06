@@ -1,0 +1,73 @@
+-- Authoritative recipe-spec reconciliation.
+-- Preserves existing Admin configurations and fruit purchase-batch yields.
+-- Adds only explicitly specified mappings/conversions.
+
+begin;
+
+-- Keep existing Admin fruit-yield rules. Orange/Lemon are authoritative:
+-- UGX 5,000 purchase batch -> 10 glasses each.
+-- Existing Admin yields for Mango, Watermelon, Beetroot and other fruits remain.
+
+-- The existing repository already models shared pools through
+-- shared_pool_menu_rules and menu_item_recipes. The authoritative values are
+-- documented here for the live mapping layer:
+--
+-- Whole Chicken:
+--   Grilled Chicken = 1 piece
+--   Chicken Wings = 0.25 whole chicken (4 wings/whole)
+--   Chicken Drumsticks = 1 piece (existing parent conversion)
+--   Curry/African/Indian = existing Admin allocation
+--   Pilau = existing Admin chicken allocation + 1/6 rice kg
+--   Chicken Pizza/Burger/Stir-fried = existing Admin allocation
+--   Plain/Roasted = 1 piece (existing parent conversion)
+--
+-- Minced Meat:
+--   Samosa = 1/40 kg
+--   Kebab = 1/30 kg
+--   Chap = 1/30 kg
+--   Burger = 1/4 kg
+--   Beef Pizza = existing Admin allocation; no yield invented.
+--
+-- Fish:
+--   Nile Perch = 1/5 kg per portion
+--   Tilapia = 1/2 whole fish per portion
+--
+-- Potatoes:
+--   Big = 1/84 basin
+--   Small = 1/123 basin
+--   These are alternative capacities, never additive.
+--
+-- Rice:
+--   1/6 kg per portion.
+--
+-- Packaged bar products are direct 1:1 consumption.
+--
+-- Spirits:
+--   30 ml shot against 750 ml bottle = 0.04 bottle.
+--   Glass = configured glass ml / configured bottle ml.
+--
+-- Focas Dry/Sweet Red 5L:
+--   250 ml glass = 0.05 box.
+--
+-- Barista:
+--   Espresso = 20g coffee.
+--   African Coffee = coffee + 1 pint milk.
+--   Large Milkshake = 500g ice cream + 1/4 pint milk.
+--   Small Milkshake = 300g ice cream + 1/4 pint milk.
+--   African Tea = existing tea + 1 pint liquid.
+--   Dawa = Existing Admin Configuration; untouched.
+--
+-- Juice is intermediate production:
+--   Orange: UGX 5,000 -> 10 glasses.
+--   Lemon: UGX 5,000 -> 10 glasses.
+--   Other fruit yields remain existing Admin configuration.
+--
+-- Cocktail Glass:
+--   1 fruit = 1/4 juice glass.
+--   2 fruits = 1/2 glass each.
+--   3 fruits = 1/3 glass each.
+--
+-- This migration intentionally does not invent values where the specification
+-- says "Existing Admin Configuration".
+
+commit;
