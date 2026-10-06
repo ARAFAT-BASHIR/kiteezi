@@ -470,6 +470,9 @@
   const CART_KEY =
     'kiteezi_cart_v2';
 
+  const ORDER_REQUEST_KEY =
+    'kiteezi_order_request_id_v1';
+
 
   const cartLines =
     document.getElementById('cart-lines');
@@ -1009,10 +1012,21 @@
       }));
 
 
+    let clientRequestId =
+      localStorage.getItem(ORDER_REQUEST_KEY);
+
+    if (!clientRequestId) {
+      clientRequestId =
+        (window.crypto && typeof window.crypto.randomUUID === 'function')
+          ? window.crypto.randomUUID()
+          : String(Date.now()) + '-' + Math.random().toString(36).slice(2);
+      localStorage.setItem(ORDER_REQUEST_KEY, clientRequestId);
+    }
+
     const response =
       await fetch(
         SUPABASE_URL +
-        '/rest/v1/rpc/place_website_order',
+        '/rest/v1/rpc/place_website_order_idempotent',
         {
 
           method: 'POST',
@@ -1033,6 +1047,9 @@
 
           body:
             JSON.stringify({
+
+              p_client_request_id:
+                clientRequestId,
 
               p_customer_name:
                 customerName,
@@ -1175,6 +1192,7 @@
         localStorage.removeItem(
           CART_KEY
         );
+        localStorage.removeItem(ORDER_REQUEST_KEY);
 
 
         cart = [];

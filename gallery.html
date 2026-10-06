@@ -31,6 +31,36 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 async function load(){const g=document.getElementById('galleryGrid');try{const r=await fetch(u+'/rest/v1/gallery_items?select=id,title,caption,category,media_type,storage_bucket,storage_path&status=eq.approved&active=eq.true&order=sort_order.asc,created_at.desc',{headers:{apikey:k,Authorization:'Bearer '+k}});if(!r.ok)throw Error('Gallery could not be loaded.');const rows=await r.json();g.innerHTML=rows.length?rows.map(x=>{const url=u+'/storage/v1/object/public/'+encodeURIComponent(x.storage_bucket)+'/'+x.storage_path.split('/').map(encodeURIComponent).join('/');const media=x.media_type==='video'?'<video class="photo" src="'+esc(url)+'" controls preload="metadata" playsinline></video>':'<img class="photo" src="'+esc(url)+'" alt="'+esc(x.title||'Kiteezi gallery')+'" loading="lazy">';return '<article class="card">'+media+'<div class="card-body"><span class="badge">'+esc(x.category)+'</span><h3>'+esc(x.title||'Kiteezi')+'</h3>'+(x.caption?'<p>'+esc(x.caption)+'</p>':'')+'</div></article>'}).join(''):'<p class="muted">No gallery media has been published yet.</p>'}catch(e){g.innerHTML='<p class="muted">Gallery is temporarily unavailable.</p>'}}
 load();
 const f=document.getElementById('galleryForm'),s=document.getElementById('galleryStatus');
-f.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(f),file=fd.get('file');if(!file||!file.size)return;s.hidden=true;if(file.size>MAX){s.hidden=false;s.textContent='That file is larger than 50 MB. Please choose a smaller file.';return}const imageTypes=['image/jpeg','image/png','image/webp','image/gif','image/avif'],videoTypes=['video/mp4','video/webm','video/quicktime'];if(![...imageTypes,...videoTypes].includes(file.type)){s.hidden=false;s.textContent='Unsupported file type.';return}const mediaType=imageTypes.includes(file.type)?'image':'video';const ext=(file.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'');const path='pending/'+crypto.randomUUID()+'.'+ext;const submit=document.querySelector('#galleryForm button[type=submit]');submit.disabled=true;submit.textContent='Uploading…';const uploadForm=new FormData(f);const up=await fetch(u+'/functions/v1/submit-gallery-media',{method:'POST',headers:{apikey:k,Authorization:'Bearer '+k},body:uploadForm});const result=await up.json().catch(()=>({}));if(!up.ok)throw Error(result.error||result.detail||'The media could not be submitted.');f.reset();s.hidden=false;s.textContent=result.message||'Thank you. Your media was submitted for review and will only appear after approval.'}catch(err){s.hidden=false;s.textContent=err.message||'The media could not be submitted.'}finally{submit.disabled=false;submit.textContent='Submit for review'}});
+f.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const fd=new FormData(f),file=fd.get('file');
+  const submit=document.querySelector('#galleryForm button[type=submit]');
+  try{
+    if(!file||!file.size) throw Error('Please choose a photo or video.');
+    s.hidden=true;
+    if(file.size>MAX) throw Error('That file is larger than 50 MB. Please choose a smaller file.');
+    const imageTypes=['image/jpeg','image/png','image/webp','image/gif','image/avif'];
+    const videoTypes=['video/mp4','video/webm','video/quicktime'];
+    if(![...imageTypes,...videoTypes].includes(file.type)) throw Error('Unsupported file type.');
+    submit.disabled=true;
+    submit.textContent='Uploading…';
+    const up=await fetch(u+'/functions/v1/submit-gallery-media',{
+      method:'POST',
+      headers:{apikey:k,Authorization:'Bearer '+k},
+      body:fd
+    });
+    const result=await up.json().catch(()=>({}));
+    if(!up.ok) throw Error(result.error||result.detail||'The media could not be submitted.');
+    f.reset();
+    s.hidden=false;
+    s.textContent=result.message||'Thank you. Your media was submitted for review and will only appear after approval.';
+  }catch(err){
+    s.hidden=false;
+    s.textContent=err.message||'The media could not be submitted.';
+  }finally{
+    submit.disabled=false;
+    submit.textContent='Submit for review';
+  }
+});
 })();
 </script></body></html>
