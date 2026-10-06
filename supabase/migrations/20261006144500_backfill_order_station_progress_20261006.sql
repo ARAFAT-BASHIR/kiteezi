@@ -1,2 +1,0 @@
-insert into public.order_station_progress(order_id,station_id,status)
-select distinct oi.order_id,mi.station_id,'waiting' from public.order_items oi join public.menu_items mi on mi.id=oi.menu_item_id join public.service_stations ss on ss.id=mi.station_id and ss.active where mi.station_id is not null on conflict(order_id,station_id) do nothing;
