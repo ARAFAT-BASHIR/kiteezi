@@ -625,3 +625,18 @@ body.admin:has(#loginView:not(.hide)){overflow:hidden;}
 .admin .nav-group{margin:0 0 12px;padding:0 4px}.admin .nav-group-title{padding:7px 10px 5px;color:#82958b;font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}.admin .nav-group nav{display:grid}.admin .nav-group a{margin:1px 0!important}
 .admin .settings-page{max-width:1180px;margin:0 auto}.admin .settings-header{display:flex;justify-content:space-between;align-items:center;gap:20px}.admin .settings-header h2{margin:4px 0;font-size:28px}.admin .toolbar-actions{display:flex;gap:8px;flex-wrap:wrap}.admin .settings-card h3{margin:0 0 6px;color:#173c2d;font-size:18px}.admin .settings-card code{background:#f0f4f1;padding:2px 5px;border-radius:5px}.admin .settings-section{padding-top:18px}.admin .settings-card input{min-width:0}
 @media(max-width:900px){.admin .nav-group{display:contents}.admin .nav-group-title{display:none}.admin .side nav{align-items:flex-start!important}.admin .settings-header{display:block}.admin .toolbar-actions{margin-top:12px}}
+
+/* === Production admin shell audit: mutually exclusive auth states + lazy module UX === */
+body.admin:has(#app:not(.hide)) #loginView{display:none!important}
+body.admin:has(#loginView:not(.hide)) #app{display:none!important}
+body.admin .tab.is-loading{position:relative}
+body.admin .tab.is-loading:after{content:"";position:absolute;top:12px;right:16px;width:16px;height:16px;border:2px solid #dce5df;border-top-color:#2d6a4f;border-radius:50%;animation:kiteeziSpin .7s linear infinite;z-index:5}
+@keyframes kiteeziSpin{to{transform:rotate(360deg)}}
+.accounting-subnav{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;border-top:1px solid #e5ece7;padding-top:14px}
+.accounting-subnav button{border:1px solid #d8e2dc;background:#f6f9f7;color:#29483a;border-radius:10px;padding:9px 13px;font:inherit;font-weight:700;cursor:pointer}
+.accounting-subnav button.active{background:#2d6a4f;color:#fff;border-color:#2d6a4f}
+.accounting-grid-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.accounting-section-title{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.accounting-section-title h3{margin:0}
+.panel-inner{margin-top:18px;padding-top:18px;border-top:1px solid #e5ece7}
+@media(max-width:760px){.accounting-grid-two{grid-template-columns:1fr}.accounting-subnav{overflow-x:auto;flex-wrap:nowrap}.accounting-subnav button{white-space:nowrap}.accounting-section-title{display:block}.accounting-section-title .muted{display:block;margin-top:5px}}
