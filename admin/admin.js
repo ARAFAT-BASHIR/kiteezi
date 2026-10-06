@@ -51,7 +51,7 @@ async function api(path,opt={},token=session?.access_token||KEY){
     }catch{}
   }
   const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}
-  if(!r.ok)throw Error(d?.message||d?.msg||d?.error_description||d?.error||(typeof d==='string'?d:'Request failed'));
+  if(!r.ok){const error=Error(d?.message||d?.msg||d?.error_description||d?.error||(typeof d==='string'?d:'Request failed'));error.status=r.status;error.auth=r.status===401;throw error}
   return d;
 }
 function msg(e){console.error(e);alert(e.message||'Something went wrong.')}
@@ -81,7 +81,7 @@ async function bootAdmin(authSession){
     return true;
   }catch(e){
     console.error('Kiteezi admin boot failed:',e);
-    const authFailure=!session?.user?.id;
+    const authFailure=!session?.user?.id||e?.auth||e?.status===401;
     if(authFailure){
       session=null;
       clearAdminSession();
