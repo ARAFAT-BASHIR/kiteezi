@@ -388,6 +388,7 @@ async function loadBookings(){
   if(['head_swimming_coach','swimming_coach'].includes(String(profile?.role||'')))rows=rows.filter(r=>/swim/i.test(r.services?.name||'')||r.booking_type==='school_swimming');
   const todayDate=today();
   const todayRows=rows.filter(r=>String(r.booking_date)===todayDate);
+  const upcomingRows=rows.filter(r=>String(r.booking_date)>todayDate);
   const previousRows=rows.filter(r=>String(r.booking_date)<todayDate);
   if(!(hasPermission('bookings.view')||hasPermission('bookings.manage'))){setHTML('#bookingTable','<div class="state">You do not have permission to view bookings.</div>');return;}
   const renderRows=list=>{
@@ -408,7 +409,7 @@ async function loadBookings(){
         return '<tr><td>'+esc(r.booking_date)+' '+esc(r.start_time||'')+'</td><td>'+esc(customer)+'<br>'+esc(r.customers?.phone||'')+'</td><td>'+esc(r.people)+'</td><td>UGX '+money(r.total)+'</td><td>'+esc(r.status)+'</td><td>'+esc(r.payment_status||'unpaid')+'</td><td class="actions">'+confirmBtn+paidBtn+completeBtn+cancelBtn+deleteBtn+'</td></tr>';
       }).join('')+'</table>';
   };
-  setHTML('#bookingTable','<h3>Today\'s bookings</h3>'+renderRows(todayRows)+'<h3 style="margin-top:24px">Previous bookings</h3>'+renderRows(previousRows));
+  setHTML('#bookingTable','<h3>Today\'s bookings</h3>'+renderRows(todayRows)+'<h3 style="margin-top:24px">Upcoming bookings</h3>'+renderRows(upcomingRows)+'<h3 style="margin-top:24px">Previous bookings</h3>'+renderRows(previousRows));
 }
 async function setBookingStatus(id,status,payment){
   try{
