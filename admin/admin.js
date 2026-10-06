@@ -185,7 +185,7 @@ function applyRoleNavigation(){
 
   // Inventory sub-sections are independently permissioned.
   const invTabs={
-    items:['inventory.view','inventory.all','inventory.operational','inventory.manage','inventory.kitchen','inventory.bar','inventory.cleaning','inventory.swimming'],
+    items:['inventory.view','inventory.all','inventory.operational','inventory.manage','inventory.kitchen','inventory.bar','inventory.cleaning','inventory.swimming','inventory.service'],
     daily:['inventory.count','inventory.manage'],
     purchases:['purchase_orders.view','purchase_orders.manage','purchase_orders.receive','purchase_orders.create'],
     movements:['inventory.adjust','inventory.manage'],
