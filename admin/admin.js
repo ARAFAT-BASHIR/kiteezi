@@ -1,12 +1,16 @@
 'use strict';
 const C=window.KITEEZI_CONFIG||{}, URL=String(C.SUPABASE_URL||'').replace(/\/+$/,''), KEY=String(C.SUPABASE_ANON_KEY||'');
 let session=null,profile=null,tab='dashboard',permissions=new Set();
+const SESSION_KEY='kiteezi_admin_session';
+function readAdminSession(){try{const raw=localStorage.getItem(SESSION_KEY)||sessionStorage.getItem(SESSION_KEY);return raw?JSON.parse(raw):null}catch{return null}}
+function writeAdminSession(value){const raw=JSON.stringify(value);localStorage.setItem(SESSION_KEY,raw);sessionStorage.setItem(SESSION_KEY,raw)}
+function clearAdminSession(){localStorage.removeItem(SESSION_KEY);sessionStorage.removeItem(SESSION_KEY)}
 const TAB_PERMISSIONS={
   dashboard:'dashboard.view', bookings:'bookings.manage', restaurant:'orders.manage',
   inventory:'inventory.operational', menu:'menu.manage', services:'services.manage',
   inquiries:'inquiries.view', swimming_timetable:'swimming.manage', swimming_sessions:'swimming.assigned', tasks:'tasks.manage', content:'content.manage', gallery:'gallery.view',
   reviews:'reviews.view', social:'social.manage', staff:'staff.manage',
-  reports:'reports.view', settings:'site_settings.manage', requisitions:'requisitions.view', purchases:'purchase_orders.view', service_tally:'service_logs.create'
+  accounting:'reports.financial', settings:'site_settings.manage', requisitions:'requisitions.view', purchases:'purchase_orders.view', service_tally:'service_logs.create'
 };
 const TAB_FALLBACK_PERMISSIONS={
   bookings:['bookings.view'],
@@ -15,7 +19,8 @@ const TAB_FALLBACK_PERMISSIONS={
   menu:['menu.manage','menu.public_content.manage'],
   inquiries:['inquiries.view','inquiries.catering','inquiries.drinks','inquiries.general','inquiries.swimming'],
   swimming_sessions:['swimming.manage','swimming.assigned'],
-  reports:['reports.view','reports.reservations.view']
+  reports:['reports.view','reports.reservations.view'],
+  accounting:['reports.financial','reports.view']
 };
 const hasPermission=code=>profile?.role==='owner'||permissions.has(code);
 const canSeeTab=name=>hasPermission(TAB_PERMISSIONS[name])||(TAB_FALLBACK_PERMISSIONS[name]||[]).some(hasPermission);
@@ -59,7 +64,7 @@ async function bootAdmin(authSession){
   try{
     session=authSession||JSON.parse(sessionStorage.getItem('kiteezi_admin_session')||'null');
     if(!session?.access_token||!session?.user?.id)throw Error('No valid admin session.');
-    sessionStorage.setItem('kiteezi_admin_session',JSON.stringify(session));
+    writeAdminSession(session);
     const p=await api('/rest/v1/profiles?select=*&id=eq.'+encodeURIComponent(session.user.id)+'&limit=1');
     profile=p?.[0];
     if(!profile?.active)throw Error('This Kiteezi staff profile is inactive.');
@@ -79,20 +84,21 @@ async function bootAdmin(authSession){
     const authFailure=!session?.user?.id;
     if(authFailure){
       session=null;
-      sessionStorage.removeItem('kiteezi_admin_session');
+      clearAdminSession();
     }
     $('#app')?.classList.add('hide');
     $('#loginView')?.classList.remove('hide');
+    document.body.classList.remove('authenticated-shell');
     const el=$('#loginMsg'); if(el){el.hidden=false;el.textContent=e.message||'Unable to open the admin dashboard.';el.className='notice danger'}
     return false;
   }
 }
 window.KITEEZI_ADMIN_BOOT=bootAdmin;
 async function restore(){
-  const raw=sessionStorage.getItem('kiteezi_admin_session');
-  if(!raw){$('#loginView').classList.remove('hide');return}
+  const raw=localStorage.getItem(SESSION_KEY)||sessionStorage.getItem(SESSION_KEY);
+  if(!raw){$('#app')?.classList.add('hide');$('#loginView')?.classList.remove('hide');return}
   let saved;try{saved=JSON.parse(raw)}catch{saved=null}
-  if(!saved?.access_token){$('#loginView').classList.remove('hide');return}
+  if(!saved?.access_token){clearAdminSession();$('#app')?.classList.add('hide');$('#loginView')?.classList.remove('hide');return}
   try{
     const refresh=window.__KITEEZI_REFRESH_ADMIN_SESSION__;
     if(typeof refresh==='function'){
@@ -106,6 +112,7 @@ async function loadAdminLogo(){try{const r=await api('/rest/v1/site_settings?sel
 async function show(){
   $('#loginView')?.classList.add('hide');
   $('#app')?.classList.remove('hide');
+  document.body.classList.add('authenticated-shell');
   if($('#who'))$('#who').textContent=(profile?.full_name||'Staff')+' · '+(profile?.role||'staff');
   if($('#rolePill'))$('#rolePill').textContent=profile?.role||'staff';
   try{loadAdminLogo()}catch(e){console.warn('Admin logo load failed',e)}
@@ -146,7 +153,7 @@ function applyRoleNavigation(){
     ['reviews','Reviews',['reviews.view','reviews.moderate']],
     ['social','Social Links',['social.manage']],
     ['staff','Staff / Roles',['staff.manage']],
-    ['reports','Reports',['reports.view','reports.reservations.view','reports.financial','reports.inventory.view']],['accounting','Accounting & Finance',['reports.financial']],
+    ['accounting','Accounting & Finance',['reports.financial','reports.view','reports.inventory.view']],
     ['requisitions','Requisitions',['requisitions.view','requisitions.create','requisitions.approve.manager','requisitions.approve.gm','requisitions.approve.ceo','requisitions.approve.finance']],
     ['purchases','Purchase Orders',['purchase_orders.view','purchase_orders.manage','purchase_orders.create','purchase_orders.receive']],
     ['service_tally','Service Tally',['service_logs.create']],
@@ -158,7 +165,7 @@ function applyRoleNavigation(){
 ['OPERATIONS',[['restaurant','POS / Orders'],['bookings','Bookings'],['services','Sports & Services'],['swimming_timetable','Swimming Timetable'],['swimming_sessions','Swimming Sessions'],['tasks','Grounds / Tasks'],['inquiries','Inquiries']]],
 ['INVENTORY & PURCHASING',[['inventory','Inventory'],['requisitions','Requisitions'],['purchases','Purchase Orders'],['service_tally','Service Tally']]],
 ['MENU & RECIPES',[['menu','Menu']]],
-['FINANCE & REPORTING',[['accounting','Accounting & Finance'],['reports','Reports']]],
+['FINANCE & REPORTING',[['accounting','Accounting & Finance']]],
 ['PEOPLE & ADMIN',[['staff','Staff, Roles & Positions']]],
 ['WEBSITE',[['content','Content / Media'],['gallery','Gallery'],['reviews','Reviews'],['social','Social Links']]],
 ['SETTINGS',[['settings','Settings']]]
@@ -364,9 +371,90 @@ async function newServiceLog(){
   $('#serviceLogForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);try{await api('/rest/v1/rpc/record_service_log',{method:'POST',body:JSON.stringify({p_item_id:f.get('item'),p_quantity:Number(f.get('qty'))})});closeModal();await loadServiceTally();}catch(err){msg(err)}};
 }
 
+async function loadAccountingOverview(){
+  const [income,dept,cash]=await Promise.all([
+    api('/rest/v1/v_income_statement?select=code,name,account_type,amount&order=code.asc'),
+    api('/rest/v1/v_department_performance?select=department,revenue,expenses,net_result&order=department.asc'),
+    api('/rest/v1/v_cash_flow?select=entry_date,net_cash_movement')
+  ]);
+  const revenue=income.filter(x=>String(x.account_type).toLowerCase()==='revenue').reduce((a,x)=>a+Number(x.amount||0),0);
+  const expenses=income.filter(x=>['expense','cost_of_sales'].includes(String(x.account_type).toLowerCase())).reduce((a,x)=>a+Number(x.amount||0),0);
+  const cashMove=cash.reduce((a,x)=>a+Number(x.net_cash_movement||0),0);
+  setText('#acctRevenue','UGX '+money(revenue));setText('#acctExpenses','UGX '+money(expenses));setText('#acctNet','UGX '+money(revenue-expenses));setText('#acctCash','UGX '+money(cashMove));
+  setHTML('#accountingDepartments',table(['Department','Revenue','Expenses','Net'],dept,x=>[x.department||'Unassigned','UGX '+money(x.revenue), 'UGX '+money(x.expenses),'UGX '+money(x.net_result)]));
+}
+async function loadAccountingStatements(){
+  const [income,balance]=await Promise.all([
+    api('/rest/v1/v_income_statement?select=code,name,account_type,amount&order=code.asc'),
+    api('/rest/v1/v_balance_sheet?select=code,name,account_type,balance&order=code.asc')
+  ]);
+  setHTML('#accountingIncome',table(['Code','Account','Type','Amount'],income,x=>[x.code,x.name,x.account_type,'UGX '+money(x.amount)]));
+  setHTML('#accountingBalance',table(['Code','Account','Type','Balance'],balance,x=>[x.code,x.name,x.account_type,'UGX '+money(x.balance)]));
+}
+async function loadAccountingCash(){await loadReport()}
+async function loadAccountingPurchasesInventory(){
+  const [po,mov]=await Promise.all([
+    api('/rest/v1/purchase_orders?select=id,po_number,supplier,status,payment_status,total,created_at&order=created_at.desc'),
+    api('/rest/v1/stock_movements?select=id,item_id,quantity,movement_type,reason,created_at&order=created_at.desc')
+  ]);
+  setHTML('#accountingPurchases',table(['PO','Supplier','Status','Payment','Total'],po,x=>[x.po_number||x.id?.slice(0,8),x.supplier||'',x.status||'',x.payment_status||'', 'UGX '+money(x.total)]));
+  setHTML('#accountingInventory',table(['Movement','Item','Quantity','Type','Reason','Date'],mov,x=>[x.id?.slice(0,8),x.item_id?.slice(0,8),x.quantity,x.movement_type,x.reason||'',x.created_at?new Date(x.created_at).toLocaleDateString('en-GB'):'' ]));
+}
+async function loadAccountingOperations(){
+  const [actions,perf]=await Promise.all([
+    api('/rest/v1/v_operational_action_report?select=occurred_at,actor_name,actor_role,actor_department,action,entity_type,entity_id,reason,department,source&order=occurred_at.desc&limit=250'),
+    api('/rest/v1/v_performance_report?select=department,operational_actions,first_activity,last_activity&order=department.asc')
+  ]);
+  setHTML('#accountingActions',table(['When','Who','Role','Department','Action','Entity','Reason'],actions,x=>[
+    x.occurred_at?new Date(x.occurred_at).toLocaleString('en-GB'):'',x.actor_name||'',x.actor_role||'',x.actor_department||x.department||'',x.action||'',x.entity_type||'',x.reason||''
+  ]));
+  setHTML('#accountingPerformance',table(['Department','Actions','First activity','Last activity'],perf,x=>[
+    x.department||'Unassigned',x.operational_actions,x.first_activity?new Date(x.first_activity).toLocaleString('en-GB'):'',x.last_activity?new Date(x.last_activity).toLocaleString('en-GB'):''
+  ]));
+}
+async function loadAccountingLedger(){
+  const rows=await api('/rest/v1/v_general_ledger?select=entry_number,entry_date,source_type,source_id,description,department,status,account_code,account_name,debit,credit,line_description,line_department&order=entry_date.desc,entry_number.desc&limit=500');
+  setHTML('#accountingLedger',table(['Date','Entry','Source','Account','Debit','Credit','Department','Description'],rows,x=>[
+    x.entry_date,x.entry_number,x.source_type||'',(x.account_code||'')+' '+(x.account_name||''),'UGX '+money(x.debit),'UGX '+money(x.credit),x.line_department||x.department||'',x.line_description||x.description||''
+  ]));
+}
+async function loadAccounting(){
+  const view=document.querySelector('#accountingSubnav [data-accounting-view].active')?.dataset.accountingView||'overview';
+  await loadAccountingView(view,true);
+}
+async function loadAccountingView(view,force=false){
+  document.querySelectorAll('[data-accounting-view]').forEach(b=>b.classList.toggle('active',b.dataset.accountingView===view));
+  document.querySelectorAll('.accounting-view').forEach(p=>{const active=p.id==='accounting-panel-'+view;p.hidden=!active});
+  const loaders={overview:loadAccountingOverview,statements:loadAccountingStatements,cash:loadAccountingCash,purchases:loadAccountingPurchasesInventory,operations:loadAccountingOperations,ledger:loadAccountingLedger};
+  const fn=loaders[view]||loaders.overview;
+  const key='accounting:'+view;
+  if(!force&&loadedTabs.has(key))return;
+  await fn();loadedTabs.add(key);
+}
+const TAB_LOADERS={
+  dashboard:loadDashboard,bookings:loadBookings,restaurant:loadOrders,inventory:loadInventory,menu:loadMenu,
+  services:loadServices,inquiries:loadInquiries,swimming_timetable:loadSwimmingTimetable,
+  swimming_sessions:loadSwimmingSessions,tasks:loadTasks,content:loadContent,gallery:loadGallery,
+  reviews:loadReviews,social:loadSocial,
+  staff:async()=>{await loadStaff();await loadTeamPositions();await loadRolesAndPermissions();},
+  accounting:loadAccounting,settings:loadSettings,requisitions:loadRequisitions,
+  purchases:loadGeneratedPOs,service_tally:loadServiceTally
+};
+let activeLoad=0;
+const loadedTabs=new Set();
+async function loadTabOnce(name,force=false){
+  const loader=TAB_LOADERS[name]||loadDashboard;
+  if(!force&&loadedTabs.has(name))return;
+  const run=++activeLoad;
+  const section=document.getElementById(name);
+  section?.classList.add('is-loading');
+  try{await loader();loadedTabs.add(name)}finally{if(run===activeLoad)section?.classList.remove('is-loading')}
+}
 function route(x){
   const requested=x||'dashboard';
-  tab=canOpenTab(requested)?requested:(canOpenTab('dashboard')?'dashboard':Object.keys(TAB_PERMISSIONS).find(canOpenTab)||'dashboard');
+  if(requested==='reports')x='accounting';
+  const desired=x||'dashboard';
+  tab=canOpenTab(desired)?desired:(canOpenTab('dashboard')?'dashboard':Object.keys(TAB_PERMISSIONS).find(canOpenTab)||'dashboard');
   document.querySelectorAll('[data-tab]').forEach(a=>a.classList.toggle('active',a.dataset.tab===tab));
   document.querySelectorAll('.tab').forEach(sec=>{
     const active=sec.id===tab;
@@ -374,8 +462,7 @@ function route(x){
     sec.hidden=!active;
     sec.setAttribute('aria-hidden',active?'false':'true');
   });
-  const f={dashboard:loadDashboard,bookings:loadBookings,restaurant:loadOrders,inventory:loadInventory,menu:loadMenu,services:loadServices,inquiries:loadInquiries,swimming_timetable:loadSwimmingTimetable,swimming_sessions:loadSwimmingSessions,tasks:loadTasks,content:loadContent,gallery:loadGallery,reviews:loadReviews,social:loadSocial,staff:async()=>{await loadStaff();await loadTeamPositions();await loadRolesAndPermissions();},reports:loadReport,settings:loadSettings,accounting:loadAccounting,requisitions:loadRequisitions,purchases:loadGeneratedPOs,service_tally:loadServiceTally};
-  Promise.resolve((f[tab]||loadDashboard)()).catch(msg);
+  loadTabOnce(tab).catch(msg);
 }
 async function loadDashboard(){const d=today();const [b,o,i,sm]=await Promise.all([api('/rest/v1/bookings?select=id,status&booking_date=eq.'+d),api('/rest/v1/orders?select=id,status&status=not.eq.completed&status=not.eq.cancelled'),api('/rest/v1/inventory_items?select=id,reorder_level'),api('/rest/v1/stock_movements?select=item_id,quantity,movement_type')]);const stock={};sm.forEach(x=>stock[x.item_id]=(stock[x.item_id]||0)+(String(x.movement_type).toLowerCase()==='out'?-1:1)*Number(x.quantity||0));$('#mBookings').textContent=b.length;$('#mPending').textContent=b.filter(x=>x.status==='pending').length;$('#mOrders').textContent=o.length;$('#mLow').textContent=i.filter(x=>(stock[x.id]||0)<=Number(x.reorder_level||0)).length;$('#todayOps').textContent='Live data connected.'}
 function today(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Kampala'}).format(new Date())}
@@ -1025,4 +1112,4 @@ async function editStations(){const rows=await loadStations();modal('Preparation
 function closeModal(){$('#modal').classList.remove('open');$('#modalBody').innerHTML=''}
 
 // admin-login.js owns the login submit handler.
-$('#logout').onclick=async()=>{try{await api('/auth/v1/logout',{method:'POST'})}catch{}sessionStorage.removeItem('kiteezi_admin_session');location.reload()};$('#nav').addEventListener('click',e=>{const a=e.target.closest('[data-tab]');if(a){e.preventDefault();history.replaceState(null,'','#'+a.dataset.tab);route(a.dataset.tab)}});window.addEventListener('hashchange',()=>route(location.hash.slice(1)));$('#modalClose').onclick=closeModal;$('#refreshBookings').onclick=loadBookings;$('#refreshOrders').onclick=loadOrders;$('#refreshInventory').onclick=loadInventory;$('#refreshStockRun').onclick=loadDailyStock;$('#setOpeningStock').onclick=setOpeningStock;$('#notificationBell').onclick=toggleNotifications;$('#markNotificationsRead').onclick=markNotificationsRead;$('#countStock').onclick=async()=>{const inv=await api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc'),d=$('#stockRunDate').value||today(),existing=await api('/rest/v1/inventory_daily_counts?select=id,inventory_item_id,physical_quantity&count_date=eq.'+d);modal('Enter physical stock count','<form id="countForm" class="form">'+inv.map(x=>{const e=existing.find(q=>q.inventory_item_id===x.id);return '<label>'+esc(x.name)+' ('+esc(x.unit)+')<input name="'+x.id+'" type="number" step="0.001" min="0" value="'+(e?.physical_quantity??'')+'"></label>'}).join('')+'<button class="btn btn-dark">Save counts</button></form>');$('#countForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);for(const x of inv){const v=f.get(x.id);if(v!==null&&v!==''){const old=existing.find(q=>q.inventory_item_id===x.id),body={inventory_item_id:x.id,count_date:d,physical_quantity:Number(v),counted_by:session.user.id};await api(old?'/rest/v1/inventory_daily_counts?id=eq.'+old.id:'/rest/v1/inventory_daily_counts',{method:old?'PATCH':'POST',body:JSON.stringify(body)})}}closeModal();loadDailyStock()}};$('#refreshPurchases').onclick=loadPurchases;$('#newStockAdjustment').onclick=addStockAdjustment;$('#refreshMenu').onclick=loadMenu;$('#refreshServices').onclick=loadServices;$('#refreshInquiries').onclick=loadInquiries;$('#refreshSwimmingTimetable').onclick=loadSwimmingTimetable;$('#refreshSwimmingSessions').onclick=loadSwimmingSessions;$('#newTask').onclick=()=>editTask();$('#refreshTasks').onclick=loadTasks;$('#newSwimmingSlot').onclick=()=>editSwimmingSlot(null);$('#refreshPages').onclick=loadContent;$('#refreshMedia').onclick=loadContent;$('#refreshAnnouncements').onclick=loadContent;$('#refreshReviews').onclick=loadReviews;$('#refreshSocial').onclick=loadSocial;$('#newStaff').onclick=addStaff;$('#refreshStaff').onclick=loadStaff;$('#newTeamPosition').onclick=()=>editTeamPosition();$('#generateReport').onclick=loadReport;$('#refreshAccounting').onclick=loadAccounting;$('#downloadReport').onclick=downloadReport;document.querySelectorAll('[data-report-view]').forEach(b=>b.onclick=()=>renderReportView(b.dataset.reportView));$('#printReport').onclick=printReport;$('#refreshSettings').onclick=loadSettings;$('#refreshRoles').onclick=loadRolesAndPermissions;$('#saveSettings').onclick=saveSettings;$('#newRequisition').onclick=()=>createRequisition();$('#refreshRequisitions').onclick=loadRequisitions;$('#refreshGeneratedPOs').onclick=loadGeneratedPOs;$('#newServiceLog').onclick=()=>newServiceLog();$('#refreshServiceTally').onclick=loadServiceTally;$('#newOrder').onclick=async()=>{const m=await api('/rest/v1/menu_items?select=id,name,price,price_on_request,in_stock&in_stock=eq.true&price_on_request=eq.false&order=name.asc');modal('New POS order','<form id="pos" class="form"><input name="customer" placeholder="Customer name"><input name="phone" placeholder="Phone"><textarea name="notes" placeholder="Notes"></textarea><div id="posItems">'+m.map(x=>'<label style="display:flex;gap:8px;align-items:center"><input type="number" min="0" value="0" data-pos="'+x.id+'" style="width:80px"><span>'+esc(x.name)+' — UGX '+money(x.price)+'</span></label>').join('')+'</div><button class="btn btn-dark">Create order</button></form>');$('#pos').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget),items=[...e.currentTarget.querySelectorAll('[data-pos]')].map(x=>({id:x.dataset.pos,quantity:Number(x.value||0)})).filter(x=>x.quantity>0);if(!items.length)return alert('Select at least one item.');await api('/rest/v1/rpc/create_pos_order',{method:'POST',body:JSON.stringify({p_customer_name:f.get('customer')||null,p_phone:f.get('phone')||null,p_items:items,p_notes:f.get('notes')||null})});closeModal();loadOrders()}};$('#newSocial').onclick=()=>editSocial();$('#newInventoryItem').onclick=()=>editInventory();$('#manageStations').onclick=editStations;$('#inventorySearch').oninput=e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#inventoryTable tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none')};$('#newMenu').onclick=()=>editMenu(); $('#inventorySubnav')?.addEventListener('click',e=>{const b=e.target.closest('[data-inv-tab]');if(!b)return;document.querySelectorAll('#inventorySubnav [data-inv-tab]').forEach(x=>x.classList.toggle('active',x===b));const key=b.dataset.invTab;document.querySelectorAll('[id^="inventory-panel-"]').forEach(x=>x.style.display=x.id==='inventory-panel-'+key?'block':'none');const loaders={items:loadInventory,daily:loadDailyStock,purchases:loadPurchases,movements:loadStockMovements,recipes:loadRecipeMappings};(loaders[key]||loadInventory)().catch(msg)}); document.querySelectorAll('[id^="inventory-panel-"]').forEach(x=>x.style.display=x.id==='inventory-panel-items'?'block':'none');$('#newService').onclick=()=>editService();$('#newSport').onclick=()=>editSport();$('#newMedia').onclick=addMedia;$('#newGalleryMedia').onclick=addGalleryMedia;$('#refreshGallery').onclick=loadGallery;$('#newAnnouncement').onclick=addAnnouncement;restore();
+$('#logout').onclick=async()=>{const button=$('#logout');if(button)button.disabled=true;try{if(session?.access_token)await api('/auth/v1/logout',{method:'POST'})}catch{}finally{clearAdminSession();session=null;profile=null;location.reload()}};$('#nav').addEventListener('click',e=>{const a=e.target.closest('[data-tab]');if(a){e.preventDefault();history.replaceState(null,'','#'+a.dataset.tab);route(a.dataset.tab)}});window.addEventListener('hashchange',()=>route(location.hash.slice(1)));$('#modalClose').onclick=closeModal;$('#refreshBookings').onclick=loadBookings;$('#refreshOrders').onclick=loadOrders;$('#refreshInventory').onclick=loadInventory;$('#refreshStockRun').onclick=loadDailyStock;$('#setOpeningStock').onclick=setOpeningStock;$('#notificationBell').onclick=toggleNotifications;$('#markNotificationsRead').onclick=markNotificationsRead;$('#countStock').onclick=async()=>{const inv=await api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc'),d=$('#stockRunDate').value||today(),existing=await api('/rest/v1/inventory_daily_counts?select=id,inventory_item_id,physical_quantity&count_date=eq.'+d);modal('Enter physical stock count','<form id="countForm" class="form">'+inv.map(x=>{const e=existing.find(q=>q.inventory_item_id===x.id);return '<label>'+esc(x.name)+' ('+esc(x.unit)+')<input name="'+x.id+'" type="number" step="0.001" min="0" value="'+(e?.physical_quantity??'')+'"></label>'}).join('')+'<button class="btn btn-dark">Save counts</button></form>');$('#countForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);for(const x of inv){const v=f.get(x.id);if(v!==null&&v!==''){const old=existing.find(q=>q.inventory_item_id===x.id),body={inventory_item_id:x.id,count_date:d,physical_quantity:Number(v),counted_by:session.user.id};await api(old?'/rest/v1/inventory_daily_counts?id=eq.'+old.id:'/rest/v1/inventory_daily_counts',{method:old?'PATCH':'POST',body:JSON.stringify(body)})}}closeModal();loadDailyStock()}};$('#refreshPurchases').onclick=loadPurchases;$('#newStockAdjustment').onclick=addStockAdjustment;$('#refreshMenu').onclick=loadMenu;$('#refreshServices').onclick=loadServices;$('#refreshInquiries').onclick=loadInquiries;$('#refreshSwimmingTimetable').onclick=loadSwimmingTimetable;$('#refreshSwimmingSessions').onclick=loadSwimmingSessions;$('#newTask').onclick=()=>editTask();$('#refreshTasks').onclick=loadTasks;$('#newSwimmingSlot').onclick=()=>editSwimmingSlot(null);$('#refreshPages').onclick=loadContent;$('#refreshMedia').onclick=loadContent;$('#refreshAnnouncements').onclick=loadContent;$('#refreshReviews').onclick=loadReviews;$('#refreshSocial').onclick=loadSocial;$('#newStaff').onclick=addStaff;$('#refreshStaff').onclick=loadStaff;$('#newTeamPosition').onclick=()=>editTeamPosition();$('#generateReport').onclick=loadReport;$('#refreshAccounting').onclick=loadAccounting;$('#downloadReport').onclick=downloadReport;document.querySelectorAll('[data-report-view]').forEach(b=>b.onclick=()=>renderReportView(b.dataset.reportView));$('#printReport').onclick=printReport;$('#refreshSettings').onclick=loadSettings;$('#refreshRoles').onclick=loadRolesAndPermissions;$('#accountingSubnav')?.addEventListener('click',e=>{const b=e.target.closest('[data-accounting-view]');if(!b)return;loadAccountingView(b.dataset.accountingView).catch(msg)});$('#saveSettings').onclick=saveSettings;$('#newRequisition').onclick=()=>createRequisition();$('#refreshRequisitions').onclick=loadRequisitions;$('#refreshGeneratedPOs').onclick=loadGeneratedPOs;$('#newServiceLog').onclick=()=>newServiceLog();$('#refreshServiceTally').onclick=loadServiceTally;$('#newOrder').onclick=async()=>{const m=await api('/rest/v1/menu_items?select=id,name,price,price_on_request,in_stock&in_stock=eq.true&price_on_request=eq.false&order=name.asc');modal('New POS order','<form id="pos" class="form"><input name="customer" placeholder="Customer name"><input name="phone" placeholder="Phone"><textarea name="notes" placeholder="Notes"></textarea><div id="posItems">'+m.map(x=>'<label style="display:flex;gap:8px;align-items:center"><input type="number" min="0" value="0" data-pos="'+x.id+'" style="width:80px"><span>'+esc(x.name)+' — UGX '+money(x.price)+'</span></label>').join('')+'</div><button class="btn btn-dark">Create order</button></form>');$('#pos').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget),items=[...e.currentTarget.querySelectorAll('[data-pos]')].map(x=>({id:x.dataset.pos,quantity:Number(x.value||0)})).filter(x=>x.quantity>0);if(!items.length)return alert('Select at least one item.');await api('/rest/v1/rpc/create_pos_order',{method:'POST',body:JSON.stringify({p_customer_name:f.get('customer')||null,p_phone:f.get('phone')||null,p_items:items,p_notes:f.get('notes')||null})});closeModal();loadOrders()}};$('#newSocial').onclick=()=>editSocial();$('#newInventoryItem').onclick=()=>editInventory();$('#manageStations').onclick=editStations;$('#inventorySearch').oninput=e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#inventoryTable tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none')};$('#newMenu').onclick=()=>editMenu(); $('#inventorySubnav')?.addEventListener('click',e=>{const b=e.target.closest('[data-inv-tab]');if(!b)return;document.querySelectorAll('#inventorySubnav [data-inv-tab]').forEach(x=>x.classList.toggle('active',x===b));const key=b.dataset.invTab;document.querySelectorAll('[id^="inventory-panel-"]').forEach(x=>x.style.display=x.id==='inventory-panel-'+key?'block':'none');const loaders={items:loadInventory,daily:loadDailyStock,purchases:loadPurchases,movements:loadStockMovements,recipes:loadRecipeMappings};(loaders[key]||loadInventory)().catch(msg)}); document.querySelectorAll('[id^="inventory-panel-"]').forEach(x=>x.style.display=x.id==='inventory-panel-items'?'block':'none');$('#newService').onclick=()=>editService();$('#newSport').onclick=()=>editSport();$('#newMedia').onclick=addMedia;$('#newGalleryMedia').onclick=addGalleryMedia;$('#refreshGallery').onclick=loadGallery;$('#newAnnouncement').onclick=addAnnouncement;restore();
