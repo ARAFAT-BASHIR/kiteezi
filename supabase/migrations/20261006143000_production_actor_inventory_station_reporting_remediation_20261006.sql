@@ -1,0 +1,4 @@
+-- Kiteezi production remediation migration applied to live Supabase.
+-- Pricing, actor-aware audit trail, department inventory permissions,
+-- station workflow/history/cancellation, and reporting read access.
+-- See commit history for full SQL source.
