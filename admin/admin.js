@@ -345,7 +345,7 @@ async function loadRequisitions(){
       if(r.status==='manager_pending'&&canManager) actions='<button class="btn" data-req-approve="'+r.id+'" data-stage="manager">Confirm</button> <button class="btn" data-req-edit="'+r.id+'">Edit</button> <button class="btn danger" data-req-reject="'+r.id+'">Reject</button>';
       if(r.status==='gm_pending'&&canGM) actions='<button class="btn" data-req-approve="'+r.id+'" data-stage="gm">Confirm</button> <button class="btn" data-req-edit="'+r.id+'">Edit</button> <button class="btn danger" data-req-reject="'+r.id+'">Reject</button>';
       if(r.status==='ceo_pending'&&canCEO) actions='<button class="btn" data-req-approve="'+r.id+'" data-stage="ceo">Confirm & Generate PO</button> <button class="btn" data-req-edit="'+r.id+'">Edit</button> <button class="btn danger" data-req-reject="'+r.id+'">Reject</button>';
-      if(profile?.role==='owner') actions += (actions?' ':'')+'<button class="btn danger" data-delete-requisition="'+r.id+'">Delete test</button';
+      if(profile?.role==='owner') actions += (actions?' ':'')+'<button class="btn danger" data-delete-requisition="'+r.id+'">Delete test</button>;
       return '<tr><td>'+esc(r.requisition_number)+'</td><td>'+esc(r.requester_id)+'</td><td>'+esc(r.status)+'</td><td>'+items+'</td><td class="actions">'+actions+'</td></tr>';
     }).join('')+'</table>':'<div class="state">No requisitions.</div>';
   $$('[data-req-approve]').forEach(b=>b.onclick=async()=>{try{await api('/rest/v1/rpc/approve_requisition',{method:'POST',body:JSON.stringify({p_requisition_id:b.dataset.reqApprove,p_action:'approved'})});await loadRequisitions();loadGeneratedPOs().catch(()=>{});}catch(e){msg(e)}});
