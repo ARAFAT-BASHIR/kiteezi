@@ -712,3 +712,97 @@ html,body{max-width:100%;overflow-x:hidden}
  body.admin .accounting-view.report-print-target .table-scroll{overflow:visible!important}
  body.admin .accounting-view.report-print-target table{font-size:9pt}
 }
+
+/* === Final persistent admin navigation + category browser === */
+body.admin #app.admin-shell>.side{
+  position:sticky!important;
+  top:0!important;
+  align-self:start!important;
+  height:100vh!important;
+  max-height:100vh!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  z-index:100!important;
+}
+body.admin .nav-category-picker{
+  margin:12px 0 14px;
+  padding:10px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;
+  background:rgba(255,255,255,.05);
+}
+body.admin .nav-category-picker label{
+  display:block;
+  margin-bottom:6px;
+  color:#aebfb6;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+body.admin .nav-category-picker select{
+  width:100%;
+  min-height:42px;
+  color:#173c2d;
+  background:#fff;
+  border:0;
+  border-radius:9px;
+  font-size:13px;
+  font-weight:700;
+}
+body.admin .nav-group{
+  scroll-margin-top:12px;
+}
+body.admin .nav-group[hidden]{display:none!important}
+@media(max-width:900px){
+  body.admin #app.admin-shell>.side{
+    position:sticky!important;
+    top:0!important;
+    height:auto!important;
+    max-height:50vh!important;
+    overflow-y:auto!important;
+    z-index:100!important;
+  }
+  body.admin .nav-category-picker{
+    margin:4px 0 8px;
+  }
+  body.admin .nav-category-picker select{
+    min-height:40px;
+  }
+  body.admin #app.admin-shell>.side nav{
+    max-height:30vh;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    display:block!important;
+  }
+  body.admin #app.admin-shell>.side nav .nav-group{
+    display:block!important;
+  }
+  body.admin #app.admin-shell>.side nav .nav-group-title{
+    display:block!important;
+    padding:7px 10px 5px;
+    position:sticky;
+    top:0;
+    background:#10251c;
+    z-index:2;
+  }
+  body.admin #app.admin-shell>.side nav a{
+    display:flex!important;
+    width:100%!important;
+  }
+}
+@media(max-width:600px){
+  body.admin #app.admin-shell>.side{
+    max-height:48vh!important;
+    padding:9px!important;
+  }
+  body.admin .nav-category-picker{
+    padding:8px;
+  }
+  body.admin #app.admin-shell>.side nav{
+    max-height:28vh;
+  }
+}
+@media print{
+  body.admin #app.admin-shell>.side{position:static!important}
+}
