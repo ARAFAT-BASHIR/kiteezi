@@ -67,3 +67,15 @@
 .socials a,.socials .social-link{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.1);color:#fff;transition:transform .18s ease,background .18s ease,opacity .18s ease}
 .socials a:hover,.socials .social-link:hover{transform:translateY(-2px);background:rgba(255,255,255,.18);opacity:1}
 .footer-brand{color:#fff!important}.footer-brand small{color:#bfcfc5!important}
+
+/* Gallery submission form: clean responsive device-upload layout */
+.gallery-submit-form{max-width:760px;margin:0 auto;padding:28px!important;background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 35px rgba(17,35,27,.07);display:grid;gap:18px}
+.gallery-submit-form label{display:grid;gap:8px;font-weight:700;font-size:14px;color:var(--dark)}
+.gallery-submit-form input:not([type=checkbox]),.gallery-submit-form select,.gallery-submit-form textarea{width:100%;min-height:48px;padding:12px 14px;border:1px solid #d7ddd8;border-radius:10px;background:#fff;font:inherit;color:var(--dark)}
+.gallery-submit-form input[type=file]{padding:10px;background:#f8faf8;cursor:pointer}
+.gallery-submit-form textarea{min-height:110px;resize:vertical}
+.gallery-submit-form small{display:block;font-weight:500;line-height:1.5}
+.gallery-submit-form .consent-row{display:flex;grid-template-columns:none;align-items:flex-start;gap:10px;font-weight:500}
+.gallery-submit-form .consent-row input[type=checkbox]{width:20px;height:20px;min-width:20px;margin:2px 0 0;accent-color:var(--green)}
+.gallery-submit-form .btn{width:100%;min-height:50px}
+@media(max-width:620px){.gallery-submit-form{padding:20px!important;border-radius:14px}.gallery-submit-form input:not([type=checkbox]),.gallery-submit-form select{min-height:50px}.gallery-submit-form .consent-row{font-size:14px}}
