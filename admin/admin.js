@@ -157,6 +157,12 @@ function applyRoleNavigation(){
   }
   const staffHelp=$('#staffHelp'); if(staffHelp&&!hasPermission('staff.manage'))staffHelp.textContent='Staff accounts are managed by the owner or authorized managers.';
   const newMenu=$('#newMenu'); if(newMenu)newMenu.hidden=!hasPermission('menu.manage');
+  const newReq=$('#newRequisition'); if(newReq)newReq.hidden=!hasPermission('requisitions.create');
+  const newOrder=$('#newOrder'); if(newOrder)newOrder.hidden=!hasPermission('orders.manage');
+  const newInv=$('#newInventoryItem'); if(newInv)newInv.hidden=!hasPermission('inventory.manage');
+  const newTask=$('#newTask'); if(newTask)newTask.hidden=!hasPermission('tasks.manage');
+  const newServiceLogBtn=$('#newServiceLog'); if(newServiceLogBtn)newServiceLogBtn.hidden=!hasPermission('service_logs.create');
+
 }
 function canOpenTab(name){return canSeeTab(name);}
 function inquiryTypesForRole(){
@@ -224,7 +230,7 @@ async function loadInquiries(){
       const num=String(x.contact_number||'').replace(/[^0-9+]/g,'');
       const wa=num.replace(/^\+/,'');
       const msgText=encodeURIComponent('Hello '+String(x.customer_name||'')+', this is Kiteezi Recreational Center regarding your enquiry: '+String(x.message||''));
-      const deleteBtn=hasPermission('orders.delete')?'<button class="btn danger" data-delete-inquiry="'+x.id+'">Delete</button> ':'';return '<tr><td>'+esc(new Date(x.created_at).toLocaleString())+'</td><td>'+esc(x.customer_name)+'</td><td>'+esc(x.contact_number)+'<br><small>'+esc(x.contact_method)+'</small></td><td>'+esc(x.inquiry_type)+'</td><td>'+esc(x.message)+'</td><td>'+deleteBtn+'<select data-inquiry-status="'+x.id+'"><option '+(x.status==='new'?'selected':'')+'>new</option><option '+(x.status==='in_progress'?'selected':'')+'>in_progress</option><option '+(x.status==='replied'?'selected':'')+'>replied</option><option '+(x.status==='closed'?'selected':'')+'>closed</option></select></td><td><div class="actions"><a class="btn" href="https://wa.me/'+wa+'?text='+msgText+'" target="_blank" rel="noopener">WhatsApp</a><a class="btn" href="tel:'+num+'">Call</a></div></td></tr>';
+      const deleteBtn=profile?.role==='owner'?'<button class="btn danger" data-delete-inquiry="'+x.id+'">Delete</button> ':'';return '<tr><td>'+esc(new Date(x.created_at).toLocaleString())+'</td><td>'+esc(x.customer_name)+'</td><td>'+esc(x.contact_number)+'<br><small>'+esc(x.contact_method)+'</small></td><td>'+esc(x.inquiry_type)+'</td><td>'+esc(x.message)+'</td><td>'+deleteBtn+'<select data-inquiry-status="'+x.id+'"><option '+(x.status==='new'?'selected':'')+'>new</option><option '+(x.status==='in_progress'?'selected':'')+'>in_progress</option><option '+(x.status==='replied'?'selected':'')+'>replied</option><option '+(x.status==='closed'?'selected':'')+'>closed</option></select></td><td><div class="actions"><a class="btn" href="https://wa.me/'+wa+'?text='+msgText+'" target="_blank" rel="noopener">WhatsApp</a><a class="btn" href="tel:'+num+'">Call</a></div></td></tr>';
     }).join('')+'</table>':'<div class="state">No inquiries for your role.</div>';
   document.querySelectorAll('#inquiriesTable [data-delete-inquiry]').forEach(x=>x.onclick=()=>deleteTestRecord('inquiry',x.dataset.deleteInquiry));document.querySelectorAll('#inquiriesTable [data-inquiry-status]').forEach(el=>el.onchange=async()=>{await api('/rest/v1/inquiries?id=eq.'+encodeURIComponent(el.dataset.inquiryStatus),{method:'PATCH',body:JSON.stringify({status:el.value,updated_at:new Date().toISOString()})});});
 }
