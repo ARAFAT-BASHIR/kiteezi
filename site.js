@@ -500,7 +500,7 @@
           <p>Swimming, dining, sports, gardens, celebrations and everyday relaxation in Kiteezi.</p>
           <div class="socials" data-social-links aria-label="Social media"></div>
         </div>
-        <div><h4>Explore</h4><a href="index.html">Home</a><a href="menu.html">Restaurant &amp; Menu</a><a href="events.html">Events &amp; Catering</a><a href="sports.html">Sports</a><a href="about.html">About Kiteezi</a></div>
+        <div><h4>Explore</h4><a href="index.html">Home</a><a href="menu.html">Restaurant &amp; Menu</a><a href="events.html">Events &amp; Catering</a><a href="sports.html">Sports</a><a href="about.html">About Kiteezi</a><a href="gallery.html">Gallery</a></div>
         <div><h4>Swimming</h4><a href="booking.html?service=swimming">Public Swimming</a><a href="swimming-schedule.html">School Swimming</a><a href="inquiry.html?type=coaching">Swimming Training</a><a href="inquiry.html?type=swimming">Swimming Enquiries</a></div>
         <div><h4>Contact</h4><a data-site-setting="phone" href="#">+256 766 529086</a><a data-site-setting-href="information_email" href="#">Information email</a><a data-site-setting-href="bookings_email" href="#">Bookings email</a><a data-site-setting="whatsapp" data-site-setting-href="whatsapp_link" href="#" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><span aria-hidden="true">◉</span></a><a data-site-setting-href="location_url" href="#" target="_blank" rel="noopener noreferrer">Location</a><a href="contact.html">Contact page</a></div>
       </div>
@@ -580,6 +580,20 @@
       });
   }
 
+
+  async function renderGalleryPreview() {
+    const target = $('#home-gallery-preview'); if (!target) return;
+    try {
+      const rows = await supabaseFetch('/rest/v1/gallery_items?select=id,title,caption,category,media_type,storage_bucket,storage_path&status=eq.approved&active=eq.true&order=sort_order.asc,created_at.desc&limit=6');
+      const cards = (rows||[]).map(x => {
+        const url = SUPABASE_URL + '/storage/v1/object/public/' + encodeURIComponent(x.storage_bucket) + '/' + x.storage_path.split('/').map(encodeURIComponent).join('/');
+        const media = x.media_type === 'video' ? '<video class="photo" src="' + escapeHtml(url) + '" muted playsinline preload="metadata" controls></video>' : '<img class="photo" src="' + escapeHtml(url) + '" alt="' + escapeHtml(x.title || 'Kiteezi gallery') + '" loading="lazy">';
+        return '<article class="card">' + media + '<div class="card-body"><span class="badge">' + escapeHtml(x.category || 'General') + '</span><h3>' + escapeHtml(x.title || 'Kiteezi') + '</h3>' + (x.caption ? '<p>' + escapeHtml(x.caption) + '</p>' : '') + '</div></article>';
+      }).join('');
+      target.innerHTML = cards || '<p class="muted">Gallery photos and videos will appear here as they are approved.</p>';
+    } catch(e) { console.warn('Gallery preview unavailable:',e); target.innerHTML='<p class="muted">Gallery is temporarily unavailable.</p>'; }
+  }
+
   function init() {
     updateCartUI();
     bindMenuButtons();
@@ -591,6 +605,7 @@
     initSiteYear();
     initInquiryAccess();
     preventDeadHashLinks();
+    renderGalleryPreview();
 
     /*
       content.js is the single owner
