@@ -166,17 +166,37 @@ function applyRoleNavigation(){
     ['settings','Settings',['site_settings.manage']]
   ];
   const visibleIds=new Set(modules.filter(([,label,needed])=>needed.some(hasPermission)).map(([id])=>id));
-  if(nav){const groups=[
-['MAIN',[['dashboard','Dashboard']]],
-['OPERATIONS',[['restaurant','POS / Orders'],['bookings','Bookings'],['services','Sports & Services'],['swimming_timetable','Swimming Timetable'],['swimming_sessions','Swimming Sessions'],['tasks','Grounds / Tasks'],['inquiries','Inquiries']]],
-['INVENTORY & PURCHASING',[['inventory','Inventory'],['requisitions','Requisitions'],['purchases','Purchase Orders'],['service_tally','Service Tally']]],
-['MENU & RECIPES',[['menu','Menu']]],
-['FINANCE & REPORTING',[['accounting','Accounting & Finance']]],
-['PEOPLE & ADMIN',[['staff','Staff, Roles & Positions']]],
-['WEBSITE',[['content','Content / Media'],['gallery','Gallery'],['reviews','Reviews'],['social','Social Links']]],
-['SETTINGS',[['settings','Settings']]]
-];nav.innerHTML=groups.map(([title,items])=>{const visible=items.filter(([id])=>visibleIds.has(id));if(!visible.length)return '';return '<div class="nav-group"><div class="nav-group-title">'+title+'</div>'+visible.map(([id,label])=>'<a href="#'+id+'" data-tab="'+id+'">'+label+'</a>').join('')+'</div>';}).join('');}
-
+  if(nav){
+    const groups=[
+      ['OPERATIONS','operations',[['restaurant','POS / Orders'],['bookings','Bookings'],['services','Sports & Services'],['swimming_timetable','Swimming Timetable'],['swimming_sessions','Swimming Sessions'],['tasks','Grounds / Tasks'],['inquiries','Customer Inquiries']]],
+      ['ADMINISTRATION','administration',[['dashboard','Dashboard']]],
+      ['WEBSITE','website',[['content','Website Content'],['social','Social Links'],['reviews','Public Reviews']]],
+      ['MEDIA','media',[['gallery','Media / Gallery']]],
+      ['MANAGEMENT','management',[['inventory','Inventory'],['requisitions','Requisitions'],['purchases','Purchase Orders'],['service_tally','Service Tally'],['menu','Menu & Recipes']]],
+      ['ACCOUNTING & REPORTS','finance',[['accounting','Accounting & Finance']]],
+      ['HUMAN RESOURCES','hr',[['staff','Staff, Roles & Positions']]],
+      ['SETTINGS','settings',[['settings','Settings']]]
+    ];
+    nav.innerHTML=groups.map(([title,key,items])=>{
+      const visible=items.filter(([id])=>visibleIds.has(id));
+      if(!visible.length)return '';
+      return '<div class="nav-group" data-nav-category="'+key+'"><div class="nav-group-title">'+title+'</div>'+
+        visible.map(([id,label])=>'<a href="#'+id+'" data-tab="'+id+'">'+label+'</a>').join('')+
+      '</div>';
+    }).join('');
+    const picker=$('#navCategory');
+    if(picker&&!picker.dataset.bound){
+      picker.dataset.bound='1';
+      picker.onchange=()=>{
+        const value=picker.value;
+        $$('.nav-group',nav).forEach(g=>g.hidden=!(value==='all'||g.dataset.navCategory===value));
+        if(value!=='all'){
+          const first=nav.querySelector('.nav-group:not([hidden]) a[data-tab]');
+          if(first){first.focus();}
+        }
+      };
+    }
+  }
   // Hide entire module panels, not just their navigation links.
   document.querySelectorAll('.tab[id]').forEach(sec=>{
     const allowed=visibleIds.has(sec.id);
