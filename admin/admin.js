@@ -534,10 +534,47 @@ async function loadBookings(){
   setHTML('#bookingTable','<h3>Today\'s bookings</h3>'+renderRows(todayRows)+'<h3 style="margin-top:24px">Upcoming bookings</h3>'+renderRows(upcomingRows)+'<h3 style="margin-top:24px">Previous bookings</h3>'+renderRows(previousRows));
 }
 async function setBookingStatus(id,status,payment){
+  await api('/rest/v1/rpc/admin_update_booking',{method:'POST',body:JSON.stringify({p_booking_id:id,p_status:status||null,p_payment_status:payment||null})});
+  await loadBookings();
+}
+async function handleBookingActionClick(e){
+  const button=e.target.closest('[data-confirm-booking],[data-paid-booking],[data-complete-booking],[data-cancel-booking],[data-delete-booking]');
+  if(!button)return;
+  if(button.dataset.busy==='1')return;
+  button.dataset.busy='1';
+  const original=button.textContent;
+  button.disabled=true;
   try{
-    await api('/rest/v1/rpc/admin_update_booking',{method:'POST',body:JSON.stringify({p_booking_id:id,p_status:status||null,p_payment_status:payment||null})});
-    await loadBookings();
-  }catch(e){msg(e)}
+    if(button.dataset.confirmBooking){
+      button.textContent='Confirming…';
+      await setBookingStatus(button.dataset.confirmBooking,'confirmed',null);
+      const phone=button.dataset.wa||'';
+      const message=button.dataset.watext||'';
+      if(phone) openWhatsApp(phone,message);
+    }else if(button.dataset.paidBooking){
+      button.textContent='Saving…';
+      await setBookingStatus(button.dataset.paidBooking,null,'paid');
+    }else if(button.dataset.completeBooking){
+      button.textContent='Completing…';
+      await setBookingStatus(button.dataset.completeBooking,'completed',null);
+    }else if(button.dataset.cancelBooking){
+      button.disabled=false;
+      button.dataset.busy='0';
+      await cancelBooking(button.dataset.cancelBooking);
+      return;
+    }else if(button.dataset.deleteBooking){
+      button.disabled=false;
+      button.dataset.busy='0';
+      await deleteTestRecord('booking',button.dataset.deleteBooking);
+      return;
+    }
+  }catch(err){
+    msg(err);
+  }finally{
+    button.disabled=false;
+    button.dataset.busy='0';
+    button.textContent=original;
+  }
 }
 function openWhatsApp(phone,textMessage){const raw=String(phone||'').trim();let digits=raw.replace(/\D/g,'');if(digits.startsWith('00'))digits=digits.slice(2);if(digits.startsWith('0'))digits='256'+digits.slice(1);if(!digits.startsWith('256')&&digits.length===9)digits='256'+digits;if(!/^2567\d{8}$/.test(digits)){msg(new Error('This booking does not have a valid Uganda WhatsApp number.'));return false;}window.location.href='https://wa.me/'+digits+'?text='+textMessage;return true}
 async function setBookingAndWhatsApp(id,status,payment,wa,textMessage){
@@ -1123,4 +1160,5 @@ async function editStations(){const rows=await loadStations();modal('Preparation
 function closeModal(){$('#modal').classList.remove('open');$('#modalBody').innerHTML=''}
 
 // admin-login.js owns the login submit handler.
+$('#bookingTable').addEventListener('click',handleBookingActionClick);
 $('#logout').onclick=async()=>{const button=$('#logout');if(button)button.disabled=true;try{if(session?.access_token)await api('/auth/v1/logout',{method:'POST'})}catch{}finally{clearAdminSession();session=null;profile=null;location.reload()}};$('#nav').addEventListener('click',e=>{const a=e.target.closest('[data-tab]');if(a){e.preventDefault();history.replaceState(null,'','#'+a.dataset.tab);route(a.dataset.tab)}});window.addEventListener('hashchange',()=>route(location.hash.slice(1)));$('#modalClose').onclick=closeModal;$('#refreshBookings').onclick=loadBookings;$('#refreshOrders').onclick=loadOrders;$('#refreshInventory').onclick=loadInventory;$('#refreshStockRun').onclick=loadDailyStock;$('#setOpeningStock').onclick=setOpeningStock;$('#notificationBell').onclick=toggleNotifications;$('#markNotificationsRead').onclick=markNotificationsRead;$('#countStock').onclick=async()=>{const inv=await api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc'),d=$('#stockRunDate').value||today(),existing=await api('/rest/v1/inventory_daily_counts?select=id,inventory_item_id,physical_quantity&count_date=eq.'+d);modal('Enter physical stock count','<form id="countForm" class="form">'+inv.map(x=>{const e=existing.find(q=>q.inventory_item_id===x.id);return '<label>'+esc(x.name)+' ('+esc(x.unit)+')<input name="'+x.id+'" type="number" step="0.001" min="0" value="'+(e?.physical_quantity??'')+'"></label>'}).join('')+'<button class="btn btn-dark">Save counts</button></form>');$('#countForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);for(const x of inv){const v=f.get(x.id);if(v!==null&&v!==''){const old=existing.find(q=>q.inventory_item_id===x.id),body={inventory_item_id:x.id,count_date:d,physical_quantity:Number(v),counted_by:session.user.id};await api(old?'/rest/v1/inventory_daily_counts?id=eq.'+old.id:'/rest/v1/inventory_daily_counts',{method:old?'PATCH':'POST',body:JSON.stringify(body)})}}closeModal();loadDailyStock()}};$('#refreshPurchases').onclick=loadPurchases;$('#newStockAdjustment').onclick=addStockAdjustment;$('#refreshMenu').onclick=loadMenu;$('#refreshServices').onclick=loadServices;$('#refreshInquiries').onclick=loadInquiries;$('#refreshSwimmingTimetable').onclick=loadSwimmingTimetable;$('#refreshSwimmingSessions').onclick=loadSwimmingSessions;$('#newTask').onclick=()=>editTask();$('#refreshTasks').onclick=loadTasks;$('#newSwimmingSlot').onclick=()=>editSwimmingSlot(null);$('#refreshPages').onclick=loadContent;$('#refreshMedia').onclick=loadContent;$('#refreshAnnouncements').onclick=loadContent;$('#refreshReviews').onclick=loadReviews;$('#refreshSocial').onclick=loadSocial;$('#newStaff').onclick=addStaff;$('#refreshStaff').onclick=loadStaff;$('#newTeamPosition').onclick=()=>editTeamPosition();$('#refreshAccounting').onclick=loadAccounting;$('#accountingCashGenerate').onclick=()=>loadAccountingCashReport().catch(msg);document.querySelectorAll('[data-report-export]').forEach(b=>b.onclick=()=>exportAccountingPanel(b.dataset.reportExport));document.querySelectorAll('[data-report-print]').forEach(b=>b.onclick=()=>printAccountingPanel(b.dataset.reportPrint));$('#accountingCashDownload').onclick=downloadAccountingCash;$('#accountingCashPrint').onclick=printAccountingCash;$('#refreshSettings').onclick=loadSettings;$('#refreshRoles').onclick=loadRolesAndPermissions;$('#accountingSubnav')?.addEventListener('click',e=>{const b=e.target.closest('[data-accounting-view]');if(!b)return;loadAccountingView(b.dataset.accountingView).catch(msg)});$('#saveSettings').onclick=saveSettings;$('#newRequisition').onclick=()=>createRequisition();$('#refreshRequisitions').onclick=loadRequisitions;$('#refreshGeneratedPOs').onclick=loadGeneratedPOs;$('#newServiceLog').onclick=()=>newServiceLog();$('#refreshServiceTally').onclick=loadServiceTally;$('#newOrder').onclick=async()=>{const m=await api('/rest/v1/menu_items?select=id,name,price,price_on_request,in_stock&in_stock=eq.true&price_on_request=eq.false&order=name.asc');modal('New POS order','<form id="pos" class="form"><input name="customer" placeholder="Customer name"><input name="phone" placeholder="Phone"><textarea name="notes" placeholder="Notes"></textarea><div id="posItems">'+m.map(x=>'<label style="display:flex;gap:8px;align-items:center"><input type="number" min="0" value="0" data-pos="'+x.id+'" style="width:80px"><span>'+esc(x.name)+' — UGX '+money(x.price)+'</span></label>').join('')+'</div><button class="btn btn-dark">Create order</button></form>');$('#pos').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget),items=[...e.currentTarget.querySelectorAll('[data-pos]')].map(x=>({id:x.dataset.pos,quantity:Number(x.value||0)})).filter(x=>x.quantity>0);if(!items.length)return alert('Select at least one item.');await api('/rest/v1/rpc/create_pos_order',{method:'POST',body:JSON.stringify({p_customer_name:f.get('customer')||null,p_phone:f.get('phone')||null,p_items:items,p_notes:f.get('notes')||null})});closeModal();loadOrders()}};$('#newSocial').onclick=()=>editSocial();$('#newInventoryItem').onclick=()=>editInventory();$('#manageStations').onclick=editStations;$('#inventorySearch').oninput=e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#inventoryTable tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none')};$('#newMenu').onclick=()=>editMenu(); $('#inventorySubnav')?.addEventListener('click',e=>{const b=e.target.closest('[data-inv-tab]');if(!b)return;document.querySelectorAll('#inventorySubnav [data-inv-tab]').forEach(x=>x.classList.toggle('active',x===b));const key=b.dataset.invTab;document.querySelectorAll('[id^="inventory-panel-"]').forEach(x=>x.style.display=x.id==='inventory-panel-'+key?'block':'none');const loaders={items:loadInventory,daily:loadDailyStock,purchases:loadPurchases,movements:loadStockMovements,recipes:loadRecipeMappings};(loaders[key]||loadInventory)().catch(msg)}); document.querySelectorAll('[id^="inventory-panel-"]').forEach(x=>x.style.display=x.id==='inventory-panel-items'?'block':'none');$('#newService').onclick=()=>editService();$('#newSport').onclick=()=>editSport();$('#newMedia').onclick=addMedia;$('#newGalleryMedia').onclick=addGalleryMedia;$('#refreshGallery').onclick=loadGallery;$('#newAnnouncement').onclick=addAnnouncement;restore();
