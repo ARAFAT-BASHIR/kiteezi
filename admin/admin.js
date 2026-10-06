@@ -486,7 +486,7 @@ async function loadOrders(){
     rows=rows.filter(x=>visibleIds.has(x.id));
   }
   const ids=rows.map(x=>x.id);
-  const progress=ids.length?await api('/rest/v1/order_station_progress?select=order_id,station_id,status,service_stations(name,sort_order)&order=order_id.asc,station_id.asc'):[]; 
+  const progress=ids.length?await api('/rest/v1/order_station_progress?select=order_id,station_id,status,cancellation_reason,cancelled_at,service_stations(name,sort_order)&order=order_id.asc,station_id.asc'):[]; 
   const byOrder={};progress.forEach(x=>(byOrder[x.order_id]??=[]).push(x));
   const canGlobalComplete=hasPermission('orders.complete');
   const stationRows=(id)=>byOrder[id]||[];
@@ -508,13 +508,13 @@ async function loadOrders(){
       const method=String(r.fulfillment_method||'pickup').toLowerCase(),customerName=r.customers?.name||'',phone=String(r.customers?.phone||'').trim();
       const station=stationRows(r.id);
       const stationHtml=station.length?station.map(s=>{
-        const name=s.service_stations?.name||'Station',label=s.status==='waiting'?'Waiting':s.status==='in_progress'?'In Progress':'Complete';
+        const name=s.service_stations?.name||'Station',label=s.status==='waiting'?'Waiting':s.status==='accepted'?'Accepted':s.status==='in_progress'?'In Progress':s.status==='cancelled'?'Cancelled':'Complete'; const stationNote=s.status==='cancelled'&&s.cancellation_reason?'<small class="muted">Reason: '+esc(s.cancellation_reason)+'</small>':'';
         const canOperateStation=(profile?.role==='owner'||profile?.role==='manager'||profile?.role==='general_manager'||profile?.role==='ceo'||profile?.role==='reception_manager'||(profile?.role==='chef'&&name==='Kitchen')||(profile?.role==='barista'&&name==='Barista'));
         const stationAction=(canOperateStation && (r.status==='pending'||r.status==='open'||r.status==='confirmed'))?
           '<select data-station-status="'+r.id+'" data-station-id="'+s.station_id+'"><option value="waiting" '+(s.status==='waiting'?'selected':'')+'>Waiting</option><option value="accepted" '+(s.status==='accepted'?'selected':'')+'>Accepted</option><option value="in_progress" '+(s.status==='in_progress'?'selected':'')+'>In Progress</option><option value="complete" '+(s.status==='complete'?'selected':'')+'>Complete</option><option value="cancelled" '+(s.status==='cancelled'?'selected':'')+'>Cancelled</option></select>'+
           ((s.status!=='complete'&&s.status!=='cancelled'&&(profile?.role==='chef'||profile?.role==='barista'))?'<button type="button" class="btn danger" data-station-cancel="'+r.id+'" data-station-id="'+s.station_id+'">Cancel</button>':'')
           :'<span class="pill">'+esc(s.status==='accepted'?'Accepted':s.status==='cancelled'?'Cancelled':label)+'</span>';
-        return '<div style="display:flex;gap:8px;align-items:center;margin:3px 0"><span>'+esc(name)+'</span>'+stationAction+'</div>';
+        return '<div style="display:flex;gap:8px;align-items:center;margin:3px 0;flex-wrap:wrap"><span>'+esc(name)+'</span>'+stationAction+stationNote+'</div>';
       }).join(''):'<span class="muted">Waiting</span>';
       const allComplete=station.length>0&&station.every(s=>s.status==='complete');
       const confirmText='Hello '+customerName+', your order has been confirmed by Kiteezi Recreational Center. Your order is now being prepared.';
