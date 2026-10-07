@@ -126,7 +126,7 @@ async function show(){
   try{loadPushSettings()}catch(e){console.warn('Push notification status unavailable',e)}
   try{await loadPermissions()}catch(e){console.warn('Admin permissions load failed',e);permissions=new Set()}
   try{applyRoleNavigation()}catch(e){console.warn('Admin navigation setup failed',e)}
-  try{history.replaceState(null,'','#dashboard');route('dashboard')}catch(e){
+  try{history.replaceState(null,'',location.search+'#dashboard');route('dashboard')}catch(e){
     console.error('Admin route initialization failed:',e);
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
     $('#dashboard')?.classList.add('active');
