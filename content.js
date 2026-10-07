@@ -236,9 +236,15 @@
         const setting = element.dataset.siteSettingHref;
         const value = String(settings[setting] ?? '').trim();
         if (!value) return;
-        element.href = setting.endsWith('_email')
-          ? 'mailto:' + value
-          : value;
+        if (setting.endsWith('_email')) {
+          const email = value.replace(/^mailto:/i, '').trim();
+          element.href = email ? 'mailto:' + email : '#';
+        } else if (setting === 'phone_link' || setting === 'phone') {
+          const phone = cleanPhone(value);
+          element.href = phone ? 'tel:' + phone : '#';
+        } else {
+          element.href = value;
+        }
         if (setting === 'location_url') {
           element.target = '_blank';
           element.rel = 'noopener noreferrer';
