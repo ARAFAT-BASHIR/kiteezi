@@ -42,7 +42,9 @@ begin
  when 'notification' then delete from notifications where id=p_id;
  when 'email_message' then delete from email_messages where id=p_id;
  when 'requisition' then
-   delete from approval_audit_trail where requisition_id=p_id;
+   if exists(select 1 from approval_audit_trail where requisition_id=p_id) then
+     raise exception 'This requisition has approval history and cannot be permanently deleted. Reject or retain it so the immutable approval audit remains intact.';
+   end if;
    delete from purchase_orders where requisition_id=p_id;
    delete from requisition_version_items where version_id in (select id from requisition_versions where requisition_id=p_id);
    delete from requisition_versions where requisition_id=p_id;
