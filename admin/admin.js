@@ -429,25 +429,59 @@ function startNotificationPolling(){if(notificationPoll)clearInterval(notificati
 function bindNotificationClicks(){document.querySelectorAll('.notification-item').forEach(el=>el.onclick=async()=>{try{const n=notificationCache.get(el.dataset.notification);if(n)await openNotification(n);}catch(e){msg(e)}})}
 async function markNotificationsRead(){await api('/rest/v1/notifications?recipient_user_id=eq.'+session.user.id+'&is_read=eq.false',{method:'PATCH',body:JSON.stringify({is_read:true})});await loadNotifications()}
 async function loadRequisitions(){
-  const rows=await api('/rest/v1/requisitions?select=*,requisition_items(*,inventory_items(name,unit))&order=created_at.desc');
+  const rows=await api('/rest/v1/requisitions?select=*,requisition_items(id,inventory_item_id,quantity,unit_code,estimated_unit_price,actual_unit_price,actual_total,inventory_items(name,unit))&order=created_at.desc');
   const role=String(profile?.role||'').toLowerCase();
   const canManager=hasPermission('requisitions.approve.manager');
   const canGM=hasPermission('requisitions.approve.gm');
   const canCEO=hasPermission('requisitions.approve.ceo');
   $('#requisitionsTable').innerHTML=rows.length?'<table><tr><th>Number</th><th>Requester</th><th>Status</th><th>Items</th><th>Action</th></tr>'+
     rows.map(r=>{
-      const items=(r.requisition_items||[]).map(i=>esc(i.inventory_items?.name||i.inventory_item_id)+' × '+esc(i.quantity)).join('<br>');
+      const items=(r.requisition_items||[]).map(i=>esc(i.inventory_items?.name||i.inventory_item_id)+' × '+esc(i.quantity)+' '+esc(i.unit_code||i.inventory_items?.unit||'')+'<br><small>Est.: '+(i.estimated_unit_price!=null?'UGX '+money(Number(i.estimated_unit_price)*Number(i.quantity||0)):'Not provided')+' · Actual: '+(i.actual_unit_price!=null?'UGX '+money(Number(i.actual_total||0)):'Pending manager')+'</small>').join('<br>');
       let actions='';
-      if(r.status==='manager_pending'&&canManager) actions='<button class="btn" data-req-approve="'+r.id+'" data-stage="manager">Confirm</button> <button class="btn" data-req-edit="'+r.id+'">Edit</button> <button class="btn danger" data-req-reject="'+r.id+'">Reject</button>';
+      if(r.status==='manager_pending'&&canManager) actions='<button class="btn btn-dark" data-req-actual="'+r.id+'">Enter actual cost & approve</button> <button class="btn" data-req-edit="'+r.id+'">Edit</button> <button class="btn danger" data-req-reject="'+r.id+'">Reject</button>';
       if(r.status==='gm_pending'&&canGM) actions='<button class="btn" data-req-approve="'+r.id+'" data-stage="gm">Confirm</button> <button class="btn" data-req-edit="'+r.id+'">Edit</button> <button class="btn danger" data-req-reject="'+r.id+'">Reject</button>';
       if(r.status==='ceo_pending'&&canCEO) actions='<button class="btn" data-req-approve="'+r.id+'" data-stage="ceo">Confirm & Generate PO</button> <button class="btn" data-req-edit="'+r.id+'">Edit</button> <button class="btn danger" data-req-reject="'+r.id+'">Reject</button>';
       if(profile?.role==='owner') actions += (actions?' ':'')+'<button class="btn danger" data-delete-requisition="'+r.id+'">Delete</button>';
       return '<tr data-req-row="'+r.id+'"><td>'+esc(r.requisition_number)+'</td><td>'+esc(r.requester_id)+'</td><td>'+esc(r.status)+'</td><td>'+items+'</td><td class="actions">'+actions+'</td></tr>';
     }).join('')+'</table>':'<div class="state">No requisitions.</div>';
-  $$('[data-req-approve]').forEach(b=>b.onclick=async()=>{try{await api('/rest/v1/rpc/approve_requisition',{method:'POST',body:JSON.stringify({p_requisition_id:b.dataset.reqApprove,p_action:'approved'})});await loadRequisitions();loadGeneratedPOs().catch(()=>{});}catch(e){msg(e)}});
+  $('[data-req-actual]').forEach(b=>b.onclick=()=>enterRequisitionActualCost(b.dataset.reqActual));
+  $('[data-req-approve]').forEach(b=>b.onclick=async()=>{try{await api('/rest/v1/rpc/approve_requisition',{method:'POST',body:JSON.stringify({p_requisition_id:b.dataset.reqApprove,p_action:'approved'})});await loadRequisitions();loadGeneratedPOs().catch(()=>{});}catch(e){msg(e)}});
   $$('[data-req-edit]').forEach(b=>b.onclick=()=>editRequisition(b.dataset.reqEdit));
   $$('[data-req-reject]').forEach(b=>b.onclick=async()=>{const reason=prompt('Reason for rejection (required):');if(!reason?.trim())return;try{await api('/rest/v1/rpc/approve_requisition',{method:'POST',body:JSON.stringify({p_requisition_id:b.dataset.reqReject,p_action:'rejected',p_reason:reason.trim()})});await loadRequisitions();}catch(e){msg(e)}});
   $$('[data-delete-requisition]').forEach(b=>b.onclick=()=>deleteTestRecord('requisition',b.dataset.deleteRequisition));
+}
+async function enterRequisitionActualCost(id){
+  const rows=await api('/rest/v1/requisitions?id=eq.'+encodeURIComponent(id)+'&select=id,requisition_number,notes,requisition_items(id,inventory_item_id,quantity,unit_code,estimated_unit_price,actual_unit_price,actual_total,inventory_items(name,unit))');
+  const r=rows?.[0]; if(!r)return;
+  const items=Array.isArray(r.requisition_items)?r.requisition_items:[];
+  if(!items.length){alert('This requisition has no items to price.');return;}
+  const row=i=>'<div class="req-actual-line" data-item="'+esc(i.id)+'" style="display:grid;grid-template-columns:2fr 90px 130px 140px;gap:8px;align-items:end;margin:8px 0;padding:8px;border-bottom:1px solid #eee">'+
+    '<div><strong>'+esc(i.inventory_items?.name||i.inventory_item_id)+'</strong><small class="muted" style="display:block">'+esc(i.unit_code||i.inventory_items?.unit||'')+' · Estimated: '+(i.estimated_unit_price!=null?'UGX '+money(Number(i.estimated_unit_price)*Number(i.quantity||0)):'Not provided')+'</small></div>'+
+    '<div><small class="muted">Qty</small><div>'+esc(i.quantity)+'</div></div>'+
+    '<label>Actual unit price<input name="actual_unit_price" type="number" min="0.01" step="0.01" value="'+esc(i.actual_unit_price??'')+'" required></label>'+
+    '<div><small class="muted">Actual total</small><div class="req-actual-total">UGX '+money(Number(i.actual_total||0))+'</div></div>'+
+    '</div>';
+  modal('Manager — actual requisition cost','<form id="reqActualForm" class="form"><p class="muted">The department estimate is preserved. Enter the actual unit price for every item. The system calculates each total from quantity × actual unit price. This is part of approval, not a requisition edit.</p><div id="reqActualLines">'+items.map(row).join('')+'</div><div id="reqActualSummary" class="notice"></div><button class="btn btn-dark" type="submit">Save actual cost & approve</button></form>');
+  const form=$('#reqActualForm'), lines=$('.req-actual-line',form), summary=$('#reqActualSummary');
+  const refresh=()=>{
+    let total=0;
+    lines.forEach(line=>{
+      const item=items.find(x=>x.id===line.dataset.item), unit=Number(line.querySelector('[name=actual_unit_price]')?.value||0), lineTotal=Number(item?.quantity||0)*unit; total+=lineTotal;
+      const out=line.querySelector('.req-actual-total'); if(out)out.textContent='UGX '+money(lineTotal);
+    });
+    if(summary)summary.textContent='Actual requisition total: UGX '+money(total);
+  };
+  lines.forEach(line=>line.querySelector('[name=actual_unit_price]')?.addEventListener('input',refresh)); refresh();
+  form.onsubmit=async e=>{
+    e.preventDefault();
+    const actual_items=lines.map(line=>({requisition_item_id:line.dataset.item,actual_unit_price:Number(line.querySelector('[name=actual_unit_price]').value||0)}));
+    if(actual_items.some(x=>!(x.actual_unit_price>0))){alert('Enter a valid actual unit price for every item.');return;}
+    try{
+      const result=await api('/rest/v1/rpc/approve_requisition',{method:'POST',body:JSON.stringify({p_requisition_id:id,p_action:'approved',p_actual_items:actual_items})});
+      closeModal(); await loadRequisitions(); loadGeneratedPOs().catch(()=>{});
+      if(result?.status==='gm_pending')showAdminToast('Approved','Actual costs saved and requisition sent to the General Manager.');
+    }catch(err){msg(err);}
+  };
 }
 async function editRequisition(id){
   const rows=await api('/rest/v1/requisitions?id=eq.'+encodeURIComponent(id)+'&select=*,requisition_items(*)');
