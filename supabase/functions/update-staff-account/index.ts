@@ -46,8 +46,17 @@ Deno.serve(async(req)=>{
   }
   if(!Object.keys(updates).length) return json({error:"Enter an email or new password."},400);
 
+  // An active staff profile must not remain Auth-banned. This also repairs
+  // older accounts that were marked active while their Auth ban remained.
+  if(target.active===true) updates.ban_duration="none";
+
   const {error:updateError}=await admin.auth.admin.updateUserById(targetId,updates);
   if(updateError) return json({error:updateError.message||"Staff account security could not be updated."},400);
+
+  if(target.active===true){
+    const {data:check,error:checkError}=await admin.auth.admin.getUserById(targetId);
+    if(checkError || check?.user?.banned_until) return json({error:"The account details were saved, but the login is still banned. Please try again."},500);
+  }
 
   return json({ok:true,message:"Staff account security updated."});
 });
