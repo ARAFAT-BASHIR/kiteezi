@@ -21,15 +21,10 @@ Deno.serve(async(req)=>{
   if(target.role==="owner") return json({error:"Owner accounts cannot be removed here."},400);
   const {error:profileError}=await admin.from("profiles").update({active:false,position_id:null,supervisor_profile_id:null}).eq("id",targetId);
   if(profileError) return json({error:"The staff profile could not be removed."},500);
-  const {error:authError}=await admin.auth.admin.deleteUser(targetId);
-  if(authError){
-    console.error("Staff auth deletion failed:",authError);
-    const {error:banError}=await admin.auth.admin.updateUserById(targetId,{ban_duration:"876000h"});
-    if(banError){
-      console.error("Staff login disable fallback failed:",banError);
-      return json({error:"The staff profile was disabled, but its login could not be disabled. Please try again."},500);
-    }
-    return json({ok:true,id:targetId,name:target.full_name,login_disabled:true});
+  const {error:banError}=await admin.auth.admin.updateUserById(targetId,{ban_duration:"876000h"});
+  if(banError){
+    console.error("Staff login disable failed:",banError);
+    return json({error:"The staff profile was disabled, but its login could not be disabled. Please try again."},500);
   }
   return json({ok:true,id:targetId,name:target.full_name,login_disabled:true});
 });
