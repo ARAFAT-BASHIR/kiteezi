@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Kiteezi Admin</title><link rel="stylesheet" href="stylez.css?v=20261006-25"><link rel="manifest" href="../manifest.webmanifest"></head><body class="admin">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Kiteezi Admin</title><link rel="stylesheet" href="stylez.css?v=20261007-26"><link rel="manifest" href="../manifest.webmanifest"></head><body class="admin">
 <div id="loginView" class="login"><div class="login-card"><div class="brand"><span class="brand-mark">K</span><span>Kiteezi Admin<small>Private Operations</small></span></div><h2>Staff sign in</h2><p class="muted">Only an active Kiteezi staff profile can enter.</p><form id="loginForm" class="form"><label>Email<input name="email" type="email" required autocomplete="username"></label><label>Password<input name="password" type="password" required autocomplete="current-password"></label><button type="submit" class="btn btn-dark">Sign in</button><button id="forgotPassword" type="button" class="btn">Forgot password?</button><div id="loginMsg" class="notice" hidden></div></form></div></div>
 <div id="app" class="admin-shell hide" hidden><aside class="side"><div class="brand"><span class="brand-mark">K</span><span>Kiteezi Admin<small>Operations</small></span></div><div class="nav-category-picker"><label for="navCategory">Browse category</label><select id="navCategory" aria-label="Browse admin category"><option value="all">All categories</option><option value="operations">Operations</option><option value="administration">Administration</option><option value="website">Website</option><option value="media">Media</option><option value="management">Management</option><option value="finance">Accounting &amp; Reports</option><option value="hr">Human Resources</option><option value="settings">Settings</option></select></div><nav id="nav" aria-label="Admin sections"></nav><button id="logout" class="btn">Sign out</button></aside>
 <main class="main"><div class="toolbar"><div><div class="eyebrow">Operations</div><h1>Kiteezi Management System</h1><div id="who" class="muted"></div></div><span id="rolePill" class="pill"></span><button id="sendStaffNotification" class="btn" type="button" hidden>Send notification</button><button id="notificationBell" class="btn" type="button" aria-label="Notifications">🔔 <span id="notificationCount">0</span></button><div id="notificationPanel" class="panel" style="display:none"><div class="toolbar"><h2>Notifications</h2><button id="markNotificationsRead" class="btn">Mark all read</button></div><div id="notificationList" class="state">No notifications.</div></div></div>
@@ -101,9 +101,60 @@
 <div class="settings-page">
 <div class="settings-header panel"><div><div class="eyebrow">Business &amp; website settings</div><h2>Settings</h2><p class="muted">Business, communications, website and operational configuration. Existing settings remain available and editable.</p></div><div class="toolbar-actions"><button id="refreshSettings" class="btn btn-dark">Refresh</button><button id="saveSettings" class="btn">Save changes</button></div></div>
 <div class="panel settings-card"><h3>Branding</h3><p class="muted">The same logo used by the public website and admin.</p><div class="form-grid"><label class="full"><strong>Business logo URL</strong><input id="logoUrl" data-set="logo_url" placeholder="Image path or public URL"><small class="muted">You can also upload a new logo below.</small></label><label class="full"><strong>Upload logo</strong><input id="logoFile" type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml"><small class="muted">PNG, WebP, SVG or JPEG · maximum 50 MB.</small></label><div class="full"><img id="logoPreview" hidden alt="Logo preview" style="max-width:220px;max-height:120px;object-fit:contain;border:1px solid #e1e7e2;border-radius:12px;padding:8px;background:#fff"></div></div></div>
-<div class="panel settings-card"><h3>My account &amp; security</h3><p class="muted">Change your staff email or password, or send yourself a password recovery email. Existing passwords are never shown.</p><button id="openMyAccountSecurity" class="btn btn-dark" type="button">Manage account security</button></div><div class="panel settings-card"><h3>Phone notifications</h3><p class="muted">Enable notifications on this device. Kiteezi can alert you when the site is closed. Tapping a notification opens the relevant admin area; if you are signed out, you will be asked to sign in first.</p><div class="toolbar-actions"><button id="enablePushNotifications" class="btn btn-dark" type="button">Enable phone notifications</button><button id="disablePushNotifications" class="btn" type="button" hidden>Disable on this device</button></div><div id="pushNotificationStatus" class="notice" hidden></div></div><div class="panel settings-card"><h3>Contact & Location</h3><div class="form-grid"><label><strong>Location URL</strong><input id="locationUrl" data-set="location_url" type="url" placeholder="Google Maps URL"></label><label><strong>Information email</strong><input id="informationEmail" data-set="information_email" type="email" placeholder="info@example.com"></label><label><strong>Bookings email</strong><input id="bookingsEmail" data-set="bookings_email" type="email" placeholder="bookings@example.com"></label><label><strong>Business email</strong><input id="businessEmail" data-set="business_email" type="email" placeholder="business@example.com"></label></div></div>
-<div class="panel settings-card"><h3>Other settings</h3><p class="muted">Other saved business and website settings are shown here. You can review and update them without removing existing information.</p><div id="settingsTable" class="form-grid"></div></div>
+<div class="panel settings-card"><h3>My account &amp; security</h3><p class="muted">Change your staff email or password, or send yourself a password recovery email. Existing passwords are never shown.</p><button id="openMyAccountSecurity" class="btn btn-dark" type="button">Manage account security</button></div><div class="panel settings-card"><h3>Phone notifications</h3><p class="muted">Enable notifications on this device. Kiteezi can alert you when the site is closed. Tapping a notification opens the relevant admin area; if you are signed out, you will be asked to sign in first.</p><div class="toolbar-actions"><button id="enablePushNotifications" class="btn btn-dark" type="button">Enable phone notifications</button><button id="disablePushNotifications" class="btn" type="button" hidden>Disable on this device</button></div><div id="pushNotificationStatus" class="notice" hidden></div></div><div class="panel settings-card">
+  <h3>Contact &amp; location</h3>
+  <p class="muted">Public contact details used across the website.</p>
+  <div class="settings-grid">
+    <label><strong>Phone</strong><input data-set="phone" type="tel" placeholder="+256 7xx xxx xxx"></label>
+    <label><strong>Phone link</strong><input data-set="phone_link" type="text" placeholder="tel:+256..."></label>
+    <label><strong>WhatsApp number</strong><input data-set="whatsapp_number" type="text" placeholder="2567xxxxxxxx"></label>
+    <label><strong>WhatsApp link</strong><input data-set="whatsapp_link" type="url" placeholder="https://wa.me/..."></label>
+    <label><strong>Information email</strong><input data-set="information_email" type="email" placeholder="info@example.com"></label>
+    <label><strong>Bookings email</strong><input data-set="bookings_email" type="email" placeholder="bookings@example.com"></label>
+    <label class="full"><strong>Business email</strong><input data-set="business_email" type="email" placeholder="business@example.com"></label>
+    <label><strong>Location</strong><input data-set="location" type="text" placeholder="Business location"></label>
+    <label><strong>Location URL</strong><input id="locationUrl" data-set="location_url" type="url" placeholder="Google Maps URL"></label>
+  </div>
+</div>
+<div class="panel settings-card">
+  <h3>Social media</h3>
+  <p class="muted">Use the real public profile links here. These links are used throughout the public website.</p>
+  <div class="settings-grid">
+    <label><strong>Facebook</strong><input data-set="facebook" type="url" placeholder="https://facebook.com/..."></label>
+    <label><strong>Instagram</strong><input data-set="instagram" type="url" placeholder="https://instagram.com/..."></label>
+    <label><strong>YouTube</strong><input data-set="youtube" type="url" placeholder="https://youtube.com/@..."></label>
+    <label><strong>TikTok</strong><input data-set="tiktok" type="url" placeholder="https://tiktok.com/@..."></label>
+    <label class="full"><strong>X</strong><input data-set="x" type="url" placeholder="https://x.com/..."></label>
+  </div>
+</div>
+<div class="panel settings-card">
+  <h3>Payments</h3>
+  <p class="muted">Public mobile-money numbers used by the website where applicable.</p>
+  <div class="settings-grid">
+    <label><strong>Airtel Money</strong><input data-set="airtel_money" type="text" inputmode="numeric"></label>
+    <label><strong>MTN Mobile Money</strong><input data-set="mtn_money" type="text" inputmode="numeric"></label>
+  </div>
+</div>
+<div class="panel settings-card">
+  <h3>Public team</h3>
+  <p class="muted">Names displayed in public business information.</p>
+  <div class="settings-grid">
+    <label><strong>General manager</strong><input data-set="team_general_manager" type="text"></label>
+    <label><strong>Reception manager</strong><input data-set="team_reception_manager" type="text"></label>
+    <label><strong>Swimming coaches</strong><input data-set="team_swimming_coaches" type="text"></label>
+    <label><strong>Food / grounds</strong><input data-set="team_food_grounds" type="text"></label>
+  </div>
+</div>
+<div class="panel settings-card">
+  <h3>Booking setup</h3>
+  <p class="muted">Buffet options are stored as configuration and can be edited when the booking offering changes.</p>
+  <label class="full"><strong>Booking buffets</strong><textarea data-set="booking_buffets" rows="6" placeholder="JSON configuration"></textarea></label>
+</div>
+<div class="panel settings-card">
+  <h3>Other settings</h3>
+  <p class="muted">Additional settings added by the system will appear here without disrupting the main contact and social sections.</p>
+  <div id="settingsTable" class="settings-grid"></div>
 </div></section>
 </main></div>
 <div id="modal" class="modal"><div class="modal-card"><div class="toolbar"><h2 id="modalTitle">Edit</h2><button id="modalClose" class="btn">Close</button></div><div id="modalBody"></div></div></div>
-<script src="../config.js?v=20261004-2"></script><script src="admin-login.js?v=20261007-02"></script><script src="admin.js?v=20261007-13"></script><script src="admin-hardening.js?v=20261007-01"></script></body></html>
+<script src="../config.js?v=20261004-2"></script><script src="admin-login.js?v=20261007-02"></script><script src="admin.js?v=20261007-14"></script><script src="admin-hardening.js?v=20261007-01"></script></body></html>
