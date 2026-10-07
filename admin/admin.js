@@ -1396,8 +1396,60 @@ async function sendStaffNotification(){if(!canSendStaffNotifications())return ms
 async function sendPasswordRecovery(email){const r=await fetch(URL+'/auth/v1/recover',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({email,redirect_to:location.origin+location.pathname+'?password_reset=1'})});if(!r.ok){const d=await r.json().catch(()=>null);throw Error(d?.msg||d?.message||'Password recovery could not be started.')}return true}
 async function saveMyAccountSecurity(email,password){const body={};if(email)body.email=email;if(password)body.password=password;if(!Object.keys(body).length)throw Error('Enter an email or new password.');const r=await fetch(URL+'/auth/v1/user',{method:'PUT',headers:{apikey:KEY,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json().catch(()=>null);if(!r.ok)throw Error(d?.msg||d?.message||'Account security changes could not be saved.');if(d?.access_token){session.access_token=d.access_token;session.refresh_token=d.refresh_token||session.refresh_token;writeAdminSession(session)}return d}
 async function openMyAccountSecurity(){const u=session?.user||{};modal('My account & security','<form id="myAccountForm" class="form"><label>Email<input name="email" type="email" value="'+esc(u.email||'')+'" required></label><label>New password<input name="password" type="password" minlength="8" autocomplete="new-password" placeholder="Leave blank to keep current password"></label><label>Confirm new password<input name="confirm" type="password" minlength="8" autocomplete="new-password"></label><button class="btn btn-dark">Save account changes</button><div class="notice" id="myAccountStatus" hidden></div></form><hr><h3>Password recovery</h3><p class="muted">Send a recovery email to the account email address.</p><button class="btn" id="sendMyRecovery" type="button">Send recovery email</button>');$('#myAccountForm').onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.currentTarget),email=String(fd.get('email')||'').trim(),pw=String(fd.get('password')||''),confirm=String(fd.get('confirm')||'');if(pw&&pw!==confirm)return alert('The new passwords do not match.');const s=$('#myAccountStatus');try{await saveMyAccountSecurity(email,pw);if(s){s.hidden=false;s.textContent='Account security updated.'}}catch(err){if(s){s.hidden=false;s.className='notice danger';s.textContent=humanAdminError(err,'Account security could not be updated.')}}};$('#sendMyRecovery').onclick=async()=>{try{await sendPasswordRecovery(String(session?.user?.email||''));alert('Password recovery email sent.')}catch(err){msg(err)}}}
-async function loadSettings(){const r=await api('/rest/v1/site_settings?select=key,value&order=key.asc');const logo=r.find(x=>x.key==='logo_url');const logoInput=$('#logoUrl');if(logoInput)logoInput.value=logo?.value||'';const locationInput=$('#locationUrl');if(locationInput)locationInput.value=r.find(x=>x.key==='location_url')?.value||'';const informationEmail=$('#informationEmail');if(informationEmail)informationEmail.value=r.find(x=>x.key==='information_email')?.value||'';const bookingsEmail=$('#bookingsEmail');if(bookingsEmail)bookingsEmail.value=r.find(x=>x.key==='bookings_email')?.value||'';const preview=$('#logoPreview');if(preview){const v=logo?.value||'';preview.src=v?(v.startsWith('http')?v:'../'+v.replace(/^\/+/,'')):'';preview.hidden=!v;}$('#settingsTable').innerHTML=r.filter(x=>!['logo_url','location_url','information_email','bookings_email'].includes(x.key)).map(x=>'<label>'+esc(x.key)+'<input data-set="'+esc(x.key)+'" value="'+esc(x.value||'')+'"></label>').join('')}
-async function saveSettings(){try{const logoFile=$('#logoFile')?.files?.[0];if(logoFile){if(logoFile.size>52428800)throw Error('Logo exceeds the 50 MB limit.');if(!['image/jpeg','image/png','image/webp','image/svg+xml'].includes(logoFile.type))throw Error('Unsupported logo type.');const path='branding/logo-'+crypto.randomUUID()+'.'+(logoFile.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'');await storageUpload('site-media',path,logoFile);const logoUrl=URL+'/storage/v1/object/public/site-media/'+path.split('/').map(encodeURIComponent).join('/');await api('/rest/v1/site_settings?key=eq.logo_url',{method:'PATCH',body:JSON.stringify({value:logoUrl,updated_at:new Date().toISOString()})});}for(const x of document.querySelectorAll('[data-set]')){if(x.dataset.set==='logo_url'&&logoFile)continue;await api('/rest/v1/site_settings?key=eq.'+encodeURIComponent(x.dataset.set),{method:'PATCH',body:JSON.stringify({value:x.value,updated_at:new Date().toISOString()})})}await loadSettings();await loadAdminLogo();alert('Site settings saved.')}catch(err){msg(err)}}
+function settingLabel(key){
+  return String(key||'')
+    .replace(/_/g,' ')
+    .replace(/\\b\\w/g,m=>m.toUpperCase());
+}
+async function loadSettings(){
+  const rows=await api('/rest/v1/site_settings?select=key,value&order=key.asc');
+  const r=Array.isArray(rows)?rows:[];
+  const known=new Set(Array.from(document.querySelectorAll('[data-set]')).map(x=>x.dataset.set).filter(Boolean));
+  r.forEach(row=>{
+    const value=row?.value??'';
+    document.querySelectorAll('[data-set="'+CSS.escape(String(row.key))+'"]').forEach(el=>{
+      if(el.matches('input,textarea,select')) el.value=String(value);
+      else el.textContent=String(value);
+    });
+  });
+  const logo=r.find(x=>x.key==='logo_url');
+  const preview=$('#logoPreview');
+  if(preview){
+    const v=logo?.value||'';
+    preview.src=v?(v.startsWith('http')?v:'../'+v.replace(/^\\/+/,'')):'';
+    preview.hidden=!v;
+  }
+  const extras=r.filter(x=>!known.has(String(x.key)));
+  const table=$('#settingsTable');
+  if(table){
+    table.innerHTML=extras.length
+      ? extras.map(x=>'<label><strong>'+esc(settingLabel(x.key))+'</strong><input data-set="'+esc(x.key)+'" value="'+esc(x.value||'')+'"></label>').join('')
+      : '<div class="settings-empty full">No additional settings.</div>';
+  }
+}
+async function saveSettings(){
+  try{
+    const logoFile=$('#logoFile')?.files?.[0];
+    if(logoFile){
+      if(logoFile.size>52428800)throw Error('Logo exceeds the 50 MB limit.');
+      if(!['image/jpeg','image/png','image/webp','image/svg+xml'].includes(logoFile.type))throw Error('Unsupported logo type.');
+      const path='branding/logo-'+crypto.randomUUID()+'.'+(logoFile.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'');
+      await storageUpload('site-media',path,logoFile);
+      const logoUrl=URL+'/storage/v1/object/public/site-media/'+path.split('/').map(encodeURIComponent).join('/');
+      await api('/rest/v1/site_settings?key=eq.logo_url',{method:'PATCH',body:JSON.stringify({value:logoUrl,updated_at:new Date().toISOString()})});
+    }
+    for(const x of document.querySelectorAll('[data-set]')){
+      if(x.dataset.set==='logo_url'&&logoFile)continue;
+      await api('/rest/v1/site_settings?key=eq.'+encodeURIComponent(x.dataset.set),{
+        method:'PATCH',
+        body:JSON.stringify({value:x.value,updated_at:new Date().toISOString()})
+      });
+    }
+    await loadSettings();
+    await loadAdminLogo();
+    alert('Site settings saved.');
+  }catch(err){msg(err)}
+}
 function modal(title,body){$('#modalTitle').textContent=title;$('#modalBody').innerHTML=body;$('#modal').classList.add('open')}
 async function editStations(){const rows=await loadStations();modal('Preparation stations','<p class="muted">These stations control where menu orders are sent. Unit such as bottle/glass/shot does not determine routing.</p><div id="stationRows">'+rows.map(x=>'<div class="cardx" style="margin:8px 0"><form class="station-form" data-id="'+x.id+'"><input name="name" value="'+esc(x.name)+'" required><input name="description" value="'+esc(x.description||'')+'" placeholder="Description"><label>Active <input name="active" type="checkbox" '+(x.active?'checked':'')+'></label><button class="btn btn-dark">Save</button> '+(profile?.role==='owner'?'<button type="button" class="btn danger" data-delete-station="'+x.id+'">Delete</button>':'')+'</form></div>').join('')+'</div><button type="button" class="btn" id="addStation">Add station</button>');$$('.station-form').forEach(f=>f.onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.currentTarget);await api('/rest/v1/service_stations?id=eq.'+e.currentTarget.dataset.id,{method:'PATCH',body:JSON.stringify({name:fd.get('name'),description:fd.get('description')||null,active:fd.get('active')==='on'})});await editStations()});$$('[data-delete-station]').forEach(b=>b.onclick=()=>deleteBusinessRecord('service_station',b.dataset.deleteStation,editStations));$('#addStation').onclick=async()=>{await api('/rest/v1/service_stations',{method:'POST',body:JSON.stringify({name:'New Station',description:'',active:true,sort_order:rows.length+1})});await editStations()}}
 function closeModal(){$('#modal').classList.remove('open');$('#modalBody').innerHTML=''}
