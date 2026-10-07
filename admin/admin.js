@@ -41,6 +41,7 @@ const setHTML=(s,v)=>{const el=$(s);if(el)el.innerHTML=v;};
 const setText=(s,v)=>{const el=$(s);if(el)el.textContent=v;};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>new Intl.NumberFormat('en-UG').format(Number(v)||0);
+function humanAdminError(error,fallback='We could not complete that action right now. Please try again.'){const m=String(error?.message??error??'').trim();if(!m)return fallback;if(/(?:supabase|postgrest|pgrst|postgres|sql|schema|relation|column|constraint|permission denied|function .* does not exist|does not exist|http\s*\d{3}|\b(?:3f000|42883|42501|235\d{3})\b|fetch failed|network error|unexpected .* response|syntax error|jwt)/i.test(m)||/^\s*[\[{].*[\]}]\s*$/.test(m))return fallback;return m;}
 async function api(path,opt={},token=session?.access_token||KEY){
   const request=async tk=>{
     const h={apikey:KEY,Authorization:'Bearer '+tk,'Content-Type':'application/json',...(opt.headers||{})};
@@ -62,10 +63,10 @@ async function api(path,opt={},token=session?.access_token||KEY){
     }catch{}
   }
   const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}
-  if(!r.ok){const error=Error(d?.message||d?.msg||d?.error_description||d?.error||(typeof d==='string'?d:'Request failed'));error.status=r.status;error.auth=r.status===401;throw error}
+  if(!r.ok){const error=Error(humanAdminError(d?.message||d?.msg||d?.error_description||d?.error||(typeof d==='string'?d:'Request failed')));error.status=r.status;error.auth=r.status===401;throw error}
   return d;
 }
-function msg(e){console.error(e);alert(e.message||'Something went wrong.')}
+function msg(e){console.error(e);alert(humanAdminError(e,'We could not complete that action right now. Please try again.'))}
 // Login is handled exclusively by admin-login.js to avoid duplicate submit handlers. 
 async function loadStations(){return api('/rest/v1/service_stations?select=id,name,description,active,sort_order&order=sort_order.asc,name.asc')}
 let UNIT_OPTIONS=[];
@@ -97,7 +98,7 @@ async function bootAdmin(authSession){
       clearAdminSession();
     }
     setAuthView(false);
-    const el=$('#loginMsg'); if(el){el.hidden=false;el.textContent=e.message||'Unable to open the admin dashboard.';el.className='notice danger'}
+    const el=$('#loginMsg'); if(el){el.hidden=false;el.textContent=humanAdminError(e,'Unable to open the admin dashboard.');el.className='notice danger'}
     return false;
   }
 }
@@ -1003,7 +1004,7 @@ async function manageRecipe(existingId=null){
           if(!Array.isArray(result)&&!result?.id)throw Error('The recipe was not returned after saving.');
         }
         closeModal(); await loadRecipeMappings();
-      }catch(err){errorEl.textContent=err.message||'The recipe could not be saved.';errorEl.style.display='block'}
+      }catch(err){errorEl.textContent=humanAdminError(err,'The recipe could not be saved. Please check the entries and try again.');errorEl.style.display='block'}
     };
   }catch(e){msg(e)}
 }
@@ -1044,7 +1045,7 @@ async function loadMenu(){
     if(search)search.oninput=render;
     if(catSelect)catSelect.onchange=render;
     render();
-  }catch(e){box.innerHTML='<div class="state">Menu could not be loaded. '+esc(e.message||'Please try again.')+'</div>'}
+  }catch(e){box.innerHTML='<div class="state">Menu could not be loaded. Please refresh and try again.</div>'}
 }
 async function editMenu(id=null){
   const isWebsite=profile?.role==='website_manager';
@@ -1230,7 +1231,7 @@ async function currentPushSubscription(){if(!('serviceWorker' in navigator))retu
 function setPushStatus(t,k=''){const el=$('#pushNotificationStatus');if(!el)return;el.hidden=false;el.textContent=t;el.className='notice'+(k==='error'?' danger':'');}
 async function loadPushSettings(){const button=$('#enablePushNotifications'),disable=$('#disablePushNotifications');if(!button&&!disable)return;if(!pushSupported()){if(button)button.hidden=true;if(disable)disable.hidden=true;setPushStatus('Phone notifications are not supported in this browser. Use a current HTTPS browser.','error');return;}try{const sub=await currentPushSubscription();if(sub){if(button)button.hidden=true;if(disable)disable.hidden=false;setPushStatus('Phone notifications are enabled on this device.');}else{if(button)button.hidden=false;if(disable)disable.hidden=true;setPushStatus(Notification.permission==='denied'?'Notifications are blocked in this browser. Allow them in browser settings before enabling again.':'Phone notifications are not enabled on this device.');}}catch(e){setPushStatus('Unable to check phone notification status.','error');}}
 async function enablePhoneNotifications(){if(!pushSupported())return setPushStatus('This browser does not support phone notifications.','error');try{const permission=await Notification.requestPermission();if(permission!=='granted')return setPushStatus('Notification permission was not granted.','error');const publicKey=await getPushPublicKey();const reg=await registerKiteeziServiceWorker();const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushB64ToBytes(publicKey)});const json=JSON.parse(JSON.stringify(sub));const body={organization_id:profile?.organization_id,user_id:session.user.id,endpoint:json.endpoint,p256dh:json.keys?.p256dh||pushBytesToB64(sub.getKey('p256dh')),auth:json.keys?.auth||pushBytesToB64(sub.getKey('auth')),updated_at:new Date().toISOString()};if(!body.organization_id)throw Error('Your staff profile has no organization assigned.');await api('/rest/v1/push_subscriptions?on_conflict=user_id%2Cendpoint',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify(body)});await loadPushSettings();setPushStatus('Phone notifications are enabled. Kiteezi can now alert this device even when the site is closed.');}catch(e){console.error(e);setPushStatus(e.message||'Could not enable phone notifications.','error');}}
-async function disablePhoneNotifications(){try{const sub=await currentPushSubscription();if(sub){const endpoint=sub.endpoint;await sub.unsubscribe().catch(()=>{});await api('/rest/v1/push_subscriptions?user_id=eq.'+encodeURIComponent(session.user.id)+'&endpoint=eq.'+encodeURIComponent(endpoint),{method:'DELETE'});}await loadPushSettings();}catch(e){setPushStatus(e.message||'Could not disable phone notifications.','error');}}
+async function disablePhoneNotifications(){try{const sub=await currentPushSubscription();if(sub){const endpoint=sub.endpoint;await sub.unsubscribe().catch(()=>{});await api('/rest/v1/push_subscriptions?user_id=eq.'+encodeURIComponent(session.user.id)+'&endpoint=eq.'+encodeURIComponent(endpoint),{method:'DELETE'});}await loadPushSettings();}catch(e){setPushStatus(humanAdminError(e,'Could not disable phone notifications. Please try again.'),'error');}}
 function canSendStaffNotifications(){return ['owner','manager','general_manager','ceo','cfo','finance_manager','reception_manager'].includes(String(profile?.role||'').toLowerCase());}
 async function sendStaffNotification(){if(!canSendStaffNotifications())return msg(Error('You do not have permission to send staff notifications.'));const profiles=await api('/rest/v1/profiles?select=id,full_name,role,active,position_id,team_positions!profiles_position_id_fkey(position,department)&active=eq.true&order=full_name.asc');const roles=[...new Set(profiles.map(x=>x.role).filter(Boolean))].sort();const departments=[...new Set(profiles.map(x=>x.team_positions?.department).filter(Boolean))].sort();const personOptions=profiles.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.full_name||x.id)+' — '+esc(x.role||'staff')+(x.team_positions?.department?' — '+esc(x.team_positions.department):'')+'</option>').join('');const roleOptions=roles.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');const deptOptions=departments.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');modal('Send staff notification','<form id="staffNotificationForm" class="form"><label>Send to<select name="mode"><option value="person">One staff member</option><option value="role">Everyone with a role</option><option value="department">Everyone in a department</option><option value="everyone">Everyone</option></select></label><label id="staffNotificationPersonWrap">Staff member<select name="person">'+personOptions+'</select></label><label id="staffNotificationRoleWrap" hidden>Role<select name="role">'+roleOptions+'</select></label><label id="staffNotificationDepartmentWrap" hidden>Department<select name="department">'+deptOptions+'</select></label><label>Title<input name="title" maxlength="160" required></label><label>Message<textarea name="message" maxlength="2000" rows="5" required></textarea></label><button class="btn btn-dark" type="submit">Send notification</button></form>');const form=$('#staffNotificationForm'),mode=form.querySelector('[name=mode]'),pw=$('#staffNotificationPersonWrap'),rw=$('#staffNotificationRoleWrap'),dw=$('#staffNotificationDepartmentWrap');const sync=()=>{pw.hidden=mode.value!=='person';rw.hidden=mode.value!=='role';dw.hidden=mode.value!=='department'};mode.onchange=sync;sync();form.onsubmit=async e=>{e.preventDefault();const fd=new FormData(form),m=String(fd.get('mode'));let ids=[];if(m==='person')ids=[String(fd.get('person')||'')];else if(m==='role')ids=profiles.filter(x=>String(x.role)===String(fd.get('role'))).map(x=>x.id);else if(m==='department')ids=profiles.filter(x=>String(x.team_positions?.department)===String(fd.get('department'))).map(x=>x.id);else ids=profiles.map(x=>x.id);ids=[...new Set(ids)].filter(Boolean);if(!ids.length)return alert('No active staff members match that target.');try{const r=await fetch(PUSH_FUNCTION_URL,{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:JSON.stringify({action:'send',recipient_user_ids:ids,title:String(fd.get('title')||''),message:String(fd.get('message')||'')})});const d=await r.json().catch(()=>null);if(!r.ok)throw Error(d?.error||'Notification could not be sent.');closeModal();alert('Notification sent to '+d.count+' staff member'+(d.count===1?'':'s')+'.');}catch(err){msg(err)}};}
 async function loadSettings(){const r=await api('/rest/v1/site_settings?select=key,value&order=key.asc');const logo=r.find(x=>x.key==='logo_url');const logoInput=$('#logoUrl');if(logoInput)logoInput.value=logo?.value||'';const locationInput=$('#locationUrl');if(locationInput)locationInput.value=r.find(x=>x.key==='location_url')?.value||'';const informationEmail=$('#informationEmail');if(informationEmail)informationEmail.value=r.find(x=>x.key==='information_email')?.value||'';const bookingsEmail=$('#bookingsEmail');if(bookingsEmail)bookingsEmail.value=r.find(x=>x.key==='bookings_email')?.value||'';const preview=$('#logoPreview');if(preview){const v=logo?.value||'';preview.src=v?(v.startsWith('http')?v:'../'+v.replace(/^\/+/,'')):'';preview.hidden=!v;}$('#settingsTable').innerHTML=r.filter(x=>!['logo_url','location_url','information_email','bookings_email'].includes(x.key)).map(x=>'<label>'+esc(x.key)+'<input data-set="'+esc(x.key)+'" value="'+esc(x.value||'')+'"></label>').join('')}
