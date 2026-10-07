@@ -31,7 +31,7 @@ Deno.serve(async(req)=>{
   if(body.send_recovery===true){
     const {data:authUser,error:authError}=await admin.auth.admin.getUserById(targetId);
     if(authError||!authUser?.user?.email) return json({error:"The staff account email could not be found."},400);
-    const {error:recoveryError}=await caller.auth.resetPasswordForEmail(authUser.user.email,{redirectTo:url.replace(/\/+$/,"")});
+    const {error:recoveryError}=await caller.auth.resetPasswordForEmail(authUser.user.email,{redirectTo:new URL("/admin/?password_reset=1",req.url).toString()});
     if(recoveryError) return json({error:"Password recovery email could not be sent."},500);
     return json({ok:true,message:"Password recovery email sent."});
   }
