@@ -221,7 +221,7 @@ function applyRoleNavigation(){
       ['WEBSITE','website',[['content','Website Content'],['social','Social Links'],['reviews','Public Reviews']]],
       ['MEDIA','media',[['gallery','Media / Gallery']]],
       ['MANAGEMENT','management',[['inventory','Inventory'],['requisitions','Requisitions'],['purchases','Purchase Orders'],['service_tally','Service Tally'],['menu','Menu & Recipes']]],
-      ['ACCOUNTING & REPORTS','finance',[['accounting','Accounting & Finance']]],
+      ['ACCOUNTING & REPORTS','finance',[['accounting','Accounting & Finance'],['audit','Audit Trail']]],
       ['HUMAN RESOURCES','hr',[['staff','Staff, Roles & Positions'],['customers','Customers']]],
       ['SETTINGS','settings',[['settings','Settings']]]
     ];
