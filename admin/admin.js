@@ -562,7 +562,19 @@ function route(x){
   });
   return loadTabOnce(tab).catch(msg);
 }
-async function loadDashboard(){const d=today();const [b,o,i,sm]=await Promise.all([api('/rest/v1/bookings?select=id,status&booking_date=eq.'+d),api('/rest/v1/orders?select=id,status&status=not.eq.completed&status=not.eq.cancelled'),api('/rest/v1/inventory_items?select=id,reorder_level'),api('/rest/v1/stock_movements?select=item_id,quantity,movement_type')]);const stock={};sm.forEach(x=>stock[x.item_id]=(stock[x.item_id]||0)+(String(x.movement_type).toLowerCase()==='out'?-1:1)*Number(x.quantity||0));$('#mBookings').textContent=b.length;$('#mPending').textContent=b.filter(x=>x.status==='pending').length;$('#mOrders').textContent=o.length;$('#mLow').textContent=i.filter(x=>(stock[x.id]||0)<=Number(x.reorder_level||0)).length;$('#todayOps').textContent='Live data connected.'}
+async function loadDashboard(){
+  const d=today();
+  const [b,o,stock]=await Promise.all([
+    api('/rest/v1/bookings?select=id,status&booking_date=eq.'+d),
+    api('/rest/v1/orders?select=id,status&status=not.eq.completed&status=not.eq.cancelled'),
+    api('/rest/v1/inventory_stock?select=id,reorder_level,current_stock&active=eq.true')
+  ]);
+  $('#mBookings').textContent=b.length;
+  $('#mPending').textContent=b.filter(x=>x.status==='pending').length;
+  $('#mOrders').textContent=o.length;
+  $('#mLow').textContent=stock.filter(x=>Number(x.current_stock||0)<=Number(x.reorder_level||0)).length;
+  $('#todayOps').textContent='Live data connected.';
+}
 function today(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Kampala'}).format(new Date())}
 async function cancelBooking(id){
   const reasons=['Customer requested cancellation','Out of stock','Customer unreachable','Operational issue','Duplicate order','Other'];
