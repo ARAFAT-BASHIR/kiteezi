@@ -7,7 +7,7 @@
   const form=document.getElementById('loginForm');
   const statusEl=document.getElementById('loginMsg');
 
-  function humanLoginError(error,fallback='Sign in could not be completed. Please check your details and try again.'){const m=String(error?.message??error??'').trim();if(!m)return fallback;if(/(?:supabase|postgrest|pgrst|postgres|sql|schema|relation|column|constraint|permission denied|function .* does not exist|does not exist|http\s*\d{3}|\b(?:3f000|42883|42501|235\d{3})\b|fetch failed|network error|unexpected .* response|syntax error|jwt)/i.test(m)||/^\s*[\[{].*[\]}]\s*$/.test(m))return fallback;return m;}
+  function humanLoginError(error,fallback='Sign in could not be completed. Please check your details and try again.'){const m=String(error?.message??error??'').trim();if(!m||m==='[object Object]')return fallback;if(/(?:supabase|postgrest|pgrst|postgres|sql|schema|relation|column|constraint|permission denied|function .* does not exist|does not exist|http\s*\d{3}|\b(?:3f000|42883|42501|235\d{3})\b|fetch failed|network error|unexpected .* response|syntax error|jwt)/i.test(m)||/^\s*[\[{].*[\]}]\s*$/.test(m))return fallback;return m;}
 function status(message,kind){
     if(!statusEl)return;
     statusEl.hidden=false;
