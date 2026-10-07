@@ -15,7 +15,7 @@
     const token=s?.access_token||KEY;
     const r=await fetch(URL+path,{headers:{apikey:KEY,Authorization:'Bearer '+token,'Content-Type':'application/json'}});
     const t=await r.text(); let d; try{d=t?JSON.parse(t):null}catch{d=t}
-    if(!r.ok) throw Error(d?.message||d?.msg||d?.error_description||d?.error||'Request failed');
+    if(!r.ok) throw Error(window.humanAdminError ? window.humanAdminError(d?.message||d?.msg||d?.error_description||d?.error||'Request failed') : 'We could not load that information right now.');
     return Array.isArray(d)?d:[];
   }
 
