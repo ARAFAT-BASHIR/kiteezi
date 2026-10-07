@@ -321,7 +321,7 @@ async function loadSwimmingTimetable(){
   const rows=await api('/rest/v1/swimming_timetable?select=*&order=day_of_week.asc,start_time.asc');
   const days=['','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
   $('#swimmingTimetableTable').innerHTML='<table><tr><th>Day</th><th>Start</th><th>End</th><th>Public display</th><th>Action</th></tr>'+
-    rows.map(x=>'<tr><td>'+days[x.day_of_week]+'</td><td>'+String(x.start_time).slice(0,5)+'</td><td>'+String(x.end_time).slice(0,5)+'</td><td><span class="pill">Occupied</span></td><td><button class="btn" data-edit-swim="'+x.id+'">Edit</button> <button class="btn danger" data-delete-swim="'+x.id+'">Remove</button></td></tr>').join('')+'</table>';
+    rows.map(x=>'<tr data-swim-row="'+x.id+'"><td>'+days[x.day_of_week]+'</td><td>'+String(x.start_time).slice(0,5)+'</td><td>'+String(x.end_time).slice(0,5)+'</td><td><span class="pill">Occupied</span></td><td><button class="btn" data-edit-swim="'+x.id+'">Edit</button> <button class="btn danger" data-delete-swim="'+x.id+'">Remove</button></td></tr>').join('')+'</table>';
   $('[data-edit-swim]').forEach(b=>b.onclick=()=>editSwimmingSlot(rows.find(x=>x.id===b.dataset.editSwim)));
   $('[data-delete-swim]').forEach(b=>b.onclick=async()=>{if(!confirm('Remove this occupied swimming period?'))return;await api('/rest/v1/swimming_timetable?id=eq.'+encodeURIComponent(b.dataset.deleteSwim),{method:'DELETE'});loadSwimmingTimetable();});
 }
