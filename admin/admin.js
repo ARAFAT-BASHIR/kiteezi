@@ -1083,16 +1083,29 @@ async function loadMenu(){
   const box=$('#menuTable'); if(!box)return;
   box.innerHTML='<div class="state">Loading menu…</div>';
   try{
-    let r;
+    let r=[];
     if(profile?.role==='website_manager'){
       const [safe,cats]=await Promise.all([
         api('/rest/v1/rpc/get_public_menu_admin',{method:'POST'}),
         api('/rest/v1/menu_categories?select=id,name,sort_order&active=eq.true&order=sort_order.asc,name.asc')
       ]);
-      const catMap=Object.fromEntries(cats.map(c=>[c.id,c]));
-      r=safe.map(x=>({...x,menu_categories:catMap[x.category_id]||null,service_stations:null}));
+      const catMap=Object.fromEntries((Array.isArray(cats)?cats:[]).map(c=>[c.id,c]));
+      r=(Array.isArray(safe)?safe:[]).map(x=>({...x,menu_categories:catMap[x.category_id]||null,service_stations:null}));
     }else{
-      r=await api('/rest/v1/menu_items?select=*,menu_categories(id,name,sort_order),service_stations(name)&order=name.asc');
+      // Keep the admin menu loader resilient: fetch base rows and lookup tables separately
+      // instead of relying on PostgREST's nested-resource embedding.
+      const [items,cats,stations]=await Promise.all([
+        api('/rest/v1/menu_items?select=*&order=name.asc'),
+        api('/rest/v1/menu_categories?select=id,name,sort_order&active=eq.true&order=sort_order.asc,name.asc'),
+        api('/rest/v1/service_stations?select=id,name&active=eq.true&order=sort_order.asc,name.asc')
+      ]);
+      const catMap=Object.fromEntries((Array.isArray(cats)?cats:[]).map(c=>[c.id,c]));
+      const stationMap=Object.fromEntries((Array.isArray(stations)?stations:[]).map(s=>[s.id,s]));
+      r=(Array.isArray(items)?items:[]).map(x=>({
+        ...x,
+        menu_categories:catMap[x.category_id]||null,
+        service_stations:stationMap[x.station_id]||null
+      }));
     }
     if(profile?.role==='barista')r=r.filter(x=>x.service_stations?.name==='Barista');
     if(profile?.role==='chef')r=r.filter(x=>x.service_stations?.name==='Kitchen');
@@ -1116,7 +1129,10 @@ async function loadMenu(){
     if(search)search.oninput=render;
     if(catSelect)catSelect.onchange=render;
     render();
-  }catch(e){box.innerHTML='<div class="state">Menu could not be loaded. Please refresh and try again.</div>'}
+  }catch(e){
+    console.error('Kiteezi menu load failed:',e);
+    box.innerHTML='<div class="state">Menu could not be loaded. Please refresh and try again.</div>';
+  }
 }
 async function editMenu(id=null){
   const isWebsite=profile?.role==='website_manager';
