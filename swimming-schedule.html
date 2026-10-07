@@ -89,14 +89,14 @@ slotEl.disabled=free.length===0;go.disabled=true;
 }
 
 async function load(){
-if(!U||!K){timetable.innerHTML='<div class="errorbox">The public Supabase configuration is missing.</div>';return;}
+if(!U||!K){timetable.innerHTML='<div class="errorbox">We could not load the swimming timetable right now. Please refresh and try again.</div>';return;}
 try{
 const url=U+'/rest/v1/swimming_timetable?select=day_of_week,start_time,end_time&active=eq.true&order=day_of_week.asc,start_time.asc';
 const response=await fetch(url,{headers:{apikey:K,Authorization:'Bearer '+K}});
 const body=await response.text();
-if(!response.ok)throw new Error(body||('HTTP '+response.status));
+if(!response.ok)throw new Error('Unable to load the current swimming timetable.');
 rows=body?JSON.parse(body):[];
-if(!Array.isArray(rows))throw new Error('Unexpected timetable response.');
+if(!Array.isArray(rows))throw new Error('Unable to load the current swimming timetable.');
 renderWeekly();updateAvailability();
 }catch(error){
 console.error('School swimming timetable:',error);
