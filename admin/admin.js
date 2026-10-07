@@ -955,31 +955,22 @@ async function loadInventory(){
   const box=$('#inventoryTable'); if(!box)return;
   box.innerHTML='<div class="state">Loading inventory…</div>';
   try{
-    const r=await api('/rest/v1/inventory_items?select=id,name,unit,category,reorder_level,active,station_id,inventory_scope,service_stations(name)&order=name.asc');
-    const rows=Array.isArray(r)?r:[];
-    let mov=[];
-    try{
-      const movementResponse=await api('/rest/v1/stock_movements?select=item_id,quantity,movement_type');
-      mov=Array.isArray(movementResponse)?movementResponse:[];
-    }catch(e){
-      console.warn('Inventory movement totals unavailable:',e);
-    }
-    const stock={};
-    mov.forEach(x=>{
-      if(!x||!x.item_id)return;
-      stock[x.item_id]=(stock[x.item_id]||0)+(String(x.movement_type).toLowerCase()==='out'?-1:1)*Number(x.quantity||0);
-    });
+    /*
+      inventory_stock calculates current stock in Postgres. The old client
+      downloaded the entire stock_movements table and calculated every
+      item's balance in the browser, which gets slower as history grows.
+    */
+    const rows=await api('/rest/v1/inventory_stock?select=id,name,unit,category,reorder_level,active,station_id,inventory_scope,station_name,current_stock&order=name.asc');
     const scopeForRole={chef:'kitchen',barista:'bar',grounds_cleaning:'cleaning',head_swimming_coach:'swimming'}[profile?.role];
     const rows0=scopeForRole?rows.filter(x=>x?.inventory_scope===scopeForRole):rows;
-    const low=rows0.filter(x=>Number(stock[x.id]||0)<=Number(x.reorder_level||0));
-    box.innerHTML=(low.length?'<div class="low-stock-banner"><strong>Low stock: '+low.length+' item(s)</strong><span>'+low.map(x=>esc(x.name)).join(', ')+'</span></div>':'')+(rows0.length?'<table><thead><tr><th>Item</th><th>Category</th><th>Unit</th><th>Station</th><th>Reorder</th><th>Active</th><th></th></tr></thead><tbody>'+
-      rows0.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.category||'')+'</td><td>'+esc(x.unit||'')+'</td><td><span class="pill">'+esc(x.service_stations?.name||'Unassigned')+'</span></td><td>'+esc(x.reorder_level??0)+'</td><td>'+esc(x.active?'Yes':'No')+'</td><td>'+(hasPermission('inventory.manage')?'<button class="btn" data-edit-inv="'+x.id+'">Edit</button>':'')+'</td></tr>').join('')+
+    const low=rows0.filter(x=>Number(x.current_stock||0)<=Number(x.reorder_level||0));
+    box.innerHTML=(low.length?'<div class="low-stock-banner"><strong>Low stock: '+low.length+' item(s)</strong><span>'+low.map(x=>esc(x.name)).join(', ')+'</span></div>':'')+(rows0.length?'<table><thead><tr><th>Item</th><th>Category</th><th>Unit</th><th>Station</th><th>Stock</th><th>Reorder</th><th>Active</th><th></th></tr></thead><tbody>'+
+      rows0.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.category||'')+'</td><td>'+esc(x.unit||'')+'</td><td><span class="pill">'+esc(x.station_name||'Unassigned')+'</span></td><td>'+esc(x.current_stock??0)+'</td><td>'+esc(x.reorder_level??0)+'</td><td>'+esc(x.active?'Yes':'No')+'</td><td>'+(hasPermission('inventory.manage')?'<button class="btn" data-edit-inv="'+x.id+'">Edit</button>':'')+'</td></tr>').join('')+
       '</tbody></table>':'<div class="state">No inventory items found.</div>');
-    // Use querySelectorAll here: inventory can contain many editable rows.
     Array.from(document.querySelectorAll('[data-edit-inv]')).forEach(x=>x.onclick=()=>editInventory(x.dataset.editInv));
   }catch(e){
     console.error('Inventory load failed:',e);
-    box.innerHTML='<div class="state">Inventory could not be loaded. Please refresh and try again.</div>';
+    box.innerHTML='<div class="state">Inventory is temporarily unavailable.</div>';
   }
 }
 async function editInventory(id=null){
