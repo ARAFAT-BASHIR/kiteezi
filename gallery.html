@@ -1,6 +1,31 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Gallery | Kiteezi Recreational Center</title><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"></head>
+<title>Gallery | Kiteezi Recreational Center</title><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+<style>
+.gallery-clickable{cursor:zoom-in}
+.gallery-lightbox{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:5vh 5vw;background:rgba(7,16,12,.94);overscroll-behavior:contain}
+.gallery-lightbox.open{display:flex}
+.gallery-lightbox-stage{position:relative;width:min(94vw,1400px);height:min(88vh,900px);display:flex;align-items:center;justify-content:center}
+.gallery-lightbox-image{display:block;max-width:100%;max-height:88vh;width:auto;height:auto;object-fit:contain;border-radius:10px;box-shadow:0 18px 60px rgba(0,0,0,.4);user-select:none;-webkit-user-drag:none}
+.gallery-lightbox-close,.gallery-lightbox-prev,.gallery-lightbox-next{position:fixed;z-index:1002;width:48px;height:48px;border:1px solid rgba(255,255,255,.3);border-radius:50%;background:rgba(0,0,0,.5);color:#fff;display:grid;place-items:center;font-size:22px;cursor:pointer;transition:background .2s,transform .2s}
+.gallery-lightbox-close:hover,.gallery-lightbox-prev:hover,.gallery-lightbox-next:hover{background:rgba(255,255,255,.18);transform:scale(1.04)}
+.gallery-lightbox-close{top:20px;right:20px}
+.gallery-lightbox-prev{left:20px;top:50%;transform:translateY(-50%)}
+.gallery-lightbox-next{right:20px;top:50%;transform:translateY(-50%)}
+.gallery-lightbox-prev:hover,.gallery-lightbox-next:hover{transform:translateY(-50%) scale(1.04)}
+.gallery-lightbox-counter{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:1002;padding:7px 13px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font-size:13px;font-weight:700;letter-spacing:.03em}
+.gallery-lightbox-caption{position:fixed;left:50%;bottom:55px;transform:translateX(-50%);z-index:1002;max-width:min(800px,80vw);padding:7px 12px;color:#fff;text-align:center;font-size:14px;text-shadow:0 1px 4px #000;pointer-events:none}
+@media(max-width:620px){
+  .gallery-lightbox{padding:4vh 3vw}
+  .gallery-lightbox-stage{width:96vw;height:88vh}
+  .gallery-lightbox-image{max-width:96vw;max-height:82vh;border-radius:7px}
+  .gallery-lightbox-close,.gallery-lightbox-prev,.gallery-lightbox-next{width:44px;height:44px;font-size:19px}
+  .gallery-lightbox-close{top:12px;right:12px}
+  .gallery-lightbox-prev{left:10px}
+  .gallery-lightbox-next{right:10px}
+  .gallery-lightbox-caption{bottom:48px;max-width:88vw;font-size:13px}
+}
+</style></head>
 <body>
 <header class="nav"><div class="container navin"><a class="brand" href="index.html"><span class="brand-mark">K</span><span><span class="brand-name">Kiteezi Recreational Center</span><small>Comfort • Dining • Recreation</small></span></a>
 <nav class="links" aria-label="Main navigation"><a href="index.html">Home</a><a href="swimming.html">Swimming</a><a href="sports.html">Sports</a><a href="menu.html">Menu</a><a href="events.html">Events</a><a href="gallery.html" class="active" aria-current="page">Gallery</a><a href="contact.html">Contact</a></nav></div></header>
@@ -23,14 +48,102 @@
 </form></div></section>
 </main>
 <footer class="footer"><div class="container copyright">© <span data-year></span> Kiteezi Recreational Center. All rights reserved.</div></footer>
+
+<div id="galleryLightbox" class="gallery-lightbox" role="dialog" aria-modal="true" aria-label="Gallery image viewer" aria-hidden="true">
+  <button id="galleryLightboxClose" class="gallery-lightbox-close" type="button" aria-label="Close image viewer"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+  <button id="galleryLightboxPrev" class="gallery-lightbox-prev" type="button" aria-label="Previous image"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+  <div class="gallery-lightbox-stage">
+    <img id="galleryLightboxImage" class="gallery-lightbox-image" alt="">
+  </div>
+  <button id="galleryLightboxNext" class="gallery-lightbox-next" type="button" aria-label="Next image"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+  <div id="galleryLightboxCaption" class="gallery-lightbox-caption"></div>
+  <div id="galleryLightboxCounter" class="gallery-lightbox-counter" aria-live="polite"></div>
+</div>
+
 <script src="config.js"></script><script src="content.js"></script><script src="site.js"></script>
 <script>
 (function(){
 const C=window.KITEEZI_CONFIG||{},u=String(C.SUPABASE_URL||'').replace(/\/+$/,''),k=C.SUPABASE_ANON_KEY,MAX=50*1024*1024;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const humanGalleryError=(error,fallback='We could not submit your media right now. Please try again in a moment.')=>{const m=String(error?.message??error??'').trim();if(!m||m==='[object Object]')return fallback;if(/(?:supabase|postgrest|pgrst|postgres|sql|schema|relation|column|constraint|permission denied|function .* does not exist|does not exist|http\s*\d{3}|\b(?:3f000|42883|42501|235\d{3})\b|fetch failed|network error|unexpected .* response|syntax error|jwt)/i.test(m)||/^\s*[\[{].*[\]}]\s*$/.test(m))return fallback;return m;};
-async function load(){const g=document.getElementById('galleryGrid');try{const r=await fetch(u+'/rest/v1/gallery_items?select=id,title,caption,category,media_type,storage_bucket,storage_path&status=eq.approved&active=eq.true&order=sort_order.asc,created_at.desc',{headers:{apikey:k,Authorization:'Bearer '+k}});if(!r.ok)throw Error('Gallery could not be loaded.');const rows=await r.json();g.innerHTML=rows.length?rows.map(x=>{const url=u+'/storage/v1/object/public/'+encodeURIComponent(x.storage_bucket)+'/'+x.storage_path.split('/').map(encodeURIComponent).join('/');const media=x.media_type==='video'?'<video class="photo" src="'+esc(url)+'" controls preload="metadata" playsinline></video>':'<img class="photo" src="'+esc(url)+'" alt="'+esc(x.title||'Kiteezi gallery')+'" loading="lazy">';return '<article class="card">'+media+'<div class="card-body"><span class="badge">'+esc(x.category)+'</span><h3>'+esc(x.title||'Kiteezi')+'</h3>'+(x.caption?'<p>'+esc(x.caption)+'</p>':'')+'</div></article>'}).join(''):'<p class="muted">No gallery media has been published yet.</p>'}catch(e){g.innerHTML='<p class="muted">Gallery is temporarily unavailable.</p>'}}
+
+const lightbox=document.getElementById('galleryLightbox');
+const lightboxImage=document.getElementById('galleryLightboxImage');
+const lightboxCaption=document.getElementById('galleryLightboxCaption');
+const lightboxCounter=document.getElementById('galleryLightboxCounter');
+const closeBtn=document.getElementById('galleryLightboxClose');
+const prevBtn=document.getElementById('galleryLightboxPrev');
+const nextBtn=document.getElementById('galleryLightboxNext');
+let galleryImages=[],currentImage=0,lastFocused=null,touchStartX=0;
+
+function showImage(index){
+  if(!galleryImages.length)return;
+  currentImage=(index+galleryImages.length)%galleryImages.length;
+  const item=galleryImages[currentImage];
+  lightboxImage.src=item.url;
+  lightboxImage.alt=item.alt;
+  lightboxCaption.textContent=item.caption||item.title||'';
+  lightboxCounter.textContent=(currentImage+1)+' / '+galleryImages.length;
+}
+function openLightbox(index){
+  lastFocused=document.activeElement;
+  showImage(index);
+  lightbox.classList.add('open');
+  lightbox.setAttribute('aria-hidden','false');
+  document.body.style.overflow='hidden';
+  closeBtn.focus();
+}
+function closeLightbox(){
+  lightbox.classList.remove('open');
+  lightbox.setAttribute('aria-hidden','true');
+  lightboxImage.removeAttribute('src');
+  document.body.style.overflow='';
+  if(lastFocused&&typeof lastFocused.focus==='function')lastFocused.focus();
+}
+function moveImage(step){showImage(currentImage+step);}
+closeBtn.addEventListener('click',closeLightbox);
+prevBtn.addEventListener('click',()=>moveImage(-1));
+nextBtn.addEventListener('click',()=>moveImage(1));
+lightbox.addEventListener('click',e=>{if(e.target===lightbox)closeLightbox();});
+document.addEventListener('keydown',e=>{
+  if(!lightbox.classList.contains('open'))return;
+  if(e.key==='Escape')closeLightbox();
+  else if(e.key==='ArrowLeft')moveImage(-1);
+  else if(e.key==='ArrowRight')moveImage(1);
+});
+lightbox.addEventListener('touchstart',e=>{touchStartX=e.changedTouches[0].clientX;},{passive:true});
+lightbox.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-touchStartX;
+  if(Math.abs(dx)>45)moveImage(dx<0?1:-1);
+},{passive:true});
+
+async function load(){
+  const g=document.getElementById('galleryGrid');
+  try{
+    const r=await fetch(u+'/rest/v1/gallery_items?select=id,title,caption,category,media_type,storage_bucket,storage_path&status=eq.approved&active=eq.true&order=sort_order.asc,created_at.desc',{headers:{apikey:k,Authorization:'Bearer '+k}});
+    if(!r.ok)throw Error('Gallery could not be loaded.');
+    const rows=await r.json();
+    galleryImages=rows.filter(x=>x.media_type!=='video').map(x=>({
+      url:u+'/storage/v1/object/public/'+encodeURIComponent(x.storage_bucket)+'/'+x.storage_path.split('/').map(encodeURIComponent).join('/'),
+      alt:x.title||'Kiteezi gallery',
+      title:x.title||'',
+      caption:x.caption||''
+    }));
+    let imageIndex=0;
+    g.innerHTML=rows.length?rows.map(x=>{
+      const url=u+'/storage/v1/object/public/'+encodeURIComponent(x.storage_bucket)+'/'+x.storage_path.split('/').map(encodeURIComponent).join('/');
+      const isVideo=x.media_type==='video';
+      const media=isVideo
+        ?'<video class="photo" src="'+esc(url)+'" controls preload="metadata" playsinline></video>'
+        :'<button class="gallery-image-button" type="button" data-gallery-image-index="'+imageIndex+'" aria-label="Open '+esc(x.title||'Kiteezi gallery image')+'"><img class="photo gallery-clickable" src="'+esc(url)+'" alt="'+esc(x.title||'Kiteezi gallery')+'" loading="lazy"></button>';
+      if(!isVideo)imageIndex++;
+      return '<article class="card">'+media+'<div class="card-body"><span class="badge">'+esc(x.category)+'</span><h3>'+esc(x.title||'Kiteezi')+'</h3>'+(x.caption?'<p>'+esc(x.caption)+'</p>':'')+'</div></article>';
+    }).join(''):'<p class="muted">No gallery media has been published yet.</p>';
+    g.querySelectorAll('[data-gallery-image-index]').forEach(btn=>btn.addEventListener('click',()=>openLightbox(Number(btn.dataset.galleryImageIndex))));
+  }catch(e){g.innerHTML='<p class="muted">Gallery is temporarily unavailable.</p>'}
+}
 load();
+
 const f=document.getElementById('galleryForm'),s=document.getElementById('galleryStatus');
 f.addEventListener('submit',async e=>{
   e.preventDefault();
@@ -45,11 +158,7 @@ f.addEventListener('submit',async e=>{
     if(![...imageTypes,...videoTypes].includes(file.type)) throw Error('Unsupported file type.');
     submit.disabled=true;
     submit.textContent='Uploading…';
-    const up=await fetch(u+'/functions/v1/submit-gallery-media',{
-      method:'POST',
-      headers:{apikey:k,Authorization:'Bearer '+k},
-      body:fd
-    });
+    const up=await fetch(u+'/functions/v1/submit-gallery-media',{method:'POST',headers:{apikey:k,Authorization:'Bearer '+k},body:fd});
     const result=await up.json().catch(()=>({}));
     if(!up.ok) throw Error(humanGalleryError(result.error||result.detail,'The media could not be submitted.'));
     f.reset();
