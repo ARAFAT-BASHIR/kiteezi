@@ -988,3 +988,13 @@ body.admin .nav-group[hidden]{display:none!important}
   .admin .settings-card .settings-grid{grid-template-columns:1fr}
   .admin .settings-card .settings-grid>label.full{grid-column:auto}
 }
+
+
+/* === Settings page: do not reserve the global Operations header space === */
+.admin .main:has(#settings.active)>.toolbar{
+  display:none!important;
+}
+.admin .main:has(#settings.active)>.tab#settings{
+  margin-top:0!important;
+  padding-top:0!important;
+}
