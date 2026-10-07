@@ -28,7 +28,7 @@ const TAB_FALLBACK_PERMISSIONS={
   bookings:['bookings.view'],
   inventory:['inventory.all','inventory.operational','inventory.kitchen','inventory.bar','inventory.cleaning','inventory.swimming','inventory.service'],
   restaurant:['orders.manage','orders.station_kitchen','orders.station_barista','orders.reception.view'],
-  menu:['menu.manage','menu.public_content.manage'],
+  menu:['menu.manage','menu.view','menu.public_content.manage'],
   inquiries:['inquiries.view','inquiries.catering','inquiries.drinks','inquiries.general','inquiries.swimming'],
   swimming_sessions:['swimming.manage','swimming.assigned'],
   accounting:['reports.financial','reports.view']
@@ -715,12 +715,13 @@ async function loadBookings(){
         const num=String(r.customers?.phone||'').replace(/[^0-9+]/g,'').replace(/^\+/,'');
         const customer=String(r.customers?.name||'');
         const waText=encodeURIComponent('Hello '+customer+', your booking request has been confirmed by Kiteezi Recreational Center.');
-        const confirmBtn=actionAllowed('bookings.confirm')&&r.status==='pending'?'<button class="btn" data-confirm-booking="'+r.id+'" data-wa="'+num+'" data-watext="'+waText+'">Confirm</button> ':'';
+        const ceoBtn=actionAllowed('bookings.confirm')&&['ceo','owner'].includes(String(profile?.role||''))&&r.status==='pending'&&!r.ceo_approved_at?'<button class="btn" data-ceo-booking="'+r.id+'">CEO approve</button> ':'';
+        const managerBtn=actionAllowed('bookings.confirm')&&['manager','owner'].includes(String(profile?.role||''))&&r.status==='pending'&&r.ceo_approved_at?'<button class="btn" data-manager-booking="'+r.id+'" data-wa="'+num+'" data-watext="'+waText+'">Manager confirm</button> ':'';
         const paidBtn=actionAllowed('bookings.pay')&&r.payment_status!=='paid'&&r.status!=='cancelled'?'<button class="btn" data-paid-booking="'+r.id+'">Paid</button> ':'';
         const completeBtn=actionAllowed('bookings.complete')&&active?'<button class="btn" data-complete-booking="'+r.id+'">Completed</button> ':'';
         const cancelBtn=actionAllowed('bookings.cancel')&&active?'<button class="btn" data-cancel-booking="'+r.id+'">Cancel</button> ':'';
         const deleteBtn=hasPermission('bookings.delete')?'<button class="btn danger" data-delete-booking="'+r.id+'">Delete</button> ':'';
-        return '<tr data-b="'+r.id+'"><td>'+esc(r.booking_date)+' '+esc(r.start_time||'')+'</td><td>'+esc(customer)+'<br>'+esc(r.customers?.phone||'')+'</td><td>'+esc(r.people)+'</td><td>UGX '+money(r.total)+'</td><td>'+esc(r.status)+'</td><td>'+esc(r.payment_status||'unpaid')+'</td><td class="actions">'+confirmBtn+paidBtn+completeBtn+cancelBtn+deleteBtn+'</td></tr>';
+        return '<tr data-b="'+r.id+'"><td>'+esc(r.booking_date)+' '+esc(r.start_time||'')+'</td><td>'+esc(customer)+'<br>'+esc(r.customers?.phone||'')+'</td><td>'+esc(r.people)+'</td><td>UGX '+money(r.total)+'</td><td>'+esc(r.status)+(r.ceo_approved_at?' · CEO approved':'')+'</td><td>'+esc(r.payment_status||'unpaid')+'</td><td class="actions">'+ceoBtn+managerBtn+paidBtn+completeBtn+cancelBtn+deleteBtn+'</td></tr>';
       }).join('')+'</table>';
   };
   setHTML('#bookingTable','<h3>Today\'s bookings</h3>'+renderRows(todayRows)+'<h3 style="margin-top:24px">Upcoming bookings</h3>'+renderRows(upcomingRows)+'<h3 style="margin-top:24px">Previous bookings</h3>'+renderRows(previousRows));
@@ -730,18 +731,23 @@ async function setBookingStatus(id,status,payment){
   await loadBookings();
 }
 async function handleBookingActionClick(e){
-  const button=e.target.closest('[data-confirm-booking],[data-paid-booking],[data-complete-booking],[data-cancel-booking],[data-delete-booking]');
+  const button=e.target.closest('[data-ceo-booking],[data-manager-booking],[data-paid-booking],[data-complete-booking],[data-cancel-booking],[data-delete-booking]');
   if(!button)return;
   if(button.dataset.busy==='1')return;
   button.dataset.busy='1';
   const original=button.textContent;
   button.disabled=true;
   try{
-    if(button.dataset.confirmBooking){
+    if(button.dataset.ceoBooking){
+      button.textContent='CEO approving…';
+      await api('/rest/v1/rpc/ceo_approve_booking',{method:'POST',body:JSON.stringify({p_booking_id:button.dataset.ceoBooking})});
+      await loadBookings();
+    }else if(button.dataset.managerBooking){
       button.textContent='Confirming…';
-      await setBookingStatus(button.dataset.confirmBooking,'confirmed',null);
+      const result=await api('/rest/v1/rpc/manager_confirm_booking',{method:'POST',body:JSON.stringify({p_booking_id:button.dataset.managerBooking})});
+      await loadBookings();
       const phone=button.dataset.wa||'';
-      const message=button.dataset.watext||'';
+      const message=button.dataset.watext||encodeURIComponent(result?.customer_message||'Your Kiteezi booking has been confirmed.');
       if(phone) openWhatsApp(phone,message);
     }else if(button.dataset.paidBooking){
       button.textContent='Saving…';
@@ -960,7 +966,8 @@ async function loadOrderItems(id){let r=await api('/rest/v1/order_items?select=i
 
 async function loadRecipeMappings(){
   const box=$('#recipeTable'); if(!box)return;
-  const toolbar='<div class="toolbar">'+(hasPermission('recipes.manage')?'<button class="btn" id="newRecipe">Add recipe</button>':'')+'<button class="btn btn-dark" id="refreshRecipes">Refresh</button></div>';
+  const recipeManage=hasPermission('recipes.manage');
+  const toolbar='<div class="toolbar">'+(recipeManage?'<button class="btn" id="newRecipe">Add recipe</button>':'')+'<button class="btn btn-dark" id="refreshRecipes">Refresh</button></div>';
   box.innerHTML=toolbar+'<div class="state">Loading recipes…</div>';
   const wire=()=>{$('#newRecipe').onclick=()=>manageRecipe();$('#refreshRecipes').onclick=()=>loadRecipeMappings().catch(msg)};
   wire();
@@ -969,7 +976,12 @@ async function loadRecipeMappings(){
       api('/rest/v1/menu_item_recipes?select=id,menu_item_id,inventory_item_id,quantity,recipe_unit,stock_units_per_recipe_unit,menu_items(name,serving_unit,service_stations(name)),inventory_items(name,unit)&order=created_at.asc'),
       api('/rest/v1/shared_pool_menu_rules?select=id,menu_item_id,inventory_item_id,dish_type,fraction_per_menu_unit,allocation_profile,requires_components,requires_profile,requires_components,active,notes,menu_items(name,serving_unit,service_stations(name)),inventory_items(name,unit)&active=eq.true&order=menu_item_id.asc')
     ]);
-    const direct=Array.isArray(recipes)?recipes:[], pool=Array.isArray(shared)?shared:[];
+    let direct=Array.isArray(recipes)?recipes:[], pool=Array.isArray(shared)?shared:[];
+    const recipeStation=({barista:'Barista',bartender:'Barista',chef:'Kitchen',head_chef:'Kitchen'})[profile?.role];
+    if(recipeStation){
+      direct=direct.filter(r=>(r.menu_items?.service_stations?.name||'')===recipeStation);
+      pool=pool.filter(r=>(r.menu_items?.service_stations?.name||'')===recipeStation);
+    }
     const directHtml=direct.length
       ?'<h3>Direct recipes</h3><table><tr><th>Menu item</th><th>Station</th><th>Ingredient</th><th>Recipe amount</th><th>Stock conversion</th><th></th></tr>'+
         direct.map(r=>'<tr><td>'+esc(r.menu_items?.name||r.menu_item_id)+'<br><small>'+esc(r.menu_items?.serving_unit||'')+'</small></td><td><span class="pill">'+esc(r.menu_items?.service_stations?.name||'Unassigned')+'</span></td><td>'+esc(r.inventory_items?.name||r.inventory_item_id)+' ('+esc(r.inventory_items?.unit||'')+')</td><td>'+esc(r.quantity)+' '+esc(r.recipe_unit||'stock')+'</td><td>'+esc(r.stock_units_per_recipe_unit||1)+' stock unit / recipe unit</td><td><button class="btn" data-recipe-edit="'+r.id+'">Edit</button> <button class="btn danger" data-recipe-delete="'+r.id+'">Delete</button></td></tr>').join('')+'</table>'
