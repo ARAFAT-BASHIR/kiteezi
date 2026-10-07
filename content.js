@@ -407,22 +407,92 @@
     return response.json();
   }
 
+  function ensureTeamProfileModal() {
+    let modal = document.getElementById('public-team-profile-modal');
+    if (modal) return modal;
+    modal = document.createElement('div');
+    modal.id = 'public-team-profile-modal';
+    modal.hidden = true;
+    modal.innerHTML = `
+      <div class="team-profile-backdrop" data-team-modal-close></div>
+      <div class="team-profile-dialog" role="dialog" aria-modal="true" aria-labelledby="team-profile-title">
+        <button type="button" class="team-profile-close" data-team-modal-close aria-label="Close profile">×</button>
+        <div class="team-profile-photo-wrap"><img class="team-profile-photo" id="team-profile-photo" alt=""></div>
+        <div class="eyebrow" id="team-profile-position"></div>
+        <h2 id="team-profile-title"></h2>
+        <p class="team-profile-description" id="team-profile-description"></p>
+      </div>`;
+    document.body.appendChild(modal);
+    const close = () => {
+      modal.hidden = true;
+      document.body.classList.remove('team-profile-open');
+    };
+    modal.querySelectorAll('[data-team-modal-close]').forEach(button => button.addEventListener('click', close));
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !modal.hidden) close();
+    });
+    return modal;
+  }
+
+  function openTeamProfile(row) {
+    const modal = ensureTeamProfileModal();
+    const photo = modal.querySelector('#team-profile-photo');
+    const position = modal.querySelector('#team-profile-position');
+    const title = modal.querySelector('#team-profile-title');
+    const description = modal.querySelector('#team-profile-description');
+    const name = String(row.person_name || 'Kiteezi team member');
+    const role = String(row.position || '');
+    const department = String(row.department || '');
+    const image = String(row.public_avatar_url || '').trim();
+
+    title.textContent = name;
+    position.textContent = [department, role].filter(Boolean).join(' • ');
+    description.textContent = String(row.public_description || '').trim() || 'Profile description coming soon.';
+    photo.src = image || '';
+    photo.alt = name;
+    photo.hidden = !image;
+    modal.hidden = false;
+    document.body.classList.add('team-profile-open');
+  }
+
   async function applyTeamPositions() {
-    const response = await fetch(url + '/rest/v1/team_positions?select=department,position,person_name,sort_order,active&active=eq.true&order=sort_order.asc', { headers });
+    const response = await fetch(url + '/rest/v1/team_positions?select=department,position,person_name,sort_order,active,public_avatar_url,public_description&active=eq.true&order=sort_order.asc', { headers });
     if (!response.ok) throw new Error('Could not load team positions.');
     const rows = await response.json();
     document.querySelectorAll('#public-team-positions').forEach(container => {
       const icons = ['GM','R','SC','FC','BD','GG','P'];
-      container.innerHTML = rows.map((row, i) =>
-        '<div class="card"><div class="card-body"><div class="iconbox">' + icons[i % icons.length] + '</div>' +
-        '<div class="eyebrow">' + String(row.department || '').replace(/[<>]/g,'') + '</div>' +
-        '<h3>' + String(row.position || '').replace(/[<>]/g,'') + '</h3>' +
-        (row.person_name ? '<p class="team-name">' + String(row.person_name).replace(/[<>]/g,'') + '</p>' : '') +
-        '</div></div>'
-      ).join('');
+      const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[char]));
+      container.innerHTML = rows.map((row, i) => {
+        const name = escapeHtml(row.person_name || 'Kiteezi team member');
+        const role = escapeHtml(row.position || '');
+        const image = String(row.public_avatar_url || '').trim();
+        const photo = image
+          ? '<img class="team-card-photo" src="' + escapeHtml(image) + '" alt="' + name + '" loading="lazy">'
+          : '<div class="team-card-placeholder">' + icons[i % icons.length] + '</div>';
+        return '<article class="card team-profile-card" tabindex="0" role="button" aria-label="View profile of ' + name + '" data-team-profile-index="' + i + '">' +
+          '<div class="card-body">' + photo +
+          '<div class="eyebrow">' + role + '</div>' +
+          '<h3>' + name + '</h3>' +
+          '</div></article>';
+      }).join('');
+
+      container.querySelectorAll('[data-team-profile-index]').forEach(card => {
+        const row = rows[Number(card.dataset.teamProfileIndex)];
+        const open = () => openTeamProfile(row);
+        card.addEventListener('click', open);
+        card.addEventListener('keydown', event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            open();
+          }
+        });
+      });
       container.hidden = rows.length === 0;
     });
   }
+
 
   async function applyServicePrices() {
     const services = await getServices();
