@@ -1007,3 +1007,69 @@ body.admin .nav-group[hidden]{display:none!important}
 .password-toggle:hover,.password-toggle:focus-visible{background:#edf4ef!important;color:#1b4332!important;outline:none!important}
 .password-toggle.is-visible{color:#1b4332!important}
 .password-toggle:focus-visible{outline:2px solid #2d6a4f!important;outline-offset:1px!important}
+
+/* === Production mobile admin layout ===
+   One canonical responsive layout for the admin shell. This intentionally
+   overrides older module-specific responsive rules without changing desktop. */
+@media (max-width:900px){
+  body.admin .admin-shell{
+    display:flex!important;
+    flex-direction:column!important;
+    min-height:100vh!important;
+  }
+  body.admin .side{
+    position:sticky!important;
+    top:0!important;
+    z-index:100!important;
+    width:100%!important;
+    height:auto!important;
+    max-height:none!important;
+    padding:10px 12px!important;
+    overflow:visible!important;
+    box-shadow:0 4px 18px rgba(17,35,27,.12);
+  }
+  body.admin .side .brand{margin-bottom:8px!important}
+  body.admin .side nav{
+    display:flex!important;
+    align-items:center!important;
+    gap:4px!important;
+    width:100%!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    white-space:nowrap!important;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;
+  }
+  body.admin .side nav a{
+    display:block!important;
+    flex:0 0 auto!important;
+    width:auto!important;
+    margin:0!important;
+    padding:9px 11px!important;
+    white-space:nowrap!important;
+  }
+  body.admin .side .nav-category-picker{
+    margin-bottom:8px!important;
+  }
+  body.admin .side #logout{
+    margin-top:8px!important;
+  }
+  body.admin .main{
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:12px 12px 30px!important;
+  }
+  body.admin .panel{
+    max-width:100%!important;
+  }
+}
+@media (max-width:600px){
+  body.admin .side{padding:8px 10px!important}
+  body.admin .side .brand-mark{width:36px;height:36px}
+  body.admin .side nav a{font-size:12px!important;padding:8px 10px!important}
+  body.admin .main{padding:10px 10px 24px!important}
+  body.admin .toolbar{gap:7px!important}
+  body.admin .toolbar h1{font-size:22px!important}
+  body.admin .admin table{min-width:650px}
+}
