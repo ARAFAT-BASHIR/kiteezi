@@ -132,7 +132,7 @@ async function loadAssets(){
   const gmReadOnly=profile?.role==='general_manager',canEdit=profile?.role==='owner'||profile?.role==='manager';
   const add=$('#newAsset');if(add)add.hidden=!canEdit;
   $('#assetsTable').innerHTML=rows.length?'<table><tr><th>Asset</th><th>Department</th><th>Purchase cost</th><th>Current value</th><th>Depreciation</th><th>Appreciation</th><th>Available</th><th>Damaged</th><th>Lost</th><th>Status</th><th></th></tr>'+rows.map(x=>'<tr><td>'+esc(x.asset_code)+'<br>'+esc(x.name)+'</td><td>'+esc(x.department||'')+'</td><td>UGX '+money(x.acquisition_cost)+'</td><td>UGX '+money(x.current_value)+'</td><td>UGX '+money(x.accumulated_depreciation)+'</td><td>UGX '+money(x.appreciation_value)+'</td><td>'+esc(x.quantity_available)+'</td><td>'+esc(x.damaged_quantity)+'</td><td>'+esc(x.lost_quantity)+'</td><td>'+esc(x.status)+'</td><td>'+(canEdit&&!gmReadOnly?'<button class="btn" data-edit-asset="'+x.id+'">Edit</button>':'View only')+'</td></tr>').join('')+'</table>':'<div class="state">No assets recorded.</div>';
-  $('[data-edit-asset]').forEach(b=>b.onclick=()=>editAsset(b.dataset.editAsset).catch(msg));
+  document.querySelectorAll('[data-edit-asset]').forEach(b=>b.onclick=()=>editAsset(b.dataset.editAsset).catch(msg));
 }
 async function editAsset(id=null){
   const x=id?(await api('/rest/v1/assets?id=eq.'+encodeURIComponent(id)))[0]:{asset_code:'',name:'',category:'',acquisition_date:today(),acquisition_cost:0,accumulated_depreciation:0,current_value:0,appreciation_value:0,quantity_available:1,damaged_quantity:0,lost_quantity:0,status:'active',department:'',notes:''};
