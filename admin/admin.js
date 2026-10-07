@@ -22,7 +22,7 @@ const TAB_PERMISSIONS={
   inventory:'inventory.operational', menu:'menu.manage', services:'services.manage',
   inquiries:'inquiries.view', swimming_timetable:'swimming.manage', swimming_sessions:'swimming.assigned', tasks:'tasks.manage', content:'content.manage', gallery:'gallery.view',
   reviews:'reviews.view', social:'social.manage', staff:'staff.manage',
-  accounting:'reports.financial', settings:'site_settings.manage', requisitions:'requisitions.view', audit:'reports.view', purchases:'purchase_orders.view', service_tally:'service_logs.create'
+  accounting:'reports.financial', settings:'site_settings.manage', requisitions:'requisitions.view', audit:'reports.view', assets:'reports.view', purchases:'purchase_orders.view', service_tally:'service_logs.create'
 };
 const TAB_FALLBACK_PERMISSIONS={
   bookings:['bookings.view'],
@@ -118,6 +118,29 @@ async function restore(){
   await bootAdmin(saved);
 }
 async function loadAdminLogo(){try{const r=await api('/rest/v1/site_settings?select=value&key=eq.logo_url&limit=1');const v=r?.[0]?.value||'';document.querySelectorAll('.brand-mark').forEach(el=>{if(!v){el.textContent='K';return;}const img=document.createElement('img');img.src=v.startsWith('http')?v:'../'+v.replace(/^\/+/, '');img.alt='Kiteezi Recreational Center';img.loading='eager';el.textContent='';el.appendChild(img);});const p=$('#logoPreview');if(p){p.src=v?(v.startsWith('http')?v:'../'+v.replace(/^\/+/,'')):'';p.hidden=!v;}}catch{}}
+function ensureAssetsTab(){
+  if($('#assets'))return;
+  const app=$('#app');if(!app)return;
+  const sec=document.createElement('section');sec.id='assets';sec.className='tab';sec.hidden=true;sec.setAttribute('aria-hidden','true');
+  sec.innerHTML='<div class="section-head"><div><h2>Assets</h2><p class="muted">Track purchase cost, current value, appreciation, depreciation, availability, damage and loss.</p></div><div class="toolbar"><button class="btn" id="newAsset">Add asset</button><button class="btn btn-dark" id="refreshAssets">Refresh</button></div></div><div id="assetsTable" class="table-scroll"></div>';
+  app.appendChild(sec);
+  $('#refreshAssets').onclick=()=>loadAssets().catch(msg);
+  $('#newAsset').onclick=()=>editAsset().catch(msg);
+}
+async function loadAssets(){
+  const rows=await api('/rest/v1/assets?select=*&order=name.asc');
+  const gmReadOnly=profile?.role==='general_manager',canEdit=profile?.role==='owner'||profile?.role==='manager';
+  const add=$('#newAsset');if(add)add.hidden=!canEdit;
+  $('#assetsTable').innerHTML=rows.length?'<table><tr><th>Asset</th><th>Department</th><th>Purchase cost</th><th>Current value</th><th>Depreciation</th><th>Appreciation</th><th>Available</th><th>Damaged</th><th>Lost</th><th>Status</th><th></th></tr>'+rows.map(x=>'<tr><td>'+esc(x.asset_code)+'<br>'+esc(x.name)+'</td><td>'+esc(x.department||'')+'</td><td>UGX '+money(x.acquisition_cost)+'</td><td>UGX '+money(x.current_value)+'</td><td>UGX '+money(x.accumulated_depreciation)+'</td><td>UGX '+money(x.appreciation_value)+'</td><td>'+esc(x.quantity_available)+'</td><td>'+esc(x.damaged_quantity)+'</td><td>'+esc(x.lost_quantity)+'</td><td>'+esc(x.status)+'</td><td>'+(canEdit&&!gmReadOnly?'<button class="btn" data-edit-asset="'+x.id+'">Edit</button>':'View only')+'</td></tr>').join('')+'</table>':'<div class="state">No assets recorded.</div>';
+  $('[data-edit-asset]').forEach(b=>b.onclick=()=>editAsset(b.dataset.editAsset).catch(msg));
+}
+async function editAsset(id=null){
+  const x=id?(await api('/rest/v1/assets?id=eq.'+encodeURIComponent(id)))[0]:{asset_code:'',name:'',category:'',acquisition_date:today(),acquisition_cost:0,accumulated_depreciation:0,current_value:0,appreciation_value:0,quantity_available:1,damaged_quantity:0,lost_quantity:0,status:'active',department:'',notes:''};
+  if(!x)throw Error('Asset not found.');
+  const body=(f)=>({asset_code:String(f.get('asset_code')||'').trim(),name:String(f.get('name')||'').trim(),category:f.get('category')||null,acquisition_date:f.get('acquisition_date')||null,acquisition_cost:Number(f.get('acquisition_cost')||0),accumulated_depreciation:Number(f.get('accumulated_depreciation')||0),current_value:Number(f.get('current_value')||0),appreciation_value:Number(f.get('appreciation_value')||0),quantity_available:Number(f.get('quantity_available')||0),damaged_quantity:Number(f.get('damaged_quantity')||0),lost_quantity:Number(f.get('lost_quantity')||0),status:f.get('status')||'active',department:f.get('department')||null,notes:f.get('notes')||null});
+  modal(id?'Edit asset':'Add asset','<form id="assetForm" class="form"><input name="asset_code" value="'+esc(x.asset_code)+'" placeholder="Asset code" required><input name="name" value="'+esc(x.name)+'" placeholder="Asset name" required><input name="category" value="'+esc(x.category||'')+'" placeholder="Category"><input name="department" value="'+esc(x.department||'')+'" placeholder="Department"><input name="acquisition_date" type="date" value="'+esc(x.acquisition_date||today())+'"><input name="acquisition_cost" type="number" step="0.01" min="0" value="'+Number(x.acquisition_cost||0)+'" placeholder="Purchase price"><input name="current_value" type="number" step="0.01" min="0" value="'+Number(x.current_value||0)+'" placeholder="Current value"><input name="accumulated_depreciation" type="number" step="0.01" min="0" value="'+Number(x.accumulated_depreciation||0)+'" placeholder="Accumulated depreciation"><input name="appreciation_value" type="number" step="0.01" min="0" value="'+Number(x.appreciation_value||0)+'" placeholder="Appreciation"><input name="quantity_available" type="number" min="0" value="'+Number(x.quantity_available||0)+'" placeholder="Available quantity"><input name="damaged_quantity" type="number" min="0" value="'+Number(x.damaged_quantity||0)+'" placeholder="Damaged quantity"><input name="lost_quantity" type="number" min="0" value="'+Number(x.lost_quantity||0)+'" placeholder="Lost quantity"><select name="status"><option '+(x.status==='active'?'selected':'')+'>active</option><option '+(x.status==='maintenance'?'selected':'')+'>maintenance</option><option '+(x.status==='disposed'?'selected':'')+'>disposed</option><option '+(x.status==='lost'?'selected':'')+'>lost</option></select><textarea name="notes" placeholder="Notes">'+esc(x.notes||'')+'</textarea><button class="btn btn-dark">Save asset</button></form>');
+  $('#assetForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const payload=body(f);if(!payload.asset_code||!payload.name)return;await api(id?'/rest/v1/assets?id=eq.'+encodeURIComponent(id):'/rest/v1/assets',{method:id?'PATCH':'POST',body:JSON.stringify(payload)});closeModal();await loadAssets()};
+}
 function ensureAuditTab(){
   if($('#audit'))return;
   const app=$('#app');
@@ -140,6 +163,7 @@ async function loadAuditTrail(){
 async function show(){
   setAuthView(true);
   ensureAuditTab();
+  ensureAssetsTab();
   if($('#who'))$('#who').textContent=(profile?.full_name||'Staff')+' · '+(profile?.role||'staff');
   if($('#rolePill'))$('#rolePill').textContent=profile?.role||'staff';
   try{loadAdminLogo()}catch(e){console.warn('Admin logo load failed',e)}
@@ -210,7 +234,7 @@ function applyRoleNavigation(){
     ['accounting','Accounting & Finance',['reports.financial','reports.view','reports.inventory.view']],
     ['requisitions','Requisitions',['requisitions.view','requisitions.create','requisitions.approve.manager','requisitions.approve.gm','requisitions.approve.ceo','requisitions.approve.finance']],
     ['purchases','Purchase Orders',['purchase_orders.view','purchase_orders.manage','purchase_orders.create','purchase_orders.receive']],
-    ['service_tally','Service Tally',['service_logs.create']],
+    ['service_tally','Service Tally',['service_logs.create']],['assets','Assets',['reports.view','reports.financial']],
     ['settings','Settings',['site_settings.manage']],['audit','Audit Trail',['reports.view']]
   ];
   const visibleIds=new Set(modules.filter(([,label,needed])=>needed.length?needed.some(hasPermission):false).map(([id])=>id));if(profile?.active)visibleIds.add('settings');if(profile?.role==='owner')visibleIds.add('customers');
@@ -220,7 +244,7 @@ function applyRoleNavigation(){
       ['ADMINISTRATION','administration',[['dashboard','Dashboard']]],
       ['WEBSITE','website',[['content','Website Content'],['social','Social Links'],['reviews','Public Reviews']]],
       ['MEDIA','media',[['gallery','Media / Gallery']]],
-      ['MANAGEMENT','management',[['inventory','Inventory'],['requisitions','Requisitions'],['purchases','Purchase Orders'],['service_tally','Service Tally'],['menu','Menu & Recipes']]],
+      ['MANAGEMENT','management',[['inventory','Inventory'],['requisitions','Requisitions'],['purchases','Purchase Orders'],['service_tally','Service Tally'],['assets','Assets'],['menu','Menu & Recipes']]],
       ['ACCOUNTING & REPORTS','finance',[['accounting','Accounting & Finance'],['audit','Audit Trail']]],
       ['HUMAN RESOURCES','hr',[['staff','Staff, Roles & Positions'],['customers','Customers']]],
       ['SETTINGS','settings',[['settings','Settings']]]
@@ -657,7 +681,7 @@ const TAB_LOADERS={
   reviews:loadReviews,social:loadSocial,
   staff:async()=>{await Promise.all([loadStaff(),loadTeamPositions(),loadRolesAndPermissions()]);},
   customers:loadCustomers,
-  accounting:loadAccounting,settings:loadSettings,requisitions:loadRequisitions,audit:loadAuditTrail,
+  accounting:loadAccounting,settings:loadSettings,requisitions:loadRequisitions,audit:loadAuditTrail,assets:loadAssets,
   purchases:loadGeneratedPOs,service_tally:loadServiceTally
 };
 let activeLoad=0;
