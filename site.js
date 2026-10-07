@@ -221,10 +221,41 @@
     saveCart(cart);
   }
 
+  const MENU_CACHE_KEY = 'kiteezi_public_menu_cache_v1';
+  const MENU_CACHE_TTL = 30000;
+  let menuItemsPromise = null;
+
   async function getMenuItems() {
-    return supabaseFetch(
-      '/rest/v1/menu_items?select=id,name,description,price,price_on_request,in_stock,img_url,alt_text,category_id,serving_unit,menu_categories(name,sort_order)&in_stock=eq.true&order=name.asc'
-    );
+    if (menuItemsPromise) return menuItemsPromise;
+
+    menuItemsPromise = (async () => {
+      try {
+        const cached = JSON.parse(sessionStorage.getItem(MENU_CACHE_KEY) || 'null');
+        if (cached && Number(cached.savedAt) + MENU_CACHE_TTL > Date.now() && Array.isArray(cached.rows)) {
+          return cached.rows;
+        }
+      } catch {}
+
+      const rows = await supabaseFetch(
+        '/rest/v1/menu_items?select=id,name,description,price,price_on_request,in_stock,img_url,alt_text,category_id,serving_unit,menu_categories(name,sort_order)&in_stock=eq.true&order=name.asc'
+      );
+
+      try {
+        sessionStorage.setItem(MENU_CACHE_KEY, JSON.stringify({
+          savedAt: Date.now(),
+          rows: Array.isArray(rows) ? rows : []
+        }));
+      } catch {}
+
+      return rows;
+    })();
+
+    try {
+      return await menuItemsPromise;
+    } catch (error) {
+      menuItemsPromise = null;
+      throw error;
+    }
   }
 
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
