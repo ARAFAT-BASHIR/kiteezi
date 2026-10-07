@@ -37,7 +37,9 @@ jobs:
 
           root = Path(".").resolve()
           script_re = re.compile(r"<script(?![^>]*\bsrc\s*=)[^>]*>(.*?)</script\s*>", re.I | re.S)
+          tag_re = re.compile(r"<([A-Za-z][A-Za-z0-9-]*)\b([^>]*)>", re.I | re.S)
           ref_re = re.compile(r"""(?:src|href)\s*=\s*["']([^"']+)["']""", re.I)
+          dynamic_ref_attr_re = re.compile(r"""\bdata-site-setting-href\s*=""", re.I)
 
           for html in sorted(root.rglob("*.html")):
               text = html.read_text(encoding="utf-8")
@@ -56,13 +58,16 @@ jobs:
                   finally:
                       temp.unlink(missing_ok=True)
 
-              for ref in ref_re.findall(text):
-                  if ref.startswith(("#", "http://", "https://", "mailto:", "tel:", "data:", "javascript:")):
-                      continue
-                  target = (html.parent / ref.split("?", 1)[0].split("#", 1)[0]).resolve()
-                  if not target.exists():
-                      print(f"Broken local reference: {html} -> {ref}")
-                      raise SystemExit(1)
+              for tag, attrs in tag_re.findall(text):
+                  for ref in ref_re.findall(attrs):
+                      if dynamic_ref_attr_re.search(attrs):
+                          continue
+                      if ref.startswith(("#", "http://", "https://", "mailto:", "tel:", "data:", "javascript:")):
+                          continue
+                      target = (html.parent / ref.split("?", 1)[0].split("#", 1)[0]).resolve()
+                      if not target.exists():
+                          print(f"Broken local reference: {html} -> {ref}")
+                          raise SystemExit(1)
 
           print("HTML inline scripts and local references passed.")
           PY
