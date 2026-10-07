@@ -89,6 +89,19 @@ function status(message,kind){
     }catch(err){status(humanLoginError(err,'Password recovery could not be started.'),'error')}
     finally{forgot.disabled=false}
   });
+  function setupPasswordToggles(root=document){
+    root.querySelectorAll('input[type="password"]:not([data-password-toggle-ready])').forEach(input=>{
+      input.dataset.passwordToggleReady='1';
+      let wrap=input.closest('.password-field');
+      if(!wrap){wrap=document.createElement('span');wrap.className='password-field';input.parentNode.insertBefore(wrap,input);wrap.appendChild(input);}
+      let toggle=wrap.querySelector('.password-toggle');
+      if(!toggle){toggle=document.createElement('button');toggle.type='button';toggle.className='password-toggle';toggle.textContent='👁';wrap.appendChild(toggle);}
+      const sync=()=>{const shown=input.type==='text';toggle.setAttribute('aria-label',shown?'Hide password':'Show password');toggle.setAttribute('aria-pressed',shown?'true':'false');toggle.title=shown?'Hide password':'Show password';toggle.textContent='👁';toggle.classList.toggle('is-visible',shown);};
+      toggle.addEventListener('click',()=>{input.type=input.type==='password'?'text':'password';sync();input.focus();});
+      sync();
+    });
+  }
+  function watchPasswordFields(){setupPasswordToggles(document);const observer=new MutationObserver(()=>setupPasswordToggles(document));observer.observe(document.body,{childList:true,subtree:true});}
   function setupRecovery(){
     const hash=new URLSearchParams(String(location.hash||'').replace(/^#/,''));
     const token=hash.get('access_token');
@@ -115,6 +128,7 @@ function status(message,kind){
   if(!form){console.error('Kiteezi admin login form was not found.');return}
   form.addEventListener('submit',signIn,{once:false});
   setupRecovery();
+  watchPasswordFields();
   window.__KITEEZI_ADMIN_LOGIN_BOUND__=true;
   window.__KITEEZI_REFRESH_ADMIN_SESSION__=refreshSession;
 })();
