@@ -89,8 +89,32 @@ function status(message,kind){
     }catch(err){status(humanLoginError(err,'Password recovery could not be started.'),'error')}
     finally{forgot.disabled=false}
   });
+  function setupRecovery(){
+    const hash=new URLSearchParams(String(location.hash||'').replace(/^#/,''));
+    const token=hash.get('access_token');
+    const type=hash.get('type');
+    if(!token||type!=='recovery')return;
+    const card=form.closest('.login-card')||form.parentElement;
+    if(!card)return;
+    form.hidden=true;
+    const wrap=document.createElement('div');
+    wrap.innerHTML='<h3>Set a new password</h3><p class="muted">Choose a new password for your Kiteezi staff account.</p><form id="recoveryForm" class="form"><label>New password<input name="password" type="password" minlength="8" autocomplete="new-password" required></label><label>Confirm password<input name="confirm" type="password" minlength="8" autocomplete="new-password" required></label><button class="btn btn-dark">Set password</button><div id="recoveryMsg" class="notice" hidden></div></form>';
+    card.appendChild(wrap);
+    const rf=document.getElementById('recoveryForm'),rm=document.getElementById('recoveryMsg');
+    rf.addEventListener('submit',async e=>{
+      e.preventDefault();const fd=new FormData(rf),pw=String(fd.get('password')||''),confirm=String(fd.get('confirm')||'');
+      if(pw!==confirm){rm.hidden=false;rm.className='notice danger';rm.textContent='The passwords do not match.';return}
+      try{
+        const r=await fetch(URL+'/auth/v1/user',{method:'PUT',headers:{apikey:KEY,Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
+        const d=await r.json().catch(()=>null);if(!r.ok)throw Error(d?.msg||d?.message||'Password could not be reset.');
+        rm.hidden=false;rm.className='notice';rm.textContent='Password changed. You can now sign in with your new password.';
+        setTimeout(()=>{location.hash='';location.reload()},900);
+      }catch(err){rm.hidden=false;rm.className='notice danger';rm.textContent=humanLoginError(err,'Password could not be reset.')}
+    });
+  }
   if(!form){console.error('Kiteezi admin login form was not found.');return}
   form.addEventListener('submit',signIn,{once:false});
+  setupRecovery();
   window.__KITEEZI_ADMIN_LOGIN_BOUND__=true;
   window.__KITEEZI_REFRESH_ADMIN_SESSION__=refreshSession;
 })();
