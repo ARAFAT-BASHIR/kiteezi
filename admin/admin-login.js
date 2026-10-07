@@ -7,7 +7,8 @@
   const form=document.getElementById('loginForm');
   const statusEl=document.getElementById('loginMsg');
 
-  function status(message,kind){
+  function humanLoginError(error,fallback='Sign in could not be completed. Please check your details and try again.'){const m=String(error?.message??error??'').trim();if(!m)return fallback;if(/(?:supabase|postgrest|pgrst|postgres|sql|schema|relation|column|constraint|permission denied|function .* does not exist|does not exist|http\s*\d{3}|\b(?:3f000|42883|42501|235\d{3})\b|fetch failed|network error|unexpected .* response|syntax error|jwt)/i.test(m)||/^\s*[\[{].*[\]}]\s*$/.test(m))return fallback;return m;}
+function status(message,kind){
     if(!statusEl)return;
     statusEl.hidden=false;
     statusEl.textContent=message;
@@ -48,14 +49,14 @@
         const code=String(data?.error||'').toLowerCase(), message=String(data?.msg||data?.message||data?.error_description||'').toLowerCase();
         if(code.includes('invalid')||message.includes('invalid')||message.includes('password'))throw Error('Invalid email or password.');
         if(message.includes('confirm'))throw Error('This staff email has not been confirmed.');
-        throw Error(data?.msg||data?.message||data?.error_description||'Sign in failed. Please try again.');
+        throw Error(humanLoginError(data?.msg||data?.message||data?.error_description));
       }
       if(!data?.access_token||!data?.user?.id)throw Error('Login succeeded but no valid session was returned.');
       const profileResponse=await fetch(URL+'/rest/v1/profiles?select=*&id=eq.'+encodeURIComponent(data.user.id)+'&limit=1',{
         headers:{apikey:KEY,Authorization:'Bearer '+data.access_token,'Content-Type':'application/json'}
       });
       const profiles=await profileResponse.json().catch(()=>null);
-      if(!profileResponse.ok)throw Error(profiles?.message||profiles?.msg||'Unable to verify the Kiteezi staff profile.');
+      if(!profileResponse.ok)throw Error(humanLoginError(profiles?.message||profiles?.msg,'Unable to verify your staff account. Please try again.'));
       const profile=profiles?.[0];
       if(!profile)throw Error('This account has no Kiteezi staff profile.');
       if(!profile.active)throw Error('This Kiteezi staff profile is inactive.');
@@ -68,7 +69,7 @@
         window.location.replace(window.location.pathname);
       }
     }catch(err){
-      status(err?.message||'Sign in failed. Please try again.','error');
+      status(humanLoginError(err),'error');
     }finally{
       form.dataset.busy='';if(button)button.disabled=false;
     }
