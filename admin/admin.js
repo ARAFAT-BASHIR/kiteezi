@@ -1399,7 +1399,7 @@ async function openMyAccountSecurity(){const u=session?.user||{};modal('My accou
 function settingLabel(key){
   return String(key||'')
     .replace(/_/g,' ')
-    .replace(/\\b\\w/g,m=>m.toUpperCase());
+    .replace(/\b\w/g,m=>m.toUpperCase());
 }
 async function loadSettings(){
   const rows=await api('/rest/v1/site_settings?select=key,value&order=key.asc');
@@ -1416,7 +1416,7 @@ async function loadSettings(){
   const preview=$('#logoPreview');
   if(preview){
     const v=logo?.value||'';
-    preview.src=v?(v.startsWith('http')?v:'../'+v.replace(/^\\/+/,'')):'';
+    preview.src=v?(v.startsWith('http')?v:'../'+v.replace(/^\/+/,'')):'';
     preview.hidden=!v;
   }
   const extras=r.filter(x=>!known.has(String(x.key)));
