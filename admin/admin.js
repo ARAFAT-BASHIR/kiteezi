@@ -124,6 +124,7 @@ async function show(){
   try{loadAdminLogo()}catch(e){console.warn('Admin logo load failed',e)}
   try{loadNotifications().catch(()=>{});startNotificationPolling()}catch(e){console.warn('Admin notifications unavailable',e)}
   try{loadPushSettings()}catch(e){console.warn('Push notification status unavailable',e)}
+  try{const sendButton=$('#sendStaffNotification');if(sendButton)sendButton.hidden=!canSendStaffNotifications()}catch(e){console.warn('Notification sender visibility setup failed',e)}
   try{await loadPermissions()}catch(e){console.warn('Admin permissions load failed',e);permissions=new Set()}
   try{applyRoleNavigation()}catch(e){console.warn('Admin navigation setup failed',e)}
   try{history.replaceState(null,'',location.search+'#dashboard');route('dashboard')}catch(e){
