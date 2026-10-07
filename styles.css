@@ -206,3 +206,18 @@ table{min-width:0}
   .menu-page-links{gap:7px;font-size:11.5px}
   .menu-page-links>.btn{padding:7px 9px;font-size:11.5px}
 }
+
+/* Public team profile cards */
+.team-profile-card{cursor:pointer;transition:transform .18s ease,box-shadow .18s ease;outline:none}
+.team-profile-card:hover,.team-profile-card:focus-visible{transform:translateY(-3px);box-shadow:0 12px 28px rgba(16,38,28,.12)}
+.team-card-photo,.team-card-placeholder{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:14px;margin-bottom:14px;background:#edf3ef}
+.team-card-placeholder{display:grid;place-items:center;font-weight:900;font-size:28px;color:#174733}
+.team-profile-backdrop{position:fixed;inset:0;background:rgba(10,25,18,.62);z-index:10000}
+.team-profile-dialog{position:fixed;z-index:10001;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,560px);max-height:88vh;overflow:auto;background:#fff;border-radius:20px;padding:28px;box-shadow:0 24px 70px rgba(0,0,0,.28)}
+.team-profile-close{position:absolute;right:14px;top:10px;width:40px;height:40px;border:0;border-radius:50%;background:#edf3ef;color:#173c2d;font-size:28px;line-height:1;cursor:pointer}
+.team-profile-photo-wrap{margin:-4px 0 20px}
+.team-profile-photo{width:100%;max-height:320px;object-fit:cover;border-radius:16px}
+.team-profile-dialog h2{margin:6px 0 12px;color:#173c2d}
+.team-profile-description{white-space:pre-line;line-height:1.7;color:#53675e}
+body.team-profile-open{overflow:hidden}
+@media(max-width:600px){.team-profile-dialog{padding:22px;border-radius:16px}.team-profile-photo{max-height:260px}}
