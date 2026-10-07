@@ -126,9 +126,33 @@ async function show(){
   try{loadNotifications().catch(()=>{});startNotificationPolling()}catch(e){console.warn('Admin notifications unavailable',e)}
   try{loadPushSettings()}catch(e){console.warn('Push notification status unavailable',e)}
   try{const sendButton=$('#sendStaffNotification');if(sendButton)sendButton.hidden=!canSendStaffNotifications()}catch(e){console.warn('Notification sender visibility setup failed',e)}
-  try{await loadPermissions()}catch(e){console.warn('Admin permissions load failed',e);permissions=new Set()}
-  try{applyRoleNavigation()}catch(e){console.warn('Admin navigation setup failed',e)}
-  try{history.replaceState(null,'',location.search+'#dashboard');route('dashboard')}catch(e){
+  /*
+    Load permissions and the first dashboard data at the same time.
+    The dashboard used to wait for the permission queries to finish before
+    its database reads even started.
+  */
+  const permissionsPromise = loadPermissions().catch(e => {
+    console.warn('Admin permissions load failed',e);
+    permissions=new Set();
+  });
+  const dashboardPromise = loadDashboard().catch(e => {
+    console.warn('Admin dashboard data unavailable',e);
+    if($('#todayOps'))$('#todayOps').textContent='Dashboard opened. Live data is still loading.';
+  });
+
+  try{await permissionsPromise;applyRoleNavigation()}catch(e){console.warn('Admin navigation setup failed',e)}
+  try{
+    await dashboardPromise;
+    loadedTabs.add('dashboard');
+    history.replaceState(null,'',location.search+'#dashboard');
+    document.querySelectorAll('[data-tab]').forEach(a=>a.classList.toggle('active',a.dataset.tab==='dashboard'));
+    document.querySelectorAll('.tab').forEach(sec=>{
+      const active=sec.id==='dashboard';
+      sec.classList.toggle('active',active);
+      sec.hidden=!active;
+      sec.setAttribute('aria-hidden',active?'false':'true');
+    });
+  }catch(e){
     console.error('Admin route initialization failed:',e);
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
     $('#dashboard')?.classList.add('active');
