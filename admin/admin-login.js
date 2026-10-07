@@ -75,6 +75,20 @@ function status(message,kind){
     }
     return false;
   }
+  const forgot=document.getElementById('forgotPassword');
+  if(forgot) forgot.addEventListener('click',async()=>{
+    const email=String(form.querySelector('[name="email"]')?.value||'').trim();
+    if(!email){status('Enter your staff email first, then choose Forgot password.','error');return}
+    if(!URL||!KEY){status('Admin configuration is missing. Please contact the site owner.','error');return}
+    forgot.disabled=true;
+    try{
+      const r=await fetch(URL+'/auth/v1/recover',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({email,redirect_to:location.origin+location.pathname+'?password_reset=1'})});
+      const d=await r.json().catch(()=>null);
+      if(!r.ok)throw Error(d?.msg||d?.message||'Password recovery could not be started.');
+      status('If that staff email exists, a password recovery email has been sent.');
+    }catch(err){status(humanLoginError(err,'Password recovery could not be started.'),'error')}
+    finally{forgot.disabled=false}
+  });
   if(!form){console.error('Kiteezi admin login form was not found.');return}
   form.addEventListener('submit',signIn,{once:false});
   window.__KITEEZI_ADMIN_LOGIN_BOUND__=true;
