@@ -59,3 +59,15 @@ begin
  end case;
  return true;
 end $$;
+
+create index if not exists requisitions_active_org_status_idx
+  on public.requisitions(organization_id,status) where deleted_at is null;
+
+drop policy if exists requisitions_select on public.requisitions;
+create policy requisitions_select on public.requisitions for select to authenticated using (
+  organization_id=public.current_organization_id() and deleted_at is null and (
+    public.has_permission('requisitions.view') or public.has_permission('requisitions.create') or
+    public.has_permission('requisitions.approve.manager') or public.has_permission('requisitions.approve.gm') or
+    public.has_permission('requisitions.approve.ceo')
+  )
+);
