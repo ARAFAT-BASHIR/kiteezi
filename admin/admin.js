@@ -559,6 +559,7 @@ const TAB_LOADERS={
   swimming_sessions:loadSwimmingSessions,tasks:loadTasks,content:loadContent,gallery:loadGallery,
   reviews:loadReviews,social:loadSocial,
   staff:async()=>{await loadStaff();await loadTeamPositions();await loadRolesAndPermissions();},
+  customers:loadCustomers,
   accounting:loadAccounting,settings:loadSettings,requisitions:loadRequisitions,
   purchases:loadGeneratedPOs,service_tally:loadServiceTally
 };
