@@ -22,7 +22,7 @@ const TAB_PERMISSIONS={
   inventory:'inventory.operational', menu:'menu.manage', services:'services.manage',
   inquiries:'inquiries.view', swimming_timetable:'swimming.manage', swimming_sessions:'swimming.assigned', tasks:'tasks.manage', content:'content.manage', gallery:'gallery.view',
   reviews:'reviews.view', social:'social.manage', staff:'staff.manage',
-  accounting:'reports.financial', settings:'site_settings.manage', requisitions:'requisitions.view', audit:'reports.view' , purchases:'purchase_orders.view', service_tally:'service_logs.create'
+  accounting:'reports.financial', settings:'site_settings.manage', requisitions:'requisitions.view', purchases:'purchase_orders.view', service_tally:'service_logs.create'
 };
 const TAB_FALLBACK_PERMISSIONS={
   bookings:['bookings.view'],
@@ -200,7 +200,7 @@ function applyRoleNavigation(){
       ['WEBSITE','website',[['content','Website Content'],['social','Social Links'],['reviews','Public Reviews']]],
       ['MEDIA','media',[['gallery','Media / Gallery']]],
       ['MANAGEMENT','management',[['inventory','Inventory'],['requisitions','Requisitions'],['purchases','Purchase Orders'],['service_tally','Service Tally'],['menu','Menu & Recipes']]],
-      ['ACCOUNTING & REPORTS','finance',[['accounting','Accounting & Finance'],]],
+      ['ACCOUNTING & REPORTS','finance',[[['accounting','Accounting & Finance']]],
       ['HUMAN RESOURCES','hr',[['staff','Staff, Roles & Positions'],['customers','Customers']]],
       ['SETTINGS','settings',[['settings','Settings']]]
     ];
