@@ -22,10 +22,18 @@
       Math.max(0, Number(value) || 0)
     );
 
+  function humanError(error, fallback = 'We could not complete that request right now. Please try again.') {
+    const message = String(error?.message ?? error ?? '').trim();
+    if (!message) return fallback;
+    const technical = /(?:supabase|postgrest|pgrst|postgres|sql|schema|relation|column|constraint|permission denied|function .* does not exist|does not exist|http\s*\d{3}|\b(?:3f000|42883|42501|235\d{3})\b|fetch failed|network error|unexpected .* response|syntax error|jwt)/i;
+    if (technical.test(message) || /^\s*[\[{].*[\]}]\s*$/.test(message)) return fallback;
+    return message;
+  }
+
   async function supabaseFetch(path, options = {}) {
     if (!SUPABASE_URL || !SUPABASE_KEY) {
       throw new Error(
-        'Supabase configuration is missing.'
+        'The website is temporarily unavailable. Please refresh and try again.'
       );
     }
 
@@ -61,11 +69,12 @@
 
     if (!response.ok) {
       throw new Error(
-        typeof data === 'string'
-          ? data
-          : data?.message ||
-            data?.error_description ||
-            'Supabase request failed.'
+        humanError(
+          typeof data === 'string'
+            ? data
+            : data?.message || data?.error_description,
+          'We could not load the latest information right now. Please refresh and try again.'
+        )
       );
     }
 
@@ -146,7 +155,7 @@
   function addToCart(item) {
     if (!item.id) {
       throw new Error(
-        'The menu item has no database ID.'
+        'This menu item is no longer available. Please refresh the menu and try again.'
       );
     }
 
@@ -360,7 +369,7 @@
 
     if (!productName) {
       throw new Error(
-        'This menu button is missing its menu item name.'
+        'This menu item is no longer available. Please refresh the menu and try again.'
       );
     }
 
@@ -376,9 +385,7 @@
 
     if (!rows?.length) {
       throw new Error(
-        '"' +
-        productName +
-        '" does not exist in the Kiteezi menu database.'
+        'This menu item is no longer available. Please refresh the menu and try again.'
       );
     }
 
@@ -427,8 +434,10 @@
       console.error(error);
 
       alert(
-        error.message ||
-        'Unable to add this item to the cart.'
+        humanError(
+          error,
+          'We could not add this item to your cart. Please refresh the menu and try again.'
+        )
       );
 
       button.textContent =
