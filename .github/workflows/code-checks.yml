@@ -6,20 +6,63 @@ on:
     branches: [main]
 
 jobs:
-  javascript-syntax:
+  javascript-and-html:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Check all JavaScript files
+
+      - name: Check JavaScript files
         shell: bash
         run: |
-          set -e
+          set -euo pipefail
           files=$(find . -type f -name "*.js" -not -path "./node_modules/*" | sort)
           test -n "$files"
           while IFS= read -r file; do
             echo "Checking $file"
             node --check "$file"
           done <<< "$files"
+
+      - name: Check inline JavaScript and local HTML references
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import subprocess
+          import tempfile
+
+          root = Path(".").resolve()
+          script_re = re.compile(r"<script(?![^>]*\bsrc\s*=)[^>]*>(.*?)</script\s*>", re.I | re.S)
+          ref_re = re.compile(r"""(?:src|href)\s*=\s*["']([^"']+)["']""", re.I)
+
+          for html in sorted(root.rglob("*.html")):
+              text = html.read_text(encoding="utf-8")
+              for n, body in enumerate(script_re.findall(text), 1):
+                  if not body.strip():
+                      continue
+                  with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8") as f:
+                      f.write(body)
+                      temp = Path(f.name)
+                  try:
+                      result = subprocess.run(["node", "--check", str(temp)], text=True, capture_output=True)
+                      if result.returncode:
+                          print(f"Inline JavaScript syntax error: {html} script #{n}")
+                          print(result.stderr)
+                          raise SystemExit(1)
+                  finally:
+                      temp.unlink(missing_ok=True)
+
+              for ref in ref_re.findall(text):
+                  if ref.startswith(("#", "http://", "https://", "mailto:", "tel:", "data:", "javascript:")):
+                      continue
+                  target = (html.parent / ref.split("?", 1)[0].split("#", 1)[0]).resolve()
+                  if not target.exists():
+                      print(f"Broken local reference: {html} -> {ref}")
+                      raise SystemExit(1)
+
+          print("HTML inline scripts and local references passed.")
+          PY
