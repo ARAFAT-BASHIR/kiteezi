@@ -22,7 +22,7 @@ const TAB_PERMISSIONS={
   inventory:'inventory.operational', menu:'menu.manage', services:'services.manage',
   inquiries:'inquiries.view', swimming_timetable:'swimming.manage', swimming_sessions:'swimming.assigned', tasks:'tasks.manage', content:'content.manage', gallery:'gallery.view',
   reviews:'reviews.view', social:'social.manage', staff:'staff.manage',
-  accounting:'reports.financial', settings:'site_settings.manage', requisitions:'requisitions.view', purchases:'purchase_orders.view', service_tally:'service_logs.create'
+  accounting:'reports.financial', settings:'site_settings.manage', requisitions:'requisitions.view', audit:'reports.view', purchases:'purchase_orders.view', service_tally:'service_logs.create'
 };
 const TAB_FALLBACK_PERMISSIONS={
   bookings:['bookings.view'],
@@ -118,8 +118,28 @@ async function restore(){
   await bootAdmin(saved);
 }
 async function loadAdminLogo(){try{const r=await api('/rest/v1/site_settings?select=value&key=eq.logo_url&limit=1');const v=r?.[0]?.value||'';document.querySelectorAll('.brand-mark').forEach(el=>{if(!v){el.textContent='K';return;}const img=document.createElement('img');img.src=v.startsWith('http')?v:'../'+v.replace(/^\/+/, '');img.alt='Kiteezi Recreational Center';img.loading='eager';el.textContent='';el.appendChild(img);});const p=$('#logoPreview');if(p){p.src=v?(v.startsWith('http')?v:'../'+v.replace(/^\/+/,'')):'';p.hidden=!v;}}catch{}}
+function ensureAuditTab(){
+  if($('#audit'))return;
+  const app=$('#app');
+  if(!app)return;
+  const sec=document.createElement('section');
+  sec.id='audit';sec.className='tab';sec.hidden=true;sec.setAttribute('aria-hidden','true');
+  sec.innerHTML='<div class="section-head"><div><h2>Audit Trail</h2><p class="muted">Filter operational history by date range. Entries are append-only and show who changed what.</p></div><div class="toolbar"><input id="auditFrom" type="date"><input id="auditTo" type="date"><button class="btn btn-dark" id="refreshAudit">Refresh</button></div></div><div id="auditTable" class="table-scroll"></div>';
+  app.appendChild(sec);
+  $('#refreshAudit').onclick=()=>loadAuditTrail().catch(msg);
+}
+async function loadAuditTrail(){
+  const box=$('#auditTable');if(!box)return;
+  const from=$('#auditFrom')?.value||'',to=$('#auditTo')?.value||'';
+  let q='/rest/v1/audit_logs?select=id,action,entity_type,entity_id,actor_name,actor_role,actor_department,details,occurred_from,occurred_to&order=occurred_from.desc&limit=500';
+  if(from)q+='&occurred_from=gte.'+encodeURIComponent(from+'T00:00:00+03:00');
+  if(to)q+='&occurred_to=lte.'+encodeURIComponent(to+'T23:59:59+03:00');
+  const rows=await api(q);
+  box.innerHTML=rows.length?'<table><tr><th>From</th><th>To</th><th>Actor</th><th>Role</th><th>Department</th><th>Action</th><th>Entity</th><th>Details</th></tr>'+rows.map(x=>'<tr><td>'+esc(x.occurred_from||'')+'</td><td>'+esc(x.occurred_to||'')+'</td><td>'+esc(x.actor_name||x.actor_id||'')+'</td><td>'+esc(x.actor_role||'')+'</td><td>'+esc(x.actor_department||'')+'</td><td>'+esc(x.action||'')+'</td><td>'+esc(x.entity_type||'')+'</td><td>'+esc(JSON.stringify(x.details||{}))+'</td></tr>').join('')+'</table>':'<div class="state">No audit entries in this date range.</div>';
+}
 async function show(){
   setAuthView(true);
+  ensureAuditTab();
   if($('#who'))$('#who').textContent=(profile?.full_name||'Staff')+' · '+(profile?.role||'staff');
   if($('#rolePill'))$('#rolePill').textContent=profile?.role||'staff';
   try{loadAdminLogo()}catch(e){console.warn('Admin logo load failed',e)}
@@ -191,7 +211,7 @@ function applyRoleNavigation(){
     ['requisitions','Requisitions',['requisitions.view','requisitions.create','requisitions.approve.manager','requisitions.approve.gm','requisitions.approve.ceo','requisitions.approve.finance']],
     ['purchases','Purchase Orders',['purchase_orders.view','purchase_orders.manage','purchase_orders.create','purchase_orders.receive']],
     ['service_tally','Service Tally',['service_logs.create']],
-    ['settings','Settings',['site_settings.manage']]
+    ['settings','Settings',['site_settings.manage']],['audit','Audit Trail',['reports.view']]
   ];
   const visibleIds=new Set(modules.filter(([,label,needed])=>needed.length?needed.some(hasPermission):false).map(([id])=>id));if(profile?.active)visibleIds.add('settings');if(profile?.role==='owner')visibleIds.add('customers');
   if(nav){
@@ -636,7 +656,7 @@ const TAB_LOADERS={
   reviews:loadReviews,social:loadSocial,
   staff:async()=>{await Promise.all([loadStaff(),loadTeamPositions(),loadRolesAndPermissions()]);},
   customers:loadCustomers,
-  accounting:loadAccounting,settings:loadSettings,requisitions:loadRequisitions,
+  accounting:loadAccounting,settings:loadSettings,requisitions:loadRequisitions,audit:loadAuditTrail,
   purchases:loadGeneratedPOs,service_tally:loadServiceTally
 };
 let activeLoad=0;
