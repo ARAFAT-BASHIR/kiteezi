@@ -276,6 +276,7 @@
     */
     const infoEmail = String(settings.information_email || '').trim();
     const bookingsEmail = String(settings.bookings_email || '').trim();
+    const businessEmail = String(settings.business_email || '').trim();
     document.querySelectorAll('[data-site-setting="information_email"]').forEach(element => {
       element.textContent = infoEmail;
       if (element.matches('a')) element.href = infoEmail ? 'mailto:' + infoEmail : '#';
@@ -285,6 +286,11 @@
       element.textContent = bookingsEmail;
       if (element.matches('a')) element.href = bookingsEmail ? 'mailto:' + bookingsEmail : '#';
       element.hidden = !bookingsEmail;
+    });
+    document.querySelectorAll('[data-site-setting="business_email"]').forEach(element => {
+      element.textContent = businessEmail;
+      if (element.matches('a')) element.href = businessEmail ? 'mailto:' + businessEmail : '#';
+      element.hidden = !businessEmail;
     });
 
     /*
