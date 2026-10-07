@@ -520,6 +520,15 @@
     document.getElementById('success-detail');
 
 
+  function humanOrderError(error, fallback='We could not submit your order right now. Please try again in a moment.') {
+    const message = String(error?.message ?? error ?? '').trim();
+    if (!message || message === '[object Object]') return fallback;
+    if (/(?:supabase|postgrest|pgrst|postgres|sql|schema|relation|column|constraint|permission denied|function .* does not exist|does not exist|http\s*\d{3}|\b(?:3f000|42883|42501|235\d{3})\b|fetch failed|network error|syntax error|jwt)/i.test(message) || /^\s*[\[{].*[\]}]\s*$/.test(message)) {
+      return fallback;
+    }
+    return message;
+  }
+
   function money(value) {
 
     return 'UGX ' +
@@ -1242,8 +1251,7 @@
 
 
         errorBox.textContent =
-          error.message ||
-          'We could not submit your order. Please try again.';
+          humanOrderError(error);
 
       } finally {
 
