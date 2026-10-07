@@ -99,9 +99,9 @@
 <section id="service_tally" class="tab"><div class="panel"><div class="toolbar"><h2>Service Tally</h2><button id="newServiceLog" class="btn">Record service</button><button id="refreshServiceTally" class="btn btn-dark">Refresh</button></div><p class="muted">This is for accounting, revenue and service tallies only. It does not count or change physical inventory.</p><div id="serviceTallyTable" class="state">Ready</div></div></section>
 <section id="settings" class="tab">
 <div class="settings-page">
-<div class="settings-header panel"><div><div class="eyebrow">Business &amp; website settings</div><h2>Settings</h2><p class="muted">Business, communications, website and operational configuration. Existing settings remain available and editable.</p></div><div class="toolbar-actions"><button id="refreshSettings" class="btn btn-dark">Refresh</button><button id="saveSettings" class="btn">Save changes</button></div></div>
-<div class="panel settings-card"><h3>Branding</h3><p class="muted">The same logo used by the public website and admin.</p><div class="form-grid"><label class="full"><strong>Business logo URL</strong><input id="logoUrl" data-set="logo_url" placeholder="Image path or public URL"><small class="muted">You can also upload a new logo below.</small></label><label class="full"><strong>Upload logo</strong><input id="logoFile" type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml"><small class="muted">PNG, WebP, SVG or JPEG · maximum 50 MB.</small></label><div class="full"><img id="logoPreview" hidden alt="Logo preview" style="max-width:220px;max-height:120px;object-fit:contain;border:1px solid #e1e7e2;border-radius:12px;padding:8px;background:#fff"></div></div></div>
-<div class="panel settings-card"><h3>My account &amp; security</h3><p class="muted">Change your staff email or password, or send yourself a password recovery email. Existing passwords are never shown.</p><button id="openMyAccountSecurity" class="btn btn-dark" type="button">Manage account security</button></div><div class="panel settings-card"><h3>Phone notifications</h3><p class="muted">Enable notifications on this device. Kiteezi can alert you when the site is closed. Tapping a notification opens the relevant admin area; if you are signed out, you will be asked to sign in first.</p><div class="toolbar-actions"><button id="enablePushNotifications" class="btn btn-dark" type="button">Enable phone notifications</button><button id="disablePushNotifications" class="btn" type="button" hidden>Disable on this device</button></div><div id="pushNotificationStatus" class="notice" hidden></div></div><div class="panel settings-card">
+<div id="settingsBusinessHeader" class="settings-header panel business-settings-only"><div><div class="eyebrow">Business &amp; website settings</div><h2>Settings</h2><p class="muted">Business, communications, website and operational configuration. Existing settings remain available and editable.</p></div><div class="toolbar-actions"><button id="refreshSettings" class="btn btn-dark">Refresh</button><button id="saveSettings" class="btn">Save changes</button></div></div>
+<div class="panel settings-card business-settings-only"><h3>Branding</h3><p class="muted">The same logo used by the public website and admin.</p><div class="form-grid"><label class="full"><strong>Business logo URL</strong><input id="logoUrl" data-set="logo_url" placeholder="Image path or public URL"><small class="muted">You can also upload a new logo below.</small></label><label class="full"><strong>Upload logo</strong><input id="logoFile" type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml"><small class="muted">PNG, WebP, SVG or JPEG · maximum 50 MB.</small></label><div class="full"><img id="logoPreview" hidden alt="Logo preview" style="max-width:220px;max-height:120px;object-fit:contain;border:1px solid #e1e7e2;border-radius:12px;padding:8px;background:#fff"></div></div></div>
+<div class="panel settings-card"><h3>My account &amp; security</h3><p class="muted">Change your staff email or password, or send yourself a password recovery email. Existing passwords are never shown.</p><button id="openMyAccountSecurity" class="btn btn-dark" type="button">Manage account security</button></div><div class="panel settings-card"><h3>Phone notifications</h3><p class="muted">Enable notifications on this device. Kiteezi can alert you when the site is closed. Tapping a notification opens the relevant admin area; if you are signed out, you will be asked to sign in first.</p><div class="toolbar-actions"><button id="enablePushNotifications" class="btn btn-dark" type="button">Enable phone notifications</button><button id="disablePushNotifications" class="btn" type="button" hidden>Disable on this device</button></div><div id="pushNotificationStatus" class="notice" hidden></div></div><div class="panel settings-card business-settings-only">
   <h3>Contact &amp; location</h3>
   <p class="muted">Public contact details used across the website.</p>
   <div class="settings-grid">
@@ -116,7 +116,7 @@
     <label><strong>Location URL</strong><input id="locationUrl" data-set="location_url" type="url" placeholder="Google Maps URL"></label>
   </div>
 </div>
-<div class="panel settings-card">
+<div class="panel settings-card business-settings-only">
   <h3>Social media</h3>
   <p class="muted">Use the real public profile links here. These links are used throughout the public website.</p>
   <div class="settings-grid">
@@ -127,7 +127,7 @@
     <label class="full"><strong>X</strong><input data-set="x" type="url" placeholder="https://x.com/..."></label>
   </div>
 </div>
-<div class="panel settings-card">
+<div class="panel settings-card business-settings-only">
   <h3>Payments</h3>
   <p class="muted">Public mobile-money numbers used by the website where applicable.</p>
   <div class="settings-grid">
@@ -135,7 +135,7 @@
     <label><strong>MTN Mobile Money</strong><input data-set="mtn_money" type="text" inputmode="numeric"></label>
   </div>
 </div>
-<div class="panel settings-card">
+<div class="panel settings-card business-settings-only">
   <h3>Public team</h3>
   <p class="muted">Names displayed in public business information.</p>
   <div class="settings-grid">
@@ -145,7 +145,7 @@
     <label><strong>Food / grounds</strong><input data-set="team_food_grounds" type="text"></label>
   </div>
 </div>
-<div class="panel settings-card">
+<div class="panel settings-card business-settings-only">
   <h3>Other settings</h3>
   <p class="muted">Additional settings added by the system will appear here without disrupting the main contact and social sections.</p>
   <div id="settingsTable" class="settings-grid"></div>
