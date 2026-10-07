@@ -42,23 +42,40 @@ Deno.serve(async(req)=>{
   }
 
   if(action==="delete"){
-    const checks=[
-      ["approval_audit_trail","approver_id"],["audit_logs","actor_id"],["bookings","created_by"],["credit_notes","created_by"],
-      ["expenses","created_by"],["gallery_items","approved_by"],["invoices","created_by"],["journal_entries","created_by"],
-      ["operational_events","actor_id"],["orders","created_by"],["payroll_lines","employee_id"],["payroll_runs","created_by"],
-      ["purchase_orders","paid_by"],["purchase_orders","received_by"],["push_subscriptions","user_id"],["receipts","created_by"],
-      ["requisition_versions","created_by"],["requisitions","created_by"],["requisitions","deleted_by"],["requisitions","requester_id"],
-      ["service_logs","staff_id"],["staff_tasks","assigned_to"],["stock_movements","staff_id"],["swimming_sessions","coach_id"],["team_positions","staff_profile_id"]
+    // Permanent deletion is allowed only when no protected non-null historical
+    // references exist. Nullable audit/operational links are detached first so
+    // the business history itself remains intact.
+    const protectedChecks=[
+      ["approval_audit_trail","approver_id"],["payroll_lines","employee_id"],
+      ["requisition_versions","created_by"],["requisitions","created_by"],
+      ["requisitions","requester_id"],["service_logs","staff_id"]
     ] as const;
     const references:{table:string;column:string;count:number}[]=[];
-    for(const [table,column] of checks){
+    for(const [table,column] of protectedChecks){
       const {count,error}=await admin.from(table).select("*",{count:"exact",head:true}).eq(column,targetId);
       if(error) return json({error:"The account could not be checked for protected history."},500);
       if((count||0)>0) references.push({table,column,count:count||0});
     }
     if(references.length){
-      return json({error:"This staff account has operational or payroll history, so it cannot be permanently deleted without damaging that history.",code:"STAFF_HAS_HISTORY",references:references.map(x=>x.table+"."+x.column+" ("+x.count+")")},409);
+      return json({error:"This staff account has protected operational or payroll history, so it cannot be permanently deleted. Keep it as an inactive former staff record instead.",code:"STAFF_HAS_HISTORY",references:references.map(x=>x.table+"."+x.column+" ("+x.count+")")},409);
     }
+
+    // Detach nullable historical references and remove device subscriptions.
+    const nullableRefs=[
+      ["audit_logs","actor_id"],["bookings","created_by"],["credit_notes","created_by"],
+      ["expenses","created_by"],["gallery_items","approved_by"],["invoices","created_by"],
+      ["journal_entries","created_by"],["operational_events","actor_id"],["orders","created_by"],
+      ["payroll_runs","created_by"],["purchase_orders","paid_by"],["purchase_orders","received_by"],
+      ["receipts","created_by"],["requisitions","deleted_by"],["staff_tasks","assigned_to"],
+      ["stock_movements","staff_id"],["swimming_sessions","coach_id"],["team_positions","staff_profile_id"]
+    ] as const;
+    for(const [table,column] of nullableRefs){
+      const {error}=await admin.from(table).update({[column]:null}).eq(column,targetId);
+      if(error) return json({error:"The account could not be safely detached from its historical records."},500);
+    }
+    const {error:subscriptionError}=await admin.from("push_subscriptions").delete().eq("user_id",targetId);
+    if(subscriptionError) return json({error:"The account's device notifications could not be removed."},500);
+
     const {error:deleteError}=await admin.auth.admin.deleteUser(targetId,false);
     if(deleteError) return json({error:"The staff account could not be permanently deleted."},500);
     return json({ok:true,id:targetId,deleted:true});
