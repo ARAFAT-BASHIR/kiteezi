@@ -41,7 +41,7 @@ const setHTML=(s,v)=>{const el=$(s);if(el)el.innerHTML=v;};
 const setText=(s,v)=>{const el=$(s);if(el)el.textContent=v;};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>new Intl.NumberFormat('en-UG').format(Number(v)||0);
-function humanAdminError(error,fallback='We could not complete that action right now. Please try again.'){const m=String(error?.message??error??'').trim();if(!m)return fallback;if(/(?:supabase|postgrest|pgrst|postgres|sql|schema|relation|column|constraint|permission denied|function .* does not exist|does not exist|http\s*\d{3}|\b(?:3f000|42883|42501|235\d{3})\b|fetch failed|network error|unexpected .* response|syntax error|jwt)/i.test(m)||/^\s*[\[{].*[\]}]\s*$/.test(m))return fallback;return m;}
+function humanAdminError(error,fallback='We could not complete that action right now. Please try again.'){const m=String(error?.message??error??'').trim();if(!m||m==='[object Object]')return fallback;if(/(?:supabase|postgrest|pgrst|postgres|sql|schema|relation|column|constraint|permission denied|function .* does not exist|does not exist|http\s*\d{3}|\b(?:3f000|42883|42501|235\d{3})\b|fetch failed|network error|unexpected .* response|syntax error|jwt)/i.test(m)||/^\s*[\[{].*[\]}]\s*$/.test(m))return fallback;return m;}
 async function api(path,opt={},token=session?.access_token||KEY){
   const request=async tk=>{
     const h={apikey:KEY,Authorization:'Bearer '+tk,'Content-Type':'application/json',...(opt.headers||{})};
