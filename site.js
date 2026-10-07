@@ -24,7 +24,7 @@
 
   function humanError(error, fallback = 'We could not complete that request right now. Please try again.') {
     const message = String(error?.message ?? error ?? '').trim();
-    if (!message) return fallback;
+    if (!message || message === '[object Object]') return fallback;
     const technical = /(?:supabase|postgrest|pgrst|postgres|sql|schema|relation|column|constraint|permission denied|function .* does not exist|does not exist|http\s*\d{3}|\b(?:3f000|42883|42501|235\d{3})\b|fetch failed|network error|unexpected .* response|syntax error|jwt)/i;
     if (technical.test(message) || /^\s*[\[{].*[\]}]\s*$/.test(message)) return fallback;
     return message;
