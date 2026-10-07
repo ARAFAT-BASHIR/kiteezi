@@ -547,6 +547,20 @@
       <div class="container copyright">© <span data-year></span> Kiteezi Recreational Center. All rights reserved.</div>`;
   }
 
+  function ensureBusinessEmailInFooters() {
+    document.querySelectorAll('.footer').forEach(footer => {
+      const contactHeading = Array.from(footer.querySelectorAll('h4')).find(h => String(h.textContent || '').trim().toLowerCase() === 'contact');
+      if (!contactHeading) return;
+      const contactColumn = contactHeading.parentElement;
+      if (!contactColumn || contactColumn.querySelector('[data-site-setting-href="business_email"]')) return;
+      const link = document.createElement('a');
+      link.href = '#';
+      link.dataset.siteSettingHref = 'business_email';
+      link.textContent = 'Business email';
+      contactColumn.appendChild(link);
+    });
+  }
+
   function initMobileNavigation() {
     const button =
       $('[data-mobile]');
@@ -642,6 +656,7 @@
     renderHomeMenu();
     initMobileNavigation();
     ensureSharedFooter();
+    ensureBusinessEmailInFooters();
     initSiteYear();
     initInquiryAccess();
     preventDeadHashLinks();
