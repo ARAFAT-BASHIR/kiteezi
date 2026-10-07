@@ -592,6 +592,43 @@ async function loadAccountingView(view,force=false){
   if(!force&&loadedTabs.has(key))return;
   await fn();loadedTabs.add(key);
 }
+const LOW_INVENTORY_THRESHOLD=5;
+function dashboardInventoryScopes(){
+  const role=String(profile?.role||'').toLowerCase();
+  const managementRoles=['owner','manager','general_manager','ceo','cfo','finance_manager','reception_manager','operations_manager','supervisor'];
+  if(managementRoles.includes(role))return null;
+  if(role==='barista'||hasPermission('inventory.bar'))return ['bar'];
+  if(role==='head_chef'||role==='chef')return ['kitchen'];
+  if(role==='waitstaff'||role==='server'||role==='waiter'||hasPermission('inventory.service'))return ['service'];
+  if(role==='cleaner'||role==='cleaning'||hasPermission('inventory.cleaning'))return ['cleaning'];
+  if(role==='swimming_coach'||role==='head_swimming_coach'||hasPermission('inventory.swimming'))return ['swimming'];
+  if(hasPermission('inventory.all')||hasPermission('inventory.view')||hasPermission('inventory.operational'))return ['bar','kitchen','service','cleaning','swimming'];
+  return [];
+}
+function dashboardInventoryScopeLabel(scopes){
+  if(scopes===null)return 'All departments';
+  if(!scopes?.length)return 'No department inventory assigned';
+  return scopes.map(x=>String(x).replace(/_/g,' ').replace(/\b\w/g,m=>m.toUpperCase())).join(' · ');
+}
+async function loadDashboard(){
+  const d=today();
+  const [b,o,stock]=await Promise.all([
+    api('/rest/v1/bookings?select=id,status&booking_date=eq.'+d),
+    api('/rest/v1/orders?select=id,status&status=not.eq.completed&status=not.eq.cancelled'),
+    api('/rest/v1/inventory_stock?select=id,name,unit,category,current_stock,inventory_scope,station_name&active=eq.true')
+  ]);
+  const scopes=dashboardInventoryScopes();
+  const visibleStock=Array.isArray(stock)?stock.filter(x=>scopes===null||scopes.includes(String(x.inventory_scope||'').toLowerCase())):[];
+  const lowStock=visibleStock.filter(x=>Number(x.current_stock||0)<LOW_INVENTORY_THRESHOLD);
+  setText('#mBookings',b.length);setText('#mPending',b.filter(x=>x.status==='pending').length);setText('#mOrders',o.length);setText('#mLow',lowStock.length);
+  setText('#lowStockScopeLabel',dashboardInventoryScopeLabel(scopes)+' · Low means below '+LOW_INVENTORY_THRESHOLD+' usable units');
+  setHTML('#lowStockList',lowStock.length
+    ? '<div class="table-scroll"><table><thead><tr><th>Item</th><th>Available</th><th>Unit</th><th>Area</th></tr></thead><tbody>'+
+      lowStock.sort((a,b)=>Number(a.current_stock||0)-Number(b.current_stock||0)).map(x=>'<tr><td>'+esc(x.name)+'</td><td><strong>'+esc(Number(x.current_stock||0))+'</strong></td><td>'+esc(x.unit||'usage')+'</td><td>'+esc(x.inventory_scope||x.station_name||'Unassigned')+'</td></tr>').join('')+
+      '</tbody></table></div>'
+    : '<div class="state">No low inventory in your assigned area.</div>');
+  setText('#todayOps','Bookings '+b.length+' · Open orders '+o.length+' · Low inventory '+lowStock.length);
+}
 const TAB_LOADERS={
   dashboard:loadDashboard,bookings:loadBookings,restaurant:loadOrders,inventory:loadInventory,menu:loadMenu,
   services:loadServices,inquiries:loadInquiries,swimming_timetable:loadSwimmingTimetable,
