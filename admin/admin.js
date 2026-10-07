@@ -34,7 +34,7 @@ const TAB_FALLBACK_PERMISSIONS={
   accounting:['reports.financial','reports.view']
 };
 const hasPermission=code=>profile?.role==='owner'||permissions.has(code);
-const canSeeTab=name=>hasPermission(TAB_PERMISSIONS[name])||(TAB_FALLBACK_PERMISSIONS[name]||[]).some(hasPermission);
+const canSeeTab=name=>name==='settings' ? Boolean(profile?.active) : hasPermission(TAB_PERMISSIONS[name])||(TAB_FALLBACK_PERMISSIONS[name]||[]).some(hasPermission);
 
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const setHTML=(s,v)=>{const el=$(s);if(el)el.innerHTML=v;};
@@ -193,7 +193,7 @@ function applyRoleNavigation(){
     ['service_tally','Service Tally',['service_logs.create']],
     ['settings','Settings',['site_settings.manage']]
   ];
-  const visibleIds=new Set(modules.filter(([,label,needed])=>needed.length?needed.some(hasPermission):false).map(([id])=>id));if(profile?.role==='owner')visibleIds.add('customers');
+  const visibleIds=new Set(modules.filter(([,label,needed])=>needed.length?needed.some(hasPermission):false).map(([id])=>id));if(profile?.active)visibleIds.add('settings');if(profile?.role==='owner')visibleIds.add('customers');
   if(nav){
     const groups=[
       ['OPERATIONS','operations',[['restaurant','POS / Orders'],['bookings','Bookings'],['services','Sports & Services'],['swimming_timetable','Swimming Timetable'],['swimming_sessions','Swimming Sessions'],['tasks','Grounds / Tasks'],['inquiries','Customer Inquiries']]],
@@ -231,6 +231,11 @@ function applyRoleNavigation(){
     if(!allowed)sec.classList.remove('active');
   });
 
+  const canManageBusinessSettings=hasPermission('site_settings.manage');
+  document.querySelectorAll('.business-settings-only').forEach(el=>{el.hidden=!canManageBusinessSettings;});
+  const refreshSettings=$('#refreshSettings'); if(refreshSettings)refreshSettings.hidden=!canManageBusinessSettings;
+  const saveSettingsButton=$('#saveSettings'); if(saveSettingsButton)saveSettingsButton.hidden=!canManageBusinessSettings;
+  const settingsHeader=$('#settingsBusinessHeader'); if(settingsHeader)settingsHeader.hidden=!canManageBusinessSettings;
   const staffHelp=$('#staffHelp'); if(staffHelp&&!hasPermission('staff.manage'))staffHelp.textContent='Staff accounts are managed by the owner or authorized managers.';
   const newMenu=$('#newMenu'); if(newMenu)newMenu.hidden=!hasPermission('menu.manage');
   const newReq=$('#newRequisition'); if(newReq)newReq.hidden=!hasPermission('requisitions.create');
@@ -1402,6 +1407,7 @@ function settingLabel(key){
     .replace(/\b\w/g,m=>m.toUpperCase());
 }
 async function loadSettings(){
+  if(!hasPermission('site_settings.manage')) return;
   const rows=await api('/rest/v1/site_settings?select=key,value&order=key.asc');
   const r=Array.isArray(rows)?rows:[];
   const known=new Set(Array.from(document.querySelectorAll('[data-set]')).map(x=>x.dataset.set).filter(Boolean));
