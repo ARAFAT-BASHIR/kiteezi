@@ -386,8 +386,6 @@
           <div class="notice">
 
             Your order will be sent to Kiteezi for processing.
-            The prices are taken directly from the Kiteezi menu
-            database when the order is submitted.
 
           </div>
 
@@ -641,24 +639,43 @@
         SUPABASE_URL + '/rest/v1/menu_items?select=id,name,in_stock,price,price_on_request&id=in.(' + params + ')',
         { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' } }
       );
-      const rows = response.ok ? await response.json() : [];
+
+      if (!response.ok) {
+        throw new Error('availability check failed');
+      }
+
+      const rows = await response.json();
       const byId = new Map((Array.isArray(rows) ? rows : []).map(x => [String(x.id), x]));
       const unavailable = cart.filter(item => {
         const row = byId.get(String(item.id));
         return !row || row.in_stock !== true || row.price_on_request === true || Number(row.price || 0) <= 0;
       });
+
       if (unavailable.length) {
         availabilityBox.hidden = false;
-        availabilityBox.innerHTML = '<strong>Action required before submission.</strong><br>' +
-          unavailable.map(x => escapeHtml(x.name) + ' is no longer available at the current online price. Please remove or adjust it yourself.').join('<br>');
+        availabilityBox.innerHTML =
+          '<strong>Some items need your attention.</strong><br>' +
+          unavailable.map(x => {
+            const row = byId.get(String(x.id));
+            if (!row) {
+              return escapeHtml(x.name) + ' is no longer available on the menu.';
+            }
+            if (row.in_stock !== true) {
+              return escapeHtml(x.name) + ' is currently unavailable.';
+            }
+            return escapeHtml(x.name) + ' cannot be ordered online right now.';
+          }).join('<br>');
+
         submitButton.disabled = true;
         return false;
       }
+
       availabilityBox.hidden = true;
       return true;
     } catch (error) {
       availabilityBox.hidden = false;
-      availabilityBox.textContent = 'We could not verify the current availability of your cart. Please try again.';
+      availabilityBox.textContent =
+        'We’re having trouble checking whether your selected items are still available. Please refresh the page and try again.';
       submitButton.disabled = true;
       return false;
     }
@@ -902,7 +919,7 @@
     }
 
     if (!(await validateCartAvailability())) {
-      throw new Error('One or more cart items need your attention before the order can be submitted.');
+      throw new Error('Please review the availability message above before placing your order.');
     }
 
 
