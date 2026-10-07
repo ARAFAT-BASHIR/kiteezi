@@ -998,3 +998,12 @@ body.admin .nav-group[hidden]{display:none!important}
   margin-top:0!important;
   padding-top:0!important;
 }
+
+
+/* === Password visibility toggle === */
+.password-field{position:relative;display:block;width:100%}
+.password-field>input{width:100%;padding-right:48px!important}
+.password-toggle{position:absolute!important;right:8px;top:50%;transform:translateY(-50%);display:inline-flex!important;align-items:center!important;justify-content:center!important;width:34px!important;height:34px!important;min-width:34px!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important;color:#53635b!important;border-radius:8px!important;font-size:18px!important;line-height:1!important;cursor:pointer!important;box-shadow:none!important}
+.password-toggle:hover,.password-toggle:focus-visible{background:#edf4ef!important;color:#1b4332!important;outline:none!important}
+.password-toggle.is-visible{color:#1b4332!important}
+.password-toggle:focus-visible{outline:2px solid #2d6a4f!important;outline-offset:1px!important}
