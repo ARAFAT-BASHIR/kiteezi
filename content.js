@@ -21,7 +21,17 @@
     'Content-Type': 'application/json'
   };
 
+  const SETTINGS_CACHE_KEY = 'kiteezi_public_settings_v1';
+  const SETTINGS_CACHE_TTL = 60000;
+
   async function getSettings() {
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(SETTINGS_CACHE_KEY) || 'null');
+      if (cached && Number(cached.savedAt) + SETTINGS_CACHE_TTL > Date.now() && cached.value && typeof cached.value === 'object') {
+        return cached.value;
+      }
+    } catch {}
+
     const response = await fetch(
       url + '/rest/v1/site_settings?select=key,value',
       {
@@ -37,13 +47,21 @@
     }
 
     const rows = await response.json();
-
-    return Object.fromEntries(
+    const value = Object.fromEntries(
       (Array.isArray(rows) ? rows : []).map(row => [
         String(row.key),
         row.value ?? ''
       ])
     );
+
+    try {
+      sessionStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify({
+        savedAt: Date.now(),
+        value
+      }));
+    } catch {}
+
+    return value;
   }
 
   function cleanPhone(value) {
@@ -472,17 +490,45 @@
     getSettings,
 
     refresh: async function () {
-      const settings = await getSettings();
+      /*
+        Start independent reads together. Only load page-specific data when
+        the current page actually has elements that use it.
+      */
+      const needsTeam = !!document.querySelector('#public-team-positions');
+      const needsServices = !!document.querySelector('[data-db-service-price]');
+      const needsMedia = !!document.querySelector('[data-media-index], [data-media-hero]');
+      const needsCms = !!document.querySelector('.hero, [data-cms-field], meta[name="description"]');
+      const needsSocial = !!document.querySelector('[data-social], [data-social-links]');
 
-      window.KiteeziContent.settings =
-        settings;
+      const settingsPromise = getSettings();
+      const teamPromise = needsTeam
+        ? applyTeamPositions().catch(error => console.warn('Team positions unavailable:', error))
+        : Promise.resolve();
+      const servicesPromise = needsServices
+        ? applyServicePrices().catch(error => console.warn('Service prices unavailable:', error))
+        : Promise.resolve();
+      const mediaPromise = needsMedia
+        ? applyMedia().catch(error => console.warn('Page media unavailable:', error))
+        : Promise.resolve();
+      const cmsPromise = needsCms
+        ? applyCmsPage().catch(error => console.warn('Page content unavailable:', error))
+        : Promise.resolve();
+      const socialPromise = needsSocial
+        ? applySocialLinks().catch(error => console.warn('Social links unavailable:', error))
+        : Promise.resolve();
 
+      const settings = await settingsPromise;
+      window.KiteeziContent.settings = settings;
       applySettings(settings);
-      await applyTeamPositions().catch(error => console.warn('Team positions unavailable:', error));
-      applyServicePrices();
-      await applyMedia();
-      await applyCmsPage();
-      await applySocialLinks();
+
+      await Promise.all([
+        teamPromise,
+        servicesPromise,
+        mediaPromise,
+        cmsPromise,
+        socialPromise
+      ]);
+
       return settings;
     },
 
