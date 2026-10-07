@@ -25,6 +25,11 @@ Deno.serve(async(req)=>{
   if(action==="restore"){
     const {error:unbanError}=await admin.auth.admin.updateUserById(targetId,{ban_duration:"none"});
     if(unbanError) return json({error:"The login could not be re-enabled."},500);
+    // Verify the Auth ban was actually lifted before reporting success.
+    const {data:restoredAuth,error:verifyError}=await admin.auth.admin.getUserById(targetId);
+    if(verifyError || restoredAuth?.user?.banned_until){
+      return json({error:"The login is still banned in Auth. Please try Enable login again."},500);
+    }
     const {error:profileError}=await admin.from("profiles").update({active:true}).eq("id",targetId);
     if(profileError){
       await admin.auth.admin.updateUserById(targetId,{ban_duration:"876000h"}).catch(()=>{});
