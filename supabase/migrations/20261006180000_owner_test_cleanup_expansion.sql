@@ -1,6 +1,6 @@
 -- Owner-only test-data cleanup expansion.
 -- Intentionally excludes audit logs and master/configuration tables.
-create or replace function public.owner_delete_test_record(p_type text,p_id uuid)
+alter table public.requisitions add column if not exists deleted_at timestamptz; alter table public.requisitions add column if not exists deleted_by uuid references public.profiles(id); alter table public.requisitions add column if not exists deletion_reason text;\n\ncreate or replace function public.owner_delete_test_record(p_type text,p_id uuid)
 returns boolean
 language plpgsql
 security definer
@@ -29,6 +29,7 @@ begin
    delete from email_messages where reference_id=p_id;
    delete from inquiries where id=p_id;
  when 'purchase_order' then
+   delete from purchase_order_items where purchase_order_id=p_id;
    delete from purchase_orders where id=p_id;
  when 'stock_movement' then delete from stock_movements where id=p_id;
  when 'menu_recipe' then delete from menu_item_recipes where id=p_id;
@@ -42,14 +43,13 @@ begin
  when 'notification' then delete from notifications where id=p_id;
  when 'email_message' then delete from email_messages where id=p_id;
  when 'requisition' then
-   if exists(select 1 from approval_audit_trail where requisition_id=p_id) then
-     raise exception 'This requisition has approval history and cannot be permanently deleted. Reject or retain it so the immutable approval audit remains intact.';
-   end if;
+   delete from purchase_order_items where purchase_order_id in (select id from purchase_orders where requisition_id=p_id);
    delete from purchase_orders where requisition_id=p_id;
    delete from requisition_version_items where version_id in (select id from requisition_versions where requisition_id=p_id);
    delete from requisition_versions where requisition_id=p_id;
    delete from requisition_items where requisition_id=p_id;
-   delete from requisitions where id=p_id;
+   update requisitions set deleted_at=coalesce(deleted_at,now()), deleted_by=auth.uid(), deletion_reason='Owner test cleanup; immutable approval audit retained.', notes=null, updated_at=now() where id=p_id;
+   if not found then raise exception 'Requisition not found.'; end if;
  when 'team_position' then
    if exists(select 1 from profiles where position_id=p_id) then
      raise exception 'Position is assigned to a staff profile; remove the assignment first';
