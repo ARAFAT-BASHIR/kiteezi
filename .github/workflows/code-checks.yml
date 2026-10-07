@@ -64,7 +64,7 @@ jobs:
                           continue
                       if ref.startswith(("#", "http://", "https://", "mailto:", "tel:", "data:", "javascript:")):
                           continue
-                      target = (html.parent / ref.split("?", 1)[0].split("#", 1)[0]).resolve()
+                      clean_ref = ref.split("?", 1)[0].split("#", 1)[0]\n                      if clean_ref.startswith("/kiteezi/"):\n                          target = (root / clean_ref.removeprefix("/kiteezi/")).resolve()\n                      elif clean_ref.startswith("/"):\n                          target = (root / clean_ref.lstrip("/")).resolve()\n                      else:\n                          target = (html.parent / clean_ref).resolve()
                       if not target.exists():
                           print(f"Broken local reference: {html} -> {ref}")
                           raise SystemExit(1)
