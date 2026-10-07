@@ -46,7 +46,7 @@ form.addEventListener('submit',async e=>{
   const t=await r.text();if(!r.ok)throw Error(t||'Unable to send inquiry.');
   form.reset();status.textContent='Inquiry sent. Our team will contact you on the number you provided.';
   status.className='status show success';
- }catch(err){status.textContent=err.message||'Unable to send inquiry. Please try again.';status.className='status show error'}
+ }catch(err){status.textContent='We could not send your inquiry right now. Please try again in a moment.';status.className='status show error'}
  finally{btn.disabled=false;btn.textContent='Send Inquiry'}
 });
 </script>
