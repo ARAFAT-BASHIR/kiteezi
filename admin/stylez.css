@@ -1190,3 +1190,11 @@ body.admin #loginView.hide{
 .station-work-panel .station-order-items{display:grid;gap:8px;margin:14px 0;padding:12px;background:#f7f9f7;border-radius:10px}
 .station-work-panel .toolbar{gap:12px;align-items:center}
 .station-work-panel .toolbar-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Logged-out admin login must be a single surface. */
+body.admin:not(.authenticated-shell) #app,
+body.admin:not(.authenticated-shell) #app[hidden],
+body.admin:not(.authenticated-shell) #app.hide{display:none!important}
+body.admin.authenticated-shell #loginView,
+body.admin.authenticated-shell #loginView[hidden],
+body.admin.authenticated-shell #loginView.hide{display:none!important}
