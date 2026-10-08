@@ -31,7 +31,8 @@ const TAB_FALLBACK_PERMISSIONS={
   menu:['menu.manage','menu.view','menu.public_content.manage'],
   inquiries:['inquiries.view','inquiries.catering','inquiries.drinks','inquiries.general','inquiries.swimming'],
   swimming_sessions:['swimming.manage','swimming.assigned'],
-  accounting:['reports.financial','reports.view']
+  accounting:['reports.financial','reports.view'],
+  staff:['staff.manage','roles.manage','staff.view']
 };
 const hasPermission=code=>profile?.role==='owner'||permissions.has(code);
 const canSeeTab=name=>name==='settings' ? Boolean(profile?.active) : (profile?.role==='general_manager' ? true : hasPermission(TAB_PERMISSIONS[name])||(TAB_FALLBACK_PERMISSIONS[name]||[]).some(hasPermission));
