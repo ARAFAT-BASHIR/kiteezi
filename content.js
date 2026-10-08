@@ -64,6 +64,25 @@
     return value;
   }
 
+  // Only allow URLs that are safe for browser navigation/resource loading.
+  // CMS values are data, not executable code. Keep relative paths and web URLs;
+  // reject javascript:, data:, vbscript:, and other active schemes.
+  function safeUrl(value, {allowRelative = true} = {}) {
+    const raw = String(value ?? '').trim();
+    if (!raw) return '';
+    if (allowRelative && /^(?:\/|\.\/|\.\.\/|[^:?#]+(?:[?#].*)?$)/.test(raw) && !/^[a-z][a-z0-9+.-]*:/i.test(raw)) return raw;
+    try {
+      const parsed = new URL(raw, location.href);
+      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') return parsed.href;
+    } catch {}
+    return '';
+  }
+
+  function safeMail(value) {
+    const email = String(value ?? '').trim().replace(/^mailto:/i, '');
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '';
+  }
+
   function cleanPhone(value) {
     return String(value || '').replace(/[^0-9+]/g, '');
   }
@@ -237,13 +256,13 @@
         const value = String(settings[setting] ?? '').trim();
         if (!value) return;
         if (setting.endsWith('_email')) {
-          const email = value.replace(/^mailto:/i, '').trim();
+          const email = safeMail(value);
           element.href = email ? 'mailto:' + email : '#';
         } else if (setting === 'phone_link' || setting === 'phone') {
           const phone = cleanPhone(value);
           element.href = phone ? 'tel:' + phone : '#';
         } else {
-          element.href = value;
+          element.href = safeUrl(value) || '#';
         }
         if (setting === 'location_url') {
           element.target = '_blank';
@@ -255,13 +274,13 @@
       SOCIAL MEDIA
     */
     const socialMap = {
-      facebook: settings.facebook,
-      instagram: settings.instagram,
-      youtube: settings.youtube || (settings.youtube_link || ''),
-      whatsapp: whatsappLink,
-      tiktok: settings.tiktok || (settings.tiktok_link || ''),
-      x: settings.x || (settings.twitter_link || ''),
-      twitter: settings.twitter || settings.x || (settings.twitter_link || '')
+      facebook: safeUrl(settings.facebook, {allowRelative: false}),
+      instagram: safeUrl(settings.instagram, {allowRelative: false}),
+      youtube: safeUrl(settings.youtube || settings.youtube_link, {allowRelative: false}),
+      whatsapp: safeUrl(whatsappLink, {allowRelative: false}),
+      tiktok: safeUrl(settings.tiktok || settings.tiktok_link, {allowRelative: false}),
+      x: safeUrl(settings.x || settings.twitter_link, {allowRelative: false}),
+      twitter: safeUrl(settings.twitter || settings.x || settings.twitter_link, {allowRelative: false})
     };
 
     document.querySelectorAll('[data-social]').forEach(element => {
@@ -323,7 +342,9 @@
         .querySelectorAll('.brand-mark')
         .forEach(element => {
           const img = document.createElement('img');
-          img.src = String(settings.logo_url);
+          const logoUrl = safeUrl(settings.logo_url);
+          if (!logoUrl) return;
+          img.src = logoUrl;
           img.alt = settings.business_name || 'Kiteezi Recreational Center';
           img.loading = 'eager';
           img.decoding = 'async';
@@ -389,7 +410,9 @@
     document.querySelectorAll('[data-media-index]').forEach(element => {
       const row = media[Number(element.dataset.mediaIndex) - 1];
       if (!row) return;
-      element.src = row.url;
+      const mediaUrl = safeUrl(row.url);
+      if (!mediaUrl) return;
+      element.src = mediaUrl;
       if (row.alt_text) element.alt = row.alt_text;
     });
     const hero = document.querySelector('[data-media-hero]');
@@ -546,7 +569,7 @@
       }
 
       element.hidden = false;
-      element.href = String(row.url);
+      element.href = safeUrl(row.url, {allowRelative: false}) || '#';
       element.target = '_blank';
       element.rel = 'noopener noreferrer';
       element.setAttribute('aria-label', row.label || requested);
@@ -557,7 +580,7 @@
     document.querySelectorAll('[data-social-links]').forEach(container => {
       container.innerHTML = (Array.isArray(rows) ? rows : []).map(row => {
         const label = String(row.label || row.platform || '');
-        const href = String(row.url || '').replace(/"/g, '&quot;');
+        const href = (safeUrl(row.url, {allowRelative: false}) || '#').replace(/"/g, '&quot;');
         return '<a class="social-link" href="' + href + '" target="_blank" rel="noopener noreferrer" aria-label="' +
           label.replace(/"/g, '&quot;') + '" title="' + label.replace(/"/g, '&quot;') +
           '"><i class="' + socialIcon(row.platform) + '" aria-hidden="true"></i></a>';
