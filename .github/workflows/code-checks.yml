@@ -25,6 +25,22 @@ jobs:
             node --check "$file"
           done <<< "$files"
 
+      - name: Check Supabase Edge Functions
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Type-check Edge Functions
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=$(find supabase/functions -type f -name "*.ts" | sort)
+          test -n "$files"
+          while IFS= read -r file; do
+            echo "Checking $file"
+            deno check "$file"
+          done <<< "$files"
+
       - name: Check public client security invariants
         shell: bash
         run: |
