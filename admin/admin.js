@@ -1064,12 +1064,28 @@ async function changeStationOrderStatus(orderId,stationId,status){
 
 function setOrderMainView(view){
   const key=String(view||'new');
-  const create=$('#orderCreatePanel'), manage=$('#orderManagementPanel');
+  const create=$('#orderCreatePanel'), manage=$('#orderManagementPanel'), station=$('#stationWorkPanel');
+  const stationRole=!!stationNameForRole();
   if(!create||!manage)return;
+  if(stationRole){
+    create.hidden=true;
+    manage.hidden=true;
+    if(station)station.hidden=key!=='station';
+    $$('#ordersMainNav [data-order-main]').forEach(b=>{
+      b.hidden=b.dataset.orderMain!=='station';
+      b.classList.toggle('active',b.dataset.orderMain===key);
+    });
+    if(key==='station')loadStationOrders();
+    return;
+  }
+  if(station)station.hidden=true;
   create.hidden=key!=='new';
   manage.hidden=key==='new';
   if(key!=='new') setOrderView(key==='status'?'status':key==='items'?'items':'orders');
-  $('#ordersMainNav [data-order-main]').forEach(b=>b.classList.toggle('active',b.dataset.orderMain===key));
+  $$('#ordersMainNav [data-order-main]').forEach(b=>{
+    b.hidden=false;
+    b.classList.toggle('active',b.dataset.orderMain===key);
+  });
 }
 function setOrderView(view){
   const orders=$('#ordersTable'),items=$('#orderItemsTable');
