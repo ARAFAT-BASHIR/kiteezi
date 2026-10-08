@@ -313,7 +313,7 @@ function menuImageFor(item){
   return MENU_IMAGE_MAP.default;
 }
 
-function renderMenuCatalog() {
+async function renderMenuCatalog() {
     const target = $('#menu-catalog');
     if (!target) return;
     try {
