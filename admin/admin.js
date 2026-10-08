@@ -1016,6 +1016,52 @@ async function posCreateUnpaidOrder(){
   }catch(err){posSetStatus(humanAdminError(err,'We could not save this order.'),true);msg(err)}
   finally{if(submit)submit.disabled=false}
 }
+
+function stationNameForRole(){
+  if(profile?.role==='chef'||profile?.role==='head_chef') return 'Kitchen';
+  if(profile?.role==='barista') return 'Barista';
+  return null;
+}
+function stationStatusLabel(s){
+  return ({waiting:'Waiting',accepted:'Accepted',in_progress:'In Progress',complete:'Completed',cancelled:'Cancelled'}[String(s||'').toLowerCase()]||String(s||''));
+}
+async function loadStationOrders(){
+  const station=stationNameForRole();
+  const box=$('#stationOrdersTable');
+  if(!station||!box)return [];
+  $('#stationWorkTitle').textContent=station+' Orders';
+  try{
+    const rows=await api('/rest/v1/rpc/get_station_order_details',{method:'POST',body:JSON.stringify({p_station:station})});
+    const safe=Array.isArray(rows)?rows:[];
+    if(!safe.length){box.innerHTML='<div class="state">No orders currently assigned to '+esc(station)+'.</div>';return safe;}
+    box.innerHTML=safe.map(r=>{
+      const status=String(r.station_status||'waiting').toLowerCase();
+      const items=Array.isArray(r.items)?r.items:[];
+      const buttons=[];
+      if(status==='waiting') buttons.push('<button class="btn btn-dark" data-station-action="accepted" data-order-id="'+esc(r.order_id)+'" data-station-id="'+esc(r.station_id)+'">Accept</button>');
+      if(status==='accepted') buttons.push('<button class="btn btn-dark" data-station-action="in_progress" data-order-id="'+esc(r.order_id)+'" data-station-id="'+esc(r.station_id)+'">Start preparation</button>');
+      if(status==='in_progress') buttons.push('<button class="btn btn-dark" data-station-action="complete" data-order-id="'+esc(r.order_id)+'" data-station-id="'+esc(r.station_id)+'">Mark completed</button>');
+      return '<article class="station-order-card">'+
+        '<div class="toolbar"><div><strong>Order #'+esc(String(r.order_id).slice(0,8).toUpperCase())+'</strong><div class="muted">'+esc(r.customer_name||'Customer')+'</div></div><span class="pill">'+esc(stationStatusLabel(status))+'</span></div>'+
+        '<div class="station-order-items">'+(items.length?items.map(x=>'<div><strong>'+esc(x.qty)+' × '+esc(x.name)+'</strong>'+(x.notes?'<span class="muted"> — '+esc(x.notes)+'</span>':'')+'</div>').join(''):'<div class="muted">No items assigned.</div>')+'</div>'+
+        '<div class="toolbar"><span class="muted">Whole order: '+esc(r.order_status||'')+'</span><div class="toolbar-actions">'+buttons.join('')+'</div></div>'+
+      '</article>';
+    }).join('');
+    return safe;
+  }catch(e){
+    box.innerHTML='<div class="state danger">'+esc(humanAdminError(e,'Station orders could not be loaded.'))+'</div>';
+    return [];
+  }
+}
+async function changeStationOrderStatus(orderId,stationId,status){
+  try{
+    await api('/rest/v1/rpc/set_order_station_status',{method:'POST',body:JSON.stringify({
+      p_order_id:orderId,p_station_id:stationId,p_status:status,p_reason:null
+    })});
+    await loadStationOrders();
+  }catch(e){msg(e);}
+}
+
 function setOrderMainView(view){
   const key=String(view||'new');
   const create=$('#orderCreatePanel'), manage=$('#orderManagementPanel');
@@ -1037,6 +1083,21 @@ function setOrderView(view){
 }
 function setupOrderViews(){
   const main=$('#ordersMainNav');
+  const stationRefresh=$('#refreshStationOrders');
+  if(stationRefresh&&!stationRefresh.dataset.bound){
+    stationRefresh.dataset.bound='1';
+    stationRefresh.addEventListener('click',()=>loadStationOrders());
+  }
+  const stationBox=$('#stationOrdersTable');
+  if(stationBox&&!stationBox.dataset.bound){
+    stationBox.dataset.bound='1';
+    stationBox.addEventListener('click',e=>{
+      const b=e.target.closest('[data-station-action]');
+      if(!b)return;
+      b.disabled=true;
+      changeStationOrderStatus(b.dataset.orderId,b.dataset.stationId,b.dataset.stationAction);
+    });
+  }
   if(main&&!main.dataset.bound){
     main.dataset.bound='1';
     main.addEventListener('click',e=>{
