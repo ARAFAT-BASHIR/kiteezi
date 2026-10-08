@@ -304,17 +304,17 @@
     const businessEmail = String(settings.business_email || '').trim();
     document.querySelectorAll('[data-site-setting="information_email"]').forEach(element => {
       element.textContent = infoEmail;
-      if (element.matches('a')) element.href = infoEmail ? 'mailto:' + infoEmail : '#';
+      if (element.matches('a')) { const email = safeMail(infoEmail); element.href = email ? 'mailto:' + email : '#'; }
       element.hidden = !infoEmail;
     });
     document.querySelectorAll('[data-site-setting="bookings_email"]').forEach(element => {
       element.textContent = bookingsEmail;
-      if (element.matches('a')) element.href = bookingsEmail ? 'mailto:' + bookingsEmail : '#';
+      if (element.matches('a')) { const email = safeMail(bookingsEmail); element.href = email ? 'mailto:' + email : '#'; }
       element.hidden = !bookingsEmail;
     });
     document.querySelectorAll('[data-site-setting="business_email"]').forEach(element => {
       element.textContent = businessEmail;
-      if (element.matches('a')) element.href = businessEmail ? 'mailto:' + businessEmail : '#';
+      if (element.matches('a')) { const email = safeMail(businessEmail); element.href = email ? 'mailto:' + email : '#'; }
       element.hidden = !businessEmail;
     });
 
@@ -417,7 +417,8 @@
     });
     const hero = document.querySelector('[data-media-hero]');
     if (hero && media[0]) {
-      hero.style.backgroundImage = 'linear-gradient(rgba(20,35,27,.64),rgba(20,35,27,.64)),url("' + media[0].url.replace(/"/g,'&quot;') + '")';
+      const heroUrl = safeUrl(media[0].url);
+      if (heroUrl) hero.style.backgroundImage = 'linear-gradient(rgba(20,35,27,.64),rgba(20,35,27,.64)),url("' + heroUrl.replace(/["\\)]/g, '\\      hero.style.backgroundImage = 'linear-gradient(rgba(20,35,27,.64),rgba(20,35,27,.64)),url("' + media[0].url.replace(/"/g,'&quot;') + '")';') + '")';
     }
   }
 
@@ -466,7 +467,7 @@
     const name = String(row.person_name || 'Kiteezi team member');
     const role = String(row.position || '');
     const department = String(row.department || '');
-    const image = String(row.public_avatar_url || '').trim();
+    const image = safeUrl(row.public_avatar_url) || '';
 
     title.textContent = name;
     position.textContent = [department, role].filter(Boolean).join(' • ');
@@ -490,7 +491,7 @@
       container.innerHTML = rows.map((row, i) => {
         const name = escapeHtml(row.person_name || 'Kiteezi team member');
         const role = escapeHtml(row.position || '');
-        const image = String(row.public_avatar_url || '').trim();
+        const image = safeUrl(row.public_avatar_url) || '';
         const photo = image
           ? '<img class="team-card-photo" src="' + escapeHtml(image) + '" alt="' + name + '" loading="lazy">'
           : '<div class="team-card-placeholder">' + icons[i % icons.length] + '</div>';
