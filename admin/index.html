@@ -14,6 +14,7 @@
       <button type="button" data-order-main="orders">Orders</button>
       <button type="button" data-order-main="status">Order &amp; Station Status</button>
       <button type="button" data-order-main="items">Order Items</button>
+      <button type="button" data-order-main="station" id="stationOrdersNav">Station Orders</button>
     </div>
   </div>
 </div>
@@ -84,6 +85,16 @@
 <div id="orderStatusTable" class="state order-view-panel" hidden>Station status is shown in the Orders table. Select a station-focused view.</div>
 <div id="orderItemsTable" class="state order-view-panel" hidden>Select an order.</div>
 </div>
+</div>
+<div id="stationWorkPanel" class="panel station-work-panel" hidden>
+  <div class="toolbar">
+    <div>
+      <h2 id="stationWorkTitle">Station Orders</h2>
+      <p class="muted">Accept incoming work, start preparation, and mark your station's work complete. You cannot confirm or reject the whole order.</p>
+    </div>
+    <button id="refreshStationOrders" class="btn btn-dark" type="button">Refresh</button>
+  </div>
+  <div id="stationOrdersTable" class="state">Loading station orders…</div>
 </div>
 </section>
 <section id="inventory" class="tab">
