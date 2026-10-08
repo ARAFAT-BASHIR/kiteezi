@@ -94,3 +94,27 @@ jobs:
 
           print("HTML inline scripts and local references passed.")
           PY
+
+      - name: Check admin startup DOM contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          html = Path("admin/index.html").read_text(encoding="utf-8")
+          js = Path("admin/admin.js").read_text(encoding="utf-8")
+          ids = set(re.findall(r'\\bid\\s*=\\s*["\\']([^"\\']+)["\\']', html, re.I))
+          marker = "// admin-login.js owns the login submit handler."
+          if marker not in js:
+              raise SystemExit("Admin startup binding marker is missing.")
+          block = js.split(marker, 1)[1]
+          block = block.split("setupPos();restore();", 1)[0]
+          refs = set(re.findall(r"\\$\\(['\"]#([A-Za-z][\\w-]*)['\"]\\)\\.(?:onclick|oninput|onchange|onsubmit|addEventListener)", block))
+          missing = sorted(x for x in refs if x not in ids)
+          if missing:
+              print("Admin startup references missing DOM ids:", ", ".join(missing))
+              raise SystemExit(1)
+          print(f"Admin startup DOM contract passed: {len(refs)} bound ids verified.")
+          PY
