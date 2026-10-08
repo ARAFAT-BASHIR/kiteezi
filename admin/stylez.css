@@ -1174,3 +1174,14 @@ body.admin .nav-group[hidden]{display:none!important}
 @media(max-width:1100px){.pos-layout{grid-template-columns:minmax(0,1fr) 340px}.pos-products{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:800px){.pos-header{display:block}.pos-toolbar-actions{margin-top:10px}.pos-layout{grid-template-columns:1fr}.pos-cart{position:static}.pos-filter-row{grid-template-columns:1fr}.pos-category-tabs{order:2}.pos-search{order:1}}
 @media(max-width:520px){.pos-products{grid-template-columns:1fr 1fr}.pos-product-media{height:105px}.pos-payment-grid{grid-template-columns:1fr}.pos-cart-line{grid-template-columns:42px minmax(0,1fr) auto}.pos-cart-thumb{width:42px;height:42px}}
+
+/* === FINAL AUTH VISIBILITY OVERRIDE === */
+/* The authenticated shell has strong display rules for the mobile/desktop
+   workspace. Keep those rules from overriding the native hidden state while
+   the user is logged out, so the login page is a single, clean surface. */
+body.admin #app[hidden],
+body.admin #app.hide,
+body.admin #loginView[hidden],
+body.admin #loginView.hide{
+  display:none!important;
+}
