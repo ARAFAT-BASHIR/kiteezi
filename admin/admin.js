@@ -869,6 +869,155 @@ async function loadReceptionOrders(){
       }).join('')+'</table>'
     : '<div class="state">No active orders for guest tracking.</div>';
 }
+
+/* === Integrated Orders / POS === */
+const POS_IMAGE_MAP={
+  burger:'https://images.unsplash.com/photo-1767065703793-7012f5fced19?auto=format&fit=crop&w=900&q=80',
+  pizza:'https://images.unsplash.com/photo-1751368647711-2e2ee6d0b7c6?auto=format&fit=crop&w=900&q=80',
+  chicken:'https://images.unsplash.com/photo-1725728286008-6bdec0508a71?auto=format&fit=crop&w=900&q=80',
+  fish:'https://images.unsplash.com/photo-1519233991914-26a44330ccd7?auto=format&fit=crop&w=900&q=80',
+  salad:'https://images.unsplash.com/photo-1568106690134-f2ee2257a9ef?auto=format&fit=crop&w=900&q=80',
+  juice:'https://images.unsplash.com/photo-1617535394182-641e70651cd8?auto=format&fit=crop&w=900&q=80',
+  coffee:'https://images.unsplash.com/photo-1681477508108-6d3164936ac4?auto=format&fit=crop&w=900&q=80',
+  milkshake:'https://images.unsplash.com/photo-1553787499-6f9133860278?auto=format&fit=crop&w=900&q=80',
+  beer:'https://images.unsplash.com/photo-1597822738124-151fb72dcb79?auto=format&fit=crop&w=900&q=80',
+  wine:'https://images.unsplash.com/photo-1610458034932-dc165f29499e?auto=format&fit=crop&w=900&q=80',
+  whiskey:'https://images.unsplash.com/photo-1671713682265-991d47c88b85?auto=format&fit=crop&w=900&q=80',
+  breakfast:'https://images.unsplash.com/photo-1734770205674-d117e4ba7926?auto=format&fit=crop&w=900&q=80',
+  hotpot:'https://www.asiancookingmom.com/wp-content/uploads/2023/01/Hot-Pot-15-of-17-1.jpg',
+  samosa:'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80',
+  default:'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80'
+};
+let posMenuItems=[],posCategories=[],posActiveCategory='',posCartItems=[],posMenuLoaded=false;
+function posMoney(v){return 'UGX '+new Intl.NumberFormat('en-UG').format(Number(v)||0)}
+function posImageFor(item){
+  if(item?.img_url)return item.img_url;
+  const hay=(String(item?.name||'')+' '+String(item?.category||'')).toLowerCase();
+  for(const key of Object.keys(POS_IMAGE_MAP)){if(key!=='default'&&hay.includes(key))return POS_IMAGE_MAP[key]}
+  if(/goat|liver|beef|meat|steak|muchomo|sausage|kebab|chapati|rolex|chips|samosa|katogo|buffet|snack/.test(hay))return POS_IMAGE_MAP.chicken;
+  if(/whisk|spirit|gin|vodka|cream|champagne/.test(hay))return POS_IMAGE_MAP.whiskey;
+  if(/wine/.test(hay))return POS_IMAGE_MAP.wine;
+  if(/beer|lager|stout|cider/.test(hay))return POS_IMAGE_MAP.beer;
+  if(/juice|drink/.test(hay))return POS_IMAGE_MAP.juice;
+  if(/breakfast/.test(hay))return POS_IMAGE_MAP.breakfast;
+  if(/hot pot|hotpot/.test(hay))return POS_IMAGE_MAP.hotpot;
+  return POS_IMAGE_MAP.default;
+}
+function posSetStatus(message,error=false){
+  const el=$('#posStatus');if(!el)return;
+  el.textContent=message||'';el.classList.toggle('show',!!message);el.style.color=error?'#8b2222':'';
+}
+function posCartTotal(){return posCartItems.reduce((s,x)=>s+(Number(x.price)||0)*(Number(x.quantity)||0),0)}
+function posRenderCategories(){
+  const box=$('#posCategoryTabs');if(!box)return;
+  const all=[{id:'',name:'All categories'}].concat(posCategories);
+  box.innerHTML=all.map(c=>'<button type="button" role="tab" class="'+(String(c.id)===String(posActiveCategory)?'active':'')+'" data-pos-category="'+esc(c.id)+'">'+esc(c.name)+'</button>').join('');
+  box.querySelectorAll('[data-pos-category]').forEach(b=>b.onclick=()=>{posActiveCategory=b.dataset.posCategory||'';posRenderCategories();posRenderProducts()});
+}
+function posRenderProducts(){
+  const box=$('#posProducts'),status=$('#posMenuStatus');if(!box||!status)return;
+  const q=String($('#posSearch')?.value||'').trim().toLowerCase();
+  const rows=posMenuItems.filter(x=>{
+    const hay=[x.name,x.description,x.category,x.serving_unit].map(v=>String(v||'').toLowerCase()).join(' ');
+    return (!q||hay.includes(q))&&(!posActiveCategory||String(x.category_id)===String(posActiveCategory));
+  });
+  status.textContent=rows.length?rows.length+' menu item'+(rows.length===1?'':'s')+' available':'No menu items match your search.';
+  box.innerHTML=rows.map(x=>{
+    const image=posImageFor(x),qty=posCartItems.find(i=>i.id===x.id)?.quantity||0;
+    return '<article class="pos-product"><div class="pos-product-media"><img src="'+esc(image)+'" alt="'+esc(x.alt_text||x.name)+'" loading="lazy" onerror="this.src=\''+POS_IMAGE_MAP.default+'\'"></div><div class="pos-product-body"><div class="pos-product-name">'+esc(x.name)+'</div><div class="pos-product-meta">'+esc(x.description||x.serving_unit||x.category||'')+'</div><div class="pos-product-foot"><span class="pos-product-price">'+posMoney(x.price)+'</span><button type="button" class="btn btn-dark pos-add" data-pos-add="'+esc(x.id)+'">'+(qty?'+'+qty:'Add')+'</button></div></div></article>';
+  }).join('');
+  box.querySelectorAll('[data-pos-add]').forEach(b=>b.onclick=()=>posAddItem(b.dataset.posAdd));
+}
+function posRenderCart(){
+  const box=$('#posCart'),count=$('#posCartCount'),sub=$('#posSubtotal'),total=$('#posTotal');
+  const n=posCartItems.reduce((s,x)=>s+Number(x.quantity||0),0),sum=posCartTotal();
+  if(count)count.textContent=n+' item'+(n===1?'':'s');
+  if(sub)sub.textContent=posMoney(sum);
+  if(total)total.textContent=posMoney(sum);
+  if(!box)return;
+  box.innerHTML=posCartItems.length?posCartItems.map(x=>{
+    const image=posImageFor(x);
+    return '<div class="pos-cart-line"><div class="pos-cart-thumb"><img src="'+esc(image)+'" alt="" loading="lazy"></div><div><div class="pos-cart-line-name">'+esc(x.name)+'</div><div class="pos-cart-line-price">'+posMoney(x.price)+' each</div><div class="pos-qty"><button type="button" data-pos-dec="'+x.id+'">−</button><span>'+x.quantity+'</span><button type="button" data-pos-inc="'+x.id+'">+</button></div></div><div><strong>'+posMoney((Number(x.price)||0)*x.quantity)+'</strong><button type="button" class="pos-remove" aria-label="Remove '+esc(x.name)+'" data-pos-remove="'+x.id+'">×</button></div></div>';
+  }).join(''):'<div class="state">No items yet.</div>';
+  box.querySelectorAll('[data-pos-inc]').forEach(b=>b.onclick=()=>posChangeQty(b.dataset.posInc,1));
+  box.querySelectorAll('[data-pos-dec]').forEach(b=>b.onclick=()=>posChangeQty(b.dataset.posDec,-1));
+  box.querySelectorAll('[data-pos-remove]').forEach(b=>b.onclick=()=>posRemoveItem(b.dataset.posRemove));
+  posRenderProducts();
+}
+function posAddItem(id){
+  const item=posMenuItems.find(x=>x.id===id);if(!item)return;
+  const existing=posCartItems.find(x=>x.id===id);
+  if(existing)existing.quantity+=1;else posCartItems.push({...item,quantity:1});
+  posRenderCart();
+}
+function posChangeQty(id,delta){
+  const item=posCartItems.find(x=>x.id===id);if(!item)return;
+  item.quantity=Math.max(0,item.quantity+delta);
+  if(!item.quantity)posRemoveItem(id);else posRenderCart();
+}
+function posRemoveItem(id){posCartItems=posCartItems.filter(x=>x.id!==id);posRenderCart()}
+function posClear(){posCartItems=[];posRenderCart();posSetStatus('')}
+async function loadPosMenu(force=false){
+  const shell=document.querySelector('.pos-shell');if(!shell)return;
+  if(!hasPermission('orders.create')&&!hasPermission('orders.manage')){shell.hidden=true;return}
+  shell.hidden=false;
+  if(posMenuLoaded&&!force)return;
+  try{
+    const [cats,items]=await Promise.all([
+      api('/rest/v1/menu_categories?select=id,name,sort_order&active=eq.true&order=sort_order.asc,name.asc'),
+      api('/rest/v1/menu_items?select=id,name,description,price,price_on_request,in_stock,img_url,alt_text,category_id,serving_unit,menu_categories(name)&in_stock=eq.true&price_on_request=eq.false&order=name.asc')
+    ]);
+    posCategories=Array.isArray(cats)?cats:[];
+    posMenuItems=(Array.isArray(items)?items:[]).map(x=>({...x,category:x.menu_categories?.name||'Other'}));
+    posMenuLoaded=true;posRenderCategories();posRenderProducts();posRenderCart();
+    $('#posMenuStatus').textContent=posMenuItems.length+' menu items available';
+  }catch(e){posMenuLoaded=false;const el=$('#posMenuStatus');if(el)el.textContent='Unable to load the live menu. Please refresh and try again.';msg(e)}
+}
+function posPaymentModal(){
+  if(!posCartItems.length){posSetStatus('Add at least one item before proceeding to payment.',true);return}
+  if(!hasPermission('orders.pay')&&!hasPermission('orders.manage')){
+    posCreateUnpaidOrder().catch(msg);return;
+  }
+  const total=posCartTotal();
+  modal('Payment','<form id="posPaymentForm" class="pos-payment-form"><div class="pos-payment-total"><span>Order total</span><span>'+posMoney(total)+'</span></div><div class="pos-payment-grid"><button type="button" class="pos-payment-choice active" data-pay-method="cash">Cash<small>Pay at counter</small></button><button type="button" class="pos-payment-choice" data-pay-method="mtn_momo">MTN Mobile Money<small>Manual confirmation</small></button><button type="button" class="pos-payment-choice" data-pay-method="airtel_money">Airtel Money<small>Manual confirmation</small></button></div><input type="hidden" name="method" value="cash"><div id="posPaymentFields"></div><div id="posPaymentError"></div><button class="btn btn-dark" type="submit">Complete Payment &amp; Save Order</button><p class="pos-payment-note">Mobile-money payment is recorded after the cashier confirms the transaction. This does not initiate a mobile-money transfer.</p></form>');
+  const form=$('#posPaymentForm'),methodInput=form.querySelector('[name=method]'),fields=$('#posPaymentFields'),error=$('#posPaymentError');
+  const renderFields=()=>{const method=methodInput.value;if(method==='cash')fields.innerHTML='<input name="received" type="number" min="'+total+'" step="1" placeholder="Amount received (UGX)" required><div id="posChange" class="muted"></div>';else fields.innerHTML='<input name="reference" type="text" maxlength="80" placeholder="Transaction/reference number (optional)">';};
+  form.querySelectorAll('[data-pay-method]').forEach(b=>b.onclick=()=>{form.querySelectorAll('[data-pay-method]').forEach(x=>x.classList.remove('active'));b.classList.add('active');methodInput.value=b.dataset.payMethod;renderFields()});
+  renderFields();
+  form.onsubmit=async e=>{
+    e.preventDefault();error.innerHTML='';
+    const fd=new FormData(form),method=String(fd.get('method')),received=Number(fd.get('received')||0);
+    if(method==='cash'&&received<total){error.innerHTML='<div class="pos-payment-error">Amount received must be at least '+posMoney(total)+'.</div>';return}
+    const submit=e.currentTarget.querySelector('button[type=submit]');submit.disabled=true;submit.textContent='Saving…';
+    try{
+      const orderId=await api('/rest/v1/rpc/create_pos_order_v2',{method:'POST',body:JSON.stringify({p_customer_name:$('#posCustomerName')?.value?.trim()||null,p_phone:$('#posPhone')?.value?.trim()||null,p_items:posCartItems.map(x=>({id:x.id,quantity:x.quantity})),p_notes:$('#posNotes')?.value?.trim()||null,p_fulfillment_method:$('#posFulfillment')?.value||'dine_in'})});
+      const reference=method==='cash'?'Cash received '+received+'; change '+(received-total):String(fd.get('reference')||'').trim()||null;
+      await api('/rest/v1/rpc/record_pos_payment',{method:'POST',body:JSON.stringify({p_order_id:orderId,p_payment_method:method,p_reference:reference})});
+      closeModal();posClear();$('#posCustomerName').value='';$('#posPhone').value='';$('#posNotes').value='';
+      posSetStatus('Order #'+String(orderId).slice(0,8).toUpperCase()+' saved and marked paid. It remains open until the authorized order confirmation workflow starts preparation.');
+      await loadOrders();
+    }catch(err){error.innerHTML='<div class="pos-payment-error">'+esc(humanAdminError(err,'We could not complete this POS payment. The order was not marked paid.'))+'</div>';msg(err);submit.disabled=false;submit.textContent='Complete Payment & Save Order'}
+  };
+}
+async function posCreateUnpaidOrder(){
+  const submit=$('#posPay');if(submit)submit.disabled=true;
+  try{
+    const orderId=await api('/rest/v1/rpc/create_pos_order_v2',{method:'POST',body:JSON.stringify({p_customer_name:$('#posCustomerName')?.value?.trim()||null,p_phone:$('#posPhone')?.value?.trim()||null,p_items:posCartItems.map(x=>({id:x.id,quantity:x.quantity})),p_notes:$('#posNotes')?.value?.trim()||null,p_fulfillment_method:$('#posFulfillment')?.value||'dine_in'})});
+    posClear();posSetStatus('Order #'+String(orderId).slice(0,8).toUpperCase()+' saved unpaid. An authorized cashier/manager can record payment and confirmation.');
+    await loadOrders();
+  }catch(err){posSetStatus(humanAdminError(err,'We could not save this order.'),true);msg(err)}
+  finally{if(submit)submit.disabled=false}
+}
+function setupPos(){
+  if(window.__KITEEZI_POS_BOUND__)return;window.__KITEEZI_POS_BOUND__=true;
+  $('#posSearch')?.addEventListener('input',posRenderProducts);
+  $('#posRefreshMenu')?.addEventListener('click',()=>loadPosMenu(true).catch(msg));
+  $('#posClear')?.addEventListener('click',posClear);
+  $('#posPay')?.addEventListener('click',posPaymentModal);
+  $('#posFulfillment')?.addEventListener('change',()=>{const x=$('#posFulfillment');const l=$('#posOrderTypeLabel');if(l)l.textContent=x?.selectedOptions?.[0]?.textContent||'Dine in'});
+  loadPosMenu().catch(msg);
+}
+
 async function loadOrders(){
   if(profile?.role==='reception_manager'){await loadReceptionOrders();return;}
   if(['chef','barista'].includes(profile?.role)){await loadStationOrders();return;}
@@ -1627,4 +1776,4 @@ function closeModal(){$('#modal').classList.remove('open');$('#modalBody').inner
 
 // admin-login.js owns the login submit handler.
 $('#bookingTable').addEventListener('click',handleBookingActionClick);
-$('#logout').onclick=async()=>{const button=$('#logout');if(button)button.disabled=true;try{if(session?.access_token)await api('/auth/v1/logout',{method:'POST'})}catch{}finally{clearAdminSession();session=null;profile=null;location.reload()}};$('#nav').addEventListener('click',e=>{const a=e.target.closest('[data-tab]');if(a){e.preventDefault();history.replaceState(null,'','#'+a.dataset.tab);route(a.dataset.tab)}});window.addEventListener('hashchange',()=>route(location.hash.slice(1)));$('#modalClose').onclick=closeModal;$('#refreshBookings').onclick=loadBookings;$('#refreshOrders').onclick=loadOrders;$('#refreshInventory').onclick=loadInventory;$('#refreshStockRun').onclick=loadDailyStock;$('#setOpeningStock').onclick=setOpeningStock;$('#notificationBell').onclick=toggleNotifications;$('#markNotificationsRead').onclick=markNotificationsRead;$('#countStock').onclick=async()=>{const inv=await api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc'),d=$('#stockRunDate').value||today(),existing=await api('/rest/v1/inventory_daily_counts?select=id,inventory_item_id,physical_quantity&count_date=eq.'+d);modal('Enter physical stock count','<form id="countForm" class="form">'+inv.map(x=>{const e=existing.find(q=>q.inventory_item_id===x.id);return '<label>'+esc(x.name)+' ('+esc(x.unit)+')<input name="'+x.id+'" type="number" step="0.001" min="0" value="'+(e?.physical_quantity??'')+'"></label>'}).join('')+'<button class="btn btn-dark">Save counts</button></form>');$('#countForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);for(const x of inv){const v=f.get(x.id);if(v!==null&&v!==''){const old=existing.find(q=>q.inventory_item_id===x.id),body={inventory_item_id:x.id,count_date:d,physical_quantity:Number(v),counted_by:session.user.id};await api(old?'/rest/v1/inventory_daily_counts?id=eq.'+old.id:'/rest/v1/inventory_daily_counts',{method:old?'PATCH':'POST',body:JSON.stringify(body)})}}closeModal();loadDailyStock()}};$('#refreshPurchases').onclick=loadPurchases;$('#newStockAdjustment').onclick=addStockAdjustment;$('#refreshMenu').onclick=loadMenu;$('#refreshServices').onclick=loadServices;$('#refreshInquiries').onclick=loadInquiries;$('#refreshSwimmingTimetable').onclick=loadSwimmingTimetable;$('#refreshSwimmingSessions').onclick=loadSwimmingSessions;$('#newTask').onclick=()=>editTask();$('#refreshTasks').onclick=loadTasks;$('#newSwimmingSlot').onclick=()=>editSwimmingSlot(null);$('#refreshPages').onclick=loadContent;$('#refreshMedia').onclick=loadContent;$('#refreshAnnouncements').onclick=loadContent;$('#refreshReviews').onclick=loadReviews;$('#refreshCustomers').onclick=loadCustomers;$('#refreshSocial').onclick=loadSocial;$('#newStaff').onclick=addStaff;$('#refreshStaff').onclick=loadStaff;$('#toggleInactiveStaff').onclick=()=>{showInactiveStaff=!showInactiveStaff;$('#toggleInactiveStaff').textContent=showInactiveStaff?'Hide inactive staff':'Show inactive staff';loadStaff().catch(msg)};$('#newTeamPosition').onclick=()=>editTeamPosition();$('#refreshAccounting').onclick=loadAccounting;$('#accountingCashGenerate').onclick=()=>loadAccountingCashReport().catch(msg);document.querySelectorAll('[data-report-export]').forEach(b=>b.onclick=()=>exportAccountingPanel(b.dataset.reportExport));document.querySelectorAll('[data-report-print]').forEach(b=>b.onclick=()=>printAccountingPanel(b.dataset.reportPrint));$('#accountingCashDownload').onclick=downloadAccountingCash;$('#accountingCashPrint').onclick=printAccountingCash;$('#refreshSettings').onclick=loadSettings;$('#enablePushNotifications')?.addEventListener('click',enablePhoneNotifications);$('#disablePushNotifications')?.addEventListener('click',disablePhoneNotifications);$('#sendStaffNotification')?.addEventListener('click',()=>sendStaffNotification().catch(msg));$('#refreshRoles').onclick=loadRolesAndPermissions;$('#accountingSubnav')?.addEventListener('click',e=>{const b=e.target.closest('[data-accounting-view]');if(!b)return;loadAccountingView(b.dataset.accountingView).catch(msg)});$('#saveSettings').onclick=saveSettings;$('#openMyAccountSecurity')?.addEventListener('click',()=>openMyAccountSecurity().catch(msg));$('#newRequisition').onclick=()=>createRequisition();$('#refreshRequisitions').onclick=loadRequisitions;$('#refreshGeneratedPOs').onclick=loadGeneratedPOs;$('#newServiceLog').onclick=()=>newServiceLog();$('#refreshServiceTally').onclick=loadServiceTally;$('#newOrder').onclick=async()=>{const m=await api('/rest/v1/menu_items?select=id,name,price,price_on_request,in_stock&in_stock=eq.true&price_on_request=eq.false&order=name.asc');modal('New POS order','<form id="pos" class="form"><input name="customer" placeholder="Customer name"><input name="phone" placeholder="Phone"><textarea name="notes" placeholder="Notes"></textarea><div id="posItems">'+m.map(x=>'<label style="display:flex;gap:8px;align-items:center"><input type="number" min="0" value="0" data-pos="'+x.id+'" style="width:80px"><span>'+esc(x.name)+' — UGX '+money(x.price)+'</span></label>').join('')+'</div><button class="btn btn-dark">Create order</button></form>');$('#pos').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget),items=[...e.currentTarget.querySelectorAll('[data-pos]')].map(x=>({id:x.dataset.pos,quantity:Number(x.value||0)})).filter(x=>x.quantity>0);if(!items.length)return alert('Select at least one item.');await api('/rest/v1/rpc/create_pos_order',{method:'POST',body:JSON.stringify({p_customer_name:f.get('customer')||null,p_phone:f.get('phone')||null,p_items:items,p_notes:f.get('notes')||null})});closeModal();loadOrders()}};$('#newSocial').onclick=()=>editSocial();$('#newInventoryItem').onclick=()=>editInventory();$('#manageStations').onclick=editStations;$('#inventorySearch').oninput=e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#inventoryTable tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none')};$('#newMenu').onclick=()=>editMenu(); $('#inventorySubnav')?.addEventListener('click',e=>{const b=e.target.closest('[data-inv-tab]');if(!b)return;document.querySelectorAll('#inventorySubnav [data-inv-tab]').forEach(x=>x.classList.toggle('active',x===b));const key=b.dataset.invTab;document.querySelectorAll('[id^="inventory-panel-"]').forEach(x=>x.style.display=x.id==='inventory-panel-'+key?'block':'none');const loaders={items:loadInventory,daily:loadDailyStock,purchases:loadPurchases,movements:loadStockMovements,recipes:loadRecipeMappings};(loaders[key]||loadInventory)().catch(msg)}); document.querySelectorAll('[id^="inventory-panel-"]').forEach(x=>x.style.display=x.id==='inventory-panel-items'?'block':'none');$('#newService').onclick=()=>editService();$('#newSport').onclick=()=>editSport();$('#newMedia').onclick=addMedia;$('#newGalleryMedia').onclick=addGalleryMedia;$('#refreshGallery').onclick=loadGallery;$('#newAnnouncement').onclick=addAnnouncement;restore();
+$('#logout').onclick=async()=>{const button=$('#logout');if(button)button.disabled=true;try{if(session?.access_token)await api('/auth/v1/logout',{method:'POST'})}catch{}finally{clearAdminSession();session=null;profile=null;location.reload()}};$('#nav').addEventListener('click',e=>{const a=e.target.closest('[data-tab]');if(a){e.preventDefault();history.replaceState(null,'','#'+a.dataset.tab);route(a.dataset.tab)}});window.addEventListener('hashchange',()=>route(location.hash.slice(1)));$('#modalClose').onclick=closeModal;$('#refreshBookings').onclick=loadBookings;$('#refreshOrders').onclick=loadOrders;$('#refreshInventory').onclick=loadInventory;$('#refreshStockRun').onclick=loadDailyStock;$('#setOpeningStock').onclick=setOpeningStock;$('#notificationBell').onclick=toggleNotifications;$('#markNotificationsRead').onclick=markNotificationsRead;$('#countStock').onclick=async()=>{const inv=await api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc'),d=$('#stockRunDate').value||today(),existing=await api('/rest/v1/inventory_daily_counts?select=id,inventory_item_id,physical_quantity&count_date=eq.'+d);modal('Enter physical stock count','<form id="countForm" class="form">'+inv.map(x=>{const e=existing.find(q=>q.inventory_item_id===x.id);return '<label>'+esc(x.name)+' ('+esc(x.unit)+')<input name="'+x.id+'" type="number" step="0.001" min="0" value="'+(e?.physical_quantity??'')+'"></label>'}).join('')+'<button class="btn btn-dark">Save counts</button></form>');$('#countForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);for(const x of inv){const v=f.get(x.id);if(v!==null&&v!==''){const old=existing.find(q=>q.inventory_item_id===x.id),body={inventory_item_id:x.id,count_date:d,physical_quantity:Number(v),counted_by:session.user.id};await api(old?'/rest/v1/inventory_daily_counts?id=eq.'+old.id:'/rest/v1/inventory_daily_counts',{method:old?'PATCH':'POST',body:JSON.stringify(body)})}}closeModal();loadDailyStock()}};$('#refreshPurchases').onclick=loadPurchases;$('#newStockAdjustment').onclick=addStockAdjustment;$('#refreshMenu').onclick=loadMenu;$('#refreshServices').onclick=loadServices;$('#refreshInquiries').onclick=loadInquiries;$('#refreshSwimmingTimetable').onclick=loadSwimmingTimetable;$('#refreshSwimmingSessions').onclick=loadSwimmingSessions;$('#newTask').onclick=()=>editTask();$('#refreshTasks').onclick=loadTasks;$('#newSwimmingSlot').onclick=()=>editSwimmingSlot(null);$('#refreshPages').onclick=loadContent;$('#refreshMedia').onclick=loadContent;$('#refreshAnnouncements').onclick=loadContent;$('#refreshReviews').onclick=loadReviews;$('#refreshCustomers').onclick=loadCustomers;$('#refreshSocial').onclick=loadSocial;$('#newStaff').onclick=addStaff;$('#refreshStaff').onclick=loadStaff;$('#toggleInactiveStaff').onclick=()=>{showInactiveStaff=!showInactiveStaff;$('#toggleInactiveStaff').textContent=showInactiveStaff?'Hide inactive staff':'Show inactive staff';loadStaff().catch(msg)};$('#newTeamPosition').onclick=()=>editTeamPosition();$('#refreshAccounting').onclick=loadAccounting;$('#accountingCashGenerate').onclick=()=>loadAccountingCashReport().catch(msg);document.querySelectorAll('[data-report-export]').forEach(b=>b.onclick=()=>exportAccountingPanel(b.dataset.reportExport));document.querySelectorAll('[data-report-print]').forEach(b=>b.onclick=()=>printAccountingPanel(b.dataset.reportPrint));$('#accountingCashDownload').onclick=downloadAccountingCash;$('#accountingCashPrint').onclick=printAccountingCash;$('#refreshSettings').onclick=loadSettings;$('#enablePushNotifications')?.addEventListener('click',enablePhoneNotifications);$('#disablePushNotifications')?.addEventListener('click',disablePhoneNotifications);$('#sendStaffNotification')?.addEventListener('click',()=>sendStaffNotification().catch(msg));$('#refreshRoles').onclick=loadRolesAndPermissions;$('#accountingSubnav')?.addEventListener('click',e=>{const b=e.target.closest('[data-accounting-view]');if(!b)return;loadAccountingView(b.dataset.accountingView).catch(msg)});$('#saveSettings').onclick=saveSettings;$('#openMyAccountSecurity')?.addEventListener('click',()=>openMyAccountSecurity().catch(msg));$('#newRequisition').onclick=()=>createRequisition();$('#refreshRequisitions').onclick=loadRequisitions;$('#refreshGeneratedPOs').onclick=loadGeneratedPOs;$('#newServiceLog').onclick=()=>newServiceLog();$('#refreshServiceTally').onclick=loadServiceTally;$('#newOrder').onclick=()=>{route('restaurant');posClear();setupPos()};$('#newSocial').onclick=()=>editSocial();$('#newInventoryItem').onclick=()=>editInventory();$('#manageStations').onclick=editStations;$('#inventorySearch').oninput=e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#inventoryTable tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none')};$('#newMenu').onclick=()=>editMenu(); $('#inventorySubnav')?.addEventListener('click',e=>{const b=e.target.closest('[data-inv-tab]');if(!b)return;document.querySelectorAll('#inventorySubnav [data-inv-tab]').forEach(x=>x.classList.toggle('active',x===b));const key=b.dataset.invTab;document.querySelectorAll('[id^="inventory-panel-"]').forEach(x=>x.style.display=x.id==='inventory-panel-'+key?'block':'none');const loaders={items:loadInventory,daily:loadDailyStock,purchases:loadPurchases,movements:loadStockMovements,recipes:loadRecipeMappings};(loaders[key]||loadInventory)().catch(msg)}); document.querySelectorAll('[id^="inventory-panel-"]').forEach(x=>x.style.display=x.id==='inventory-panel-items'?'block':'none');$('#newService').onclick=()=>editService();$('#newSport').onclick=()=>editSport();$('#newMedia').onclick=addMedia;$('#newGalleryMedia').onclick=addGalleryMedia;$('#refreshGallery').onclick=loadGallery;$('#newAnnouncement').onclick=addAnnouncement;setupPos();restore();
