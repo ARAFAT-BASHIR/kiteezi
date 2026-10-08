@@ -1016,6 +1016,15 @@ async function posCreateUnpaidOrder(){
   }catch(err){posSetStatus(humanAdminError(err,'We could not save this order.'),true);msg(err)}
   finally{if(submit)submit.disabled=false}
 }
+function setOrderMainView(view){
+  const key=String(view||'new');
+  const create=$('#orderCreatePanel'), manage=$('#orderManagementPanel');
+  if(!create||!manage)return;
+  create.hidden=key!=='new';
+  manage.hidden=key==='new';
+  if(key!=='new') setOrderView(key==='status'?'status':key==='items'?'items':'orders');
+  $('#ordersMainNav [data-order-main]').forEach(b=>b.classList.toggle('active',b.dataset.orderMain===key));
+}
 function setOrderView(view){
   const orders=$('#ordersTable'),items=$('#orderItemsTable');
   if(!orders||!items)return;
@@ -1027,6 +1036,14 @@ function setOrderView(view){
   $('#ordersSubnav [data-order-view]').forEach(b=>b.classList.toggle('active',b.dataset.orderView===key));
 }
 function setupOrderViews(){
+  const main=$('#ordersMainNav');
+  if(main&&!main.dataset.bound){
+    main.dataset.bound='1';
+    main.addEventListener('click',e=>{
+      const b=e.target.closest('[data-order-main]');if(!b)return;
+      setOrderMainView(b.dataset.orderMain);
+    });
+  }
   const sub=$('#ordersSubnav');if(!sub||sub.dataset.bound)return;
   sub.dataset.bound='1';
   sub.addEventListener('click',e=>{
@@ -1040,6 +1057,7 @@ function setupOrderViews(){
     document.head.appendChild(style);
   }
   setOrderView('orders');
+  setOrderMainView('new');
 }
 function setupPos(){
   if(window.__KITEEZI_POS_BOUND__)return;window.__KITEEZI_POS_BOUND__=true;
