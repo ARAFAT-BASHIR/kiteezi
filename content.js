@@ -418,7 +418,12 @@
     const hero = document.querySelector('[data-media-hero]');
     if (hero && media[0]) {
       const heroUrl = safeUrl(media[0].url);
-      if (heroUrl) hero.style.backgroundImage = 'linear-gradient(rgba(20,35,27,.64),rgba(20,35,27,.64)),url("' + heroUrl.replace(/["\\)]/g, '\\      hero.style.backgroundImage = 'linear-gradient(rgba(20,35,27,.64),rgba(20,35,27,.64)),url("' + media[0].url.replace(/"/g,'&quot;') + '")';') + '")';
+      if (heroUrl) {
+        hero.style.backgroundImage =
+          'linear-gradient(rgba(20,35,27,.64),rgba(20,35,27,.64)),url(' +
+          JSON.stringify(heroUrl) +
+          ')';
+      }
     }
   }
 
