@@ -26,7 +26,10 @@ function status(message,kind){
     });
     if(!r.ok)return null;
     const data=await r.json();
-    if(data?.access_token&&data?.user?.id){saveSession(data);return data}
+    if(data?.access_token){
+      const merged={...old,...data,user:data?.user||old.user,refresh_token:data?.refresh_token||old.refresh_token};
+      if(merged?.user?.id){saveSession(merged);return merged}
+    }
     return null;
   }
   async function signIn(e){
