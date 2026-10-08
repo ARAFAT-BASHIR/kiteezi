@@ -352,10 +352,15 @@ async function renderMenuCatalog() {
     const target = $('#menu-catalog');
     if (!target) return;
     try {
-      const [items, pages] = await Promise.all([
-        getMenuItems(),
-        supabaseFetch('/rest/v1/cms_pages?select=title,content&slug=eq.menu&published=eq.true&limit=1')
-      ]);
+      // Menu items are the critical payload. Optional CMS copy must not
+      // prevent the actual menu catalogue from rendering.
+      const items = await getMenuItems();
+      let pages = [];
+      try {
+        pages = await supabaseFetch('/rest/v1/cms_pages?select=title,content&slug=eq.menu&published=eq.true&limit=1');
+      } catch (cmsError) {
+        console.warn('Menu CMS copy unavailable; rendering menu data anyway:', cmsError);
+      }
       const content = pages?.[0]?.content || {};
       if ($('[data-menu-title]')) $('[data-menu-title]').textContent = content.hero_title || pages?.[0]?.title || 'Menu';
       if ($('[data-menu-description]')) $('[data-menu-description]').textContent = content.intro || 'Browse the current Kiteezi menu.';
