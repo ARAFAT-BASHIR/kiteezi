@@ -1134,7 +1134,7 @@ function setupOrderViews(){
     document.head.appendChild(style);
   }
   setOrderView('orders');
-  setOrderMainView('new');
+  setOrderMainView(stationNameForRole()?'station':'new');
 }
 function setupPos(){
   if(window.__KITEEZI_POS_BOUND__)return;window.__KITEEZI_POS_BOUND__=true;
