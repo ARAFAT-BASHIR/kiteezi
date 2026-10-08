@@ -48,7 +48,7 @@
         <div><span>Tax</span><strong>UGX 0</strong></div>
         <div class="pos-total"><span>Total</span><strong id="posTotal">UGX 0</strong></div>
       </div>
-      <button id="posPay" class="btn btn-dark pos-pay" type="button">Proceed to Payment</button>
+      <button id="posPay" class="btn btn-dark pos-pay" type="button">Send Order to Manager</button>
       <div id="posStatus" class="pos-status" role="status" aria-live="polite"></div>
     </aside>
   </div>
@@ -56,18 +56,21 @@
 
 <div class="panel">
   <div class="toolbar">
-    <h2>Order history & station progress</h2>
+    <h2>Orders</h2>
+    <div class="subnav" id="ordersSubnav" role="tablist" aria-label="Order sections">
+      <button type="button" data-order-view="orders" class="active">Orders</button>
+      <button type="button" data-order-view="status">Order &amp; Station Status</button>
+      <button type="button" data-order-view="items">Order Items</button>
+    </div>
     <select id="orderStatusFilter">
       <option value="all">All</option><option value="pending">pending</option><option value="confirmed">confirmed</option>
       <option value="open">open</option><option value="paid">paid</option><option value="completed">completed</option><option value="cancelled">cancelled</option>
     </select>
     <button id="refreshOrders" class="btn btn-dark">Refresh</button>
   </div>
-  <div id="ordersTable" class="state">Ready</div>
-</div>
-<div class="panel">
-  <h2>Selected order items</h2>
-  <div id="orderItemsTable" class="state">Select an order.</div>
+  <div id="ordersTable" class="state order-view-panel">Ready</div>
+<div id="orderStatusTable" class="state order-view-panel" hidden>Station status is shown in the Orders table. Select a station-focused view.</div>
+<div id="orderItemsTable" class="state order-view-panel" hidden>Select an order.</div>
 </div>
 </section>
 <section id="inventory" class="tab">
