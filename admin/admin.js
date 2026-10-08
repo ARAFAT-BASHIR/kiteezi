@@ -120,7 +120,7 @@ async function restore(){
 async function loadAdminLogo(){try{const r=await api('/rest/v1/site_settings?select=value&key=eq.logo_url&limit=1');const v=r?.[0]?.value||'';document.querySelectorAll('.brand-mark').forEach(el=>{if(!v){el.textContent='K';return;}const img=document.createElement('img');img.src=v.startsWith('http')?v:'../'+v.replace(/^\/+/, '');img.alt='Kiteezi Recreational Center';img.loading='eager';el.textContent='';el.appendChild(img);});const p=$('#logoPreview');if(p){p.src=v?(v.startsWith('http')?v:'../'+v.replace(/^\/+/,'')):'';p.hidden=!v;}}catch{}}
 function ensureAssetsTab(){
   if($('#assets'))return;
-  const app=$('#app');if(!app)return;
+  const app=$('.main');if(!app)return;
   const sec=document.createElement('section');sec.id='assets';sec.className='tab';sec.hidden=true;sec.setAttribute('aria-hidden','true');
   sec.innerHTML='<div class="section-head"><div><h2>Assets</h2><p class="muted">Track purchase cost, current value, appreciation, depreciation, availability, damage and loss.</p></div><div class="toolbar"><button class="btn" id="newAsset">Add asset</button><button class="btn" id="exportAssets">Download CSV</button><button class="btn" id="printAssets">Print / Save PDF</button><button class="btn btn-dark" id="refreshAssets">Refresh</button></div></div><div id="assetsSummary" class="report-metrics"></div><div id="assetsTable" class="table-scroll"></div>';
   app.appendChild(sec);
@@ -143,7 +143,7 @@ async function editAsset(id=null){
 }
 function ensureAuditTab(){
   if($('#audit'))return;
-  const app=$('#app');
+  const app=$('.main');
   if(!app)return;
   const sec=document.createElement('section');
   sec.id='audit';sec.className='tab';sec.hidden=true;sec.setAttribute('aria-hidden','true');
