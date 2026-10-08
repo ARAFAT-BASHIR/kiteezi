@@ -25,6 +25,23 @@ jobs:
             node --check "$file"
           done <<< "$files"
 
+      - name: Check public client security invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          client_files=$(find . -type f \( -name "*.js" -o -name "*.html" \) \
+            -not -path "./supabase/functions/*" \
+            -not -path "./node_modules/*" | sort)
+          if grep -nE "SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEY|service_role" $client_files; then
+            echo "Server-only Supabase credentials must never appear in public client files."
+            exit 1
+          fi
+          if grep -nE "element\.href[[:space:]]*=[[:space:]]*(value|row\.url|settings\.)" $client_files; then
+            echo "CMS/database URLs must pass through an explicit URL allowlist before assignment."
+            exit 1
+          fi
+          echo "Public client security invariants passed."
+
       - name: Check inline JavaScript and local HTML references
         shell: bash
         run: |
