@@ -6,7 +6,7 @@
   const C=window.KITEEZI_CONFIG||{};
   const URL=String(C.SUPABASE_URL||'').replace(/\/+$/,'');
   const KEY=String(C.SUPABASE_ANON_KEY||'');
-  const session=()=>{try{return JSON.parse(sessionStorage.getItem('kiteezi_admin_session')||'null')}catch{return null}};
+  const session=()=>{try{return JSON.parse(localStorage.getItem('kiteezi_admin_session')||sessionStorage.getItem('kiteezi_admin_session')||'null')}catch{return null}};
   const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const money=v=>new Intl.NumberFormat('en-UG').format(Number(v)||0);
 
