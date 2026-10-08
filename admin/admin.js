@@ -1151,11 +1151,14 @@ async function setOrderAndWhatsApp(id,status,payment,phone,textMessage){
   else if(/^7[0-9]{8}$/.test(canonical))canonical='+256'+canonical;
   else if(/^256[0-9]{9}$/.test(canonical))canonical='+'+canonical;
   const digits=canonical.replace(/^\+/,'');
-  if(!/^[1-9][0-9]{7,14}$/.test(digits)){msg(new Error('This customer does not have a valid international WhatsApp number. The status change can still be made without WhatsApp.'));return;}
   try{
     await api('/rest/v1/rpc/admin_set_order_status',{method:'POST',body:JSON.stringify({p_order_id:id,p_status:status,p_payment_status:payment})});
     await loadOrders();
   }catch(err){msg(err);return}
+  if(!/^[1-9][0-9]{7,14}$/.test(digits)){
+    showAdminToast('Order updated','The order status was changed, but WhatsApp was not opened because the customer phone number is invalid.');
+    return;
+  }
   window.location.href='https://wa.me/'+digits+'?text='+encodeURIComponent(textMessage||'');
 }
 async function adminCancelOrder(id,customer,phone){
@@ -1179,7 +1182,7 @@ async function loadRecipeMappings(){
   try{
     const [recipes,shared]=await Promise.all([
       api('/rest/v1/menu_item_recipes?select=id,menu_item_id,inventory_item_id,quantity,recipe_unit,stock_units_per_recipe_unit,menu_items(name,serving_unit,service_stations(name)),inventory_items(name,unit)&order=created_at.asc'),
-      api('/rest/v1/shared_pool_menu_rules?select=id,menu_item_id,inventory_item_id,dish_type,fraction_per_menu_unit,allocation_profile,requires_components,requires_profile,requires_components,active,notes,menu_items(name,serving_unit,service_stations(name)),inventory_items(name,unit)&active=eq.true&order=menu_item_id.asc')
+      api('/rest/v1/shared_pool_menu_rules?select=id,menu_item_id,inventory_item_id,dish_type,fraction_per_menu_unit,allocation_profile,requires_components,requires_profile,active,notes,menu_items(name,serving_unit,service_stations(name)),inventory_items(name,unit)&active=eq.true&order=menu_item_id.asc')
     ]);
     let direct=Array.isArray(recipes)?recipes:[], pool=Array.isArray(shared)?shared:[];
     const recipeStation=({barista:'Barista',bartender:'Barista',chef:'Kitchen',head_chef:'Kitchen'})[profile?.role];
