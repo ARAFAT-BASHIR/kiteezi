@@ -228,7 +228,7 @@ function applyRoleNavigation(){
     ['gallery','Gallery',['gallery.view','gallery.moderate','gallery.manage','gallery.upload']],
     ['reviews','Reviews',['reviews.view','reviews.moderate']],
     ['social','Social Links',['social.manage']],
-    ['staff','Staff / Roles',['staff.manage']],['customers','Customers',[]],
+    ['staff','Staff / Roles',['staff.manage','roles.manage','staff.view']],['customers','Customers',[]],
     ['accounting','Accounting & Finance',['reports.financial','reports.view','reports.inventory.view']],
     ['requisitions','Requisitions',['requisitions.view','requisitions.create','requisitions.approve.manager','requisitions.approve.gm','requisitions.approve.ceo','requisitions.approve.finance']],
     ['purchases','Purchase Orders',['purchase_orders.view','purchase_orders.manage','purchase_orders.create','purchase_orders.receive']],
@@ -1586,7 +1586,7 @@ async function loadRolesAndPermissions(){
   ]);
   const rp=await api('/rest/v1/role_permissions?select=role_id,permission_id');
   const byRole={}; (rp||[]).forEach(x=>(byRole[x.role_id]??=[]).push(x.permission_id));
-  const canManage=hasPermission('staff.manage');
+  const canManage=hasPermission('staff.manage')||hasPermission('roles.manage');
   const roleRows=(roles||[]).map(r=>'<tr><td><strong>'+esc(r.name)+'</strong></td><td>'+esc(r.description||'')+'</td><td><span class="pill">'+((byRole[r.id]||[]).length)+' permissions</span></td><td>'+(canManage?'<button class="btn" data-role-edit="'+r.id+'">Edit permissions</button> ':'')+(profile?.role==='owner'?'<button class="btn danger" data-delete-role="'+r.id+'">Delete</button>':'')+'</td></tr>').join('');
   const box=$('#rolesTable'); if(box) box.innerHTML=roleRows?'<div class="table-scroll"><table><thead><tr><th>Role</th><th>Description</th><th>Access</th><th></th></tr></thead><tbody>'+roleRows+'</tbody></table></div>':'<div class="state">No roles found.</div>';
   const edit=async id=>{
