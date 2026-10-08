@@ -121,7 +121,7 @@ jobs:
 
           html = Path("admin/index.html").read_text(encoding="utf-8")
           js = Path("admin/admin.js").read_text(encoding="utf-8")
-          ids = set(re.findall(r'\\bid\\s*=\\s*["\\']([^"\\']+)["\\']', html, re.I))
+          ids = set(re.findall(r"\\bid\\s*=\\s*[\"']([^\"']+)[\"']", html, re.I))
           marker = "// admin-login.js owns the login submit handler."
           if marker not in js:
               raise SystemExit("Admin startup binding marker is missing.")
