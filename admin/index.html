@@ -6,7 +6,18 @@
 <section id="dashboard" class="tab"><div class="metrics"><div class="metric"><b id="mBookings">0</b>Today's bookings</div><div class="metric"><b id="mPending">0</b>Pending bookings</div><div class="metric"><b id="mOrders">0</b>Open orders</div><div class="metric"><b id="mLow">0</b>Low inventory</div></div><div class="panel"><div class="toolbar"><h2>Low inventory</h2><span id="lowStockScopeLabel" class="muted"></span></div><div id="lowStockList" class="state">Checking inventory…</div></div><div class="panel"><h2>Today</h2><div id="todayOps" class="state">Ready</div></div></section>
 <section id="bookings" class="tab"><div class="panel"><div class="toolbar"><h2>Bookings</h2><select id="bookingFilter"><option value="all">All</option><option>pending</option><option>confirmed</option><option>completed</option><option>cancelled</option></select><button id="refreshBookings" class="btn btn-dark">Refresh</button></div><div id="bookingTable" class="state">Ready</div></div></section>
 <section id="restaurant" class="tab">
-<div class="panel pos-shell">
+<div class="panel orders-nav-shell">
+  <div class="toolbar">
+    <h2>Orders</h2>
+    <div class="subnav" id="ordersMainNav" role="tablist" aria-label="Order functions">
+      <button type="button" data-order-main="new" class="active">New Order</button>
+      <button type="button" data-order-main="orders">Orders</button>
+      <button type="button" data-order-main="status">Order &amp; Station Status</button>
+      <button type="button" data-order-main="items">Order Items</button>
+    </div>
+  </div>
+</div>
+<div id="orderCreatePanel" class="order-main-panel">
   <div class="pos-header">
     <div>
       <div class="eyebrow">Orders</div>
@@ -54,6 +65,7 @@
   </div>
 </div>
 
+<div id="orderManagementPanel" class="order-main-panel" hidden>
 <div class="panel">
   <div class="toolbar">
     <h2>Orders</h2>
@@ -71,6 +83,7 @@
   <div id="ordersTable" class="state order-view-panel">Ready</div>
 <div id="orderStatusTable" class="state order-view-panel" hidden>Station status is shown in the Orders table. Select a station-focused view.</div>
 <div id="orderItemsTable" class="state order-view-panel" hidden>Select an order.</div>
+</div>
 </div>
 </section>
 <section id="inventory" class="tab">
