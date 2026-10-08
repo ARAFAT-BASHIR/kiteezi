@@ -5,7 +5,71 @@
 <main class="main"><div class="toolbar"><div><div class="eyebrow">Operations</div><h1>Kiteezi Management System</h1><div id="who" class="muted"></div></div><span id="rolePill" class="pill"></span><button id="sendStaffNotification" class="btn" type="button" hidden>Send notification</button><button id="notificationBell" class="btn" type="button" aria-label="Notifications">🔔 <span id="notificationCount">0</span></button><div id="notificationPanel" class="panel" style="display:none"><div class="toolbar"><h2>Notifications</h2><button id="markNotificationsRead" class="btn">Mark all read</button></div><div id="notificationList" class="state">No notifications.</div></div></div>
 <section id="dashboard" class="tab"><div class="metrics"><div class="metric"><b id="mBookings">0</b>Today's bookings</div><div class="metric"><b id="mPending">0</b>Pending bookings</div><div class="metric"><b id="mOrders">0</b>Open orders</div><div class="metric"><b id="mLow">0</b>Low inventory</div></div><div class="panel"><div class="toolbar"><h2>Low inventory</h2><span id="lowStockScopeLabel" class="muted"></span></div><div id="lowStockList" class="state">Checking inventory…</div></div><div class="panel"><h2>Today</h2><div id="todayOps" class="state">Ready</div></div></section>
 <section id="bookings" class="tab"><div class="panel"><div class="toolbar"><h2>Bookings</h2><select id="bookingFilter"><option value="all">All</option><option>pending</option><option>confirmed</option><option>completed</option><option>cancelled</option></select><button id="refreshBookings" class="btn btn-dark">Refresh</button></div><div id="bookingTable" class="state">Ready</div></div></section>
-<section id="restaurant" class="tab"><div class="panel"><div class="toolbar"><h2>POS / Orders</h2><select id="orderStatusFilter"><option value="all">All</option><option>pending</option><option>confirmed</option><option>open</option><option>paid</option><option>completed</option><option>cancelled</option></select><button id="refreshOrders" class="btn btn-dark">Refresh</button><button id="newOrder" class="btn">New POS order</button></div><div id="ordersTable" class="state">Ready</div></div><div class="panel"><h2>Order items</h2><div id="orderItemsTable" class="state">Select an order.</div></div></section>
+<section id="restaurant" class="tab">
+<div class="panel pos-shell">
+  <div class="pos-header">
+    <div>
+      <div class="eyebrow">Orders</div>
+      <h2>Point of Sale</h2>
+      <p class="muted">Use the same live Kiteezi menu as the public website. Prices, stock and order creation are verified by Supabase.</p>
+    </div>
+    <div class="pos-toolbar-actions">
+      <button id="posRefreshMenu" class="btn" type="button">Refresh menu</button>
+      <button id="posClear" class="btn" type="button">Clear order</button>
+    </div>
+  </div>
+  <div class="pos-layout">
+    <div class="pos-catalog">
+      <div class="pos-filter-row">
+        <div id="posCategoryTabs" class="pos-category-tabs" role="tablist" aria-label="Menu categories"></div>
+        <input id="posSearch" class="pos-search" type="search" placeholder="Search menu items..." autocomplete="off">
+      </div>
+      <div id="posMenuStatus" class="state">Loading menu…</div>
+      <div id="posProducts" class="pos-products"></div>
+    </div>
+    <aside class="pos-cart">
+      <div class="pos-cart-head">
+        <div><strong>Current Order</strong><span id="posCartCount" class="pill">0 items</span></div>
+        <span id="posOrderTypeLabel" class="muted">Dine in</span>
+      </div>
+      <div class="pos-customer-grid">
+        <input id="posCustomerName" type="text" placeholder="Customer name (optional)" autocomplete="name">
+        <input id="posPhone" type="tel" placeholder="Phone / WhatsApp (optional)" autocomplete="tel">
+        <select id="posFulfillment">
+          <option value="dine_in">Dine in</option>
+          <option value="pickup">Pickup</option>
+          <option value="delivery">Delivery</option>
+        </select>
+        <textarea id="posNotes" rows="2" placeholder="Order notes (optional)"></textarea>
+      </div>
+      <div id="posCart" class="pos-cart-lines"><div class="state">No items yet.</div></div>
+      <div class="pos-summary">
+        <div><span>Subtotal</span><strong id="posSubtotal">UGX 0</strong></div>
+        <div><span>Tax</span><strong>UGX 0</strong></div>
+        <div class="pos-total"><span>Total</span><strong id="posTotal">UGX 0</strong></div>
+      </div>
+      <button id="posPay" class="btn btn-dark pos-pay" type="button">Proceed to Payment</button>
+      <div id="posStatus" class="pos-status" role="status" aria-live="polite"></div>
+    </aside>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="toolbar">
+    <h2>Order history & station progress</h2>
+    <select id="orderStatusFilter">
+      <option value="all">All</option><option value="pending">pending</option><option value="confirmed">confirmed</option>
+      <option value="open">open</option><option value="paid">paid</option><option value="completed">completed</option><option value="cancelled">cancelled</option>
+    </select>
+    <button id="refreshOrders" class="btn btn-dark">Refresh</button>
+  </div>
+  <div id="ordersTable" class="state">Ready</div>
+</div>
+<div class="panel">
+  <h2>Selected order items</h2>
+  <div id="orderItemsTable" class="state">Select an order.</div>
+</div>
+</section>
 <section id="inventory" class="tab">
 <div class="inventory-nav panel"><div class="toolbar"><h2>Inventory</h2><div class="subnav" id="inventorySubnav"><button type="button" data-inv-tab="items" class="active">Stock</button><button type="button" data-inv-tab="daily">Daily stock</button><button type="button" data-inv-tab="purchases">Purchases</button><button type="button" data-inv-tab="movements">Movements</button><button type="button" data-inv-tab="recipes">Recipes</button></div></div></div>
 <div id="inventory-panel-items" class="panel inventory-section"><div class="toolbar"><h2>Stock</h2><input id="inventorySearch" placeholder="Search"><button id="newInventoryItem" class="btn">Add item</button><button id="manageStations" class="btn">Stations</button><button id="refreshInventory" class="btn btn-dark">Refresh</button></div><div id="inventoryTable" class="state">Ready</div></div>
