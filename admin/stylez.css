@@ -1185,3 +1185,8 @@ body.admin #loginView[hidden],
 body.admin #loginView.hide{
   display:none!important;
 }
+
+.station-work-panel .station-order-card{border:1px solid #dfe7e2;border-radius:14px;padding:16px;margin:12px 0;background:#fff}
+.station-work-panel .station-order-items{display:grid;gap:8px;margin:14px 0;padding:12px;background:#f7f9f7;border-radius:10px}
+.station-work-panel .toolbar{gap:12px;align-items:center}
+.station-work-panel .toolbar-actions{display:flex;gap:8px;flex-wrap:wrap}
