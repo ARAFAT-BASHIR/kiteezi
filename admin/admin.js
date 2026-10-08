@@ -215,7 +215,7 @@ function applyRoleNavigation(){
   const nav=$('#nav');
   const modules=[
     ['dashboard','Dashboard',['dashboard.view']],
-    ['restaurant','POS / Orders',['orders.view','orders.manage','orders.create','orders.station_kitchen','orders.station_barista','orders.reception.view']],
+    ['restaurant','Orders',['orders.view','orders.manage','orders.create','orders.station_kitchen','orders.station_barista','orders.reception.view']],
     ['bookings','Bookings',['bookings.view','bookings.manage']],
     ['inventory','Inventory',['inventory.view','inventory.all','inventory.operational','inventory.manage','inventory.kitchen','inventory.bar','inventory.cleaning','inventory.swimming','inventory.count','inventory.adjust']],
     ['menu','Menu',['menu.view','menu.manage','menu.public_content.manage']],
@@ -238,7 +238,7 @@ function applyRoleNavigation(){
   const visibleIds=new Set(modules.filter(([,label,needed])=>needed.length?needed.some(hasPermission):false).map(([id])=>id));if(profile?.active)visibleIds.add('settings');if(profile?.role==='owner')visibleIds.add('customers');
   if(nav){
     const groups=[
-      ['OPERATIONS','operations',[['restaurant','POS / Orders'],['bookings','Bookings'],['services','Sports & Services'],['swimming_timetable','Swimming Timetable'],['swimming_sessions','Swimming Sessions'],['tasks','Grounds / Tasks'],['inquiries','Customer Inquiries']]],
+      ['OPERATIONS','operations',[['restaurant','Orders'],['bookings','Bookings'],['services','Sports & Services'],['swimming_timetable','Swimming Timetable'],['swimming_sessions','Swimming Sessions'],['tasks','Grounds / Tasks'],['inquiries','Customer Inquiries']]],
       ['ADMINISTRATION','administration',[['dashboard','Dashboard']]],
       ['WEBSITE','website',[['content','Website Content'],['social','Social Links'],['reviews','Public Reviews']]],
       ['MEDIA','media',[['gallery','Media / Gallery']]],
