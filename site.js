@@ -314,6 +314,7 @@
   };
 
   function menuImageFor(item) {
+    if (item?.img_url) return String(item.img_url);
     const name = String(item?.name || '').trim();
     const hay = (name + ' ' + String(item?.menu_categories?.name || '')).toLowerCase();
     const exact = [
@@ -339,10 +340,10 @@
     for (const [pattern, url] of exact) if (pattern.test(hay)) return url;
 
     const keyword = name
-      .replace(/\\([^)]*\\)/g, '')
+      .replace(/\([^)]*\)/g, '')
       .replace(/[^a-z0-9 ]/gi, ' ')
-      .replace(/\\b(each|pair|big|small|large|glass|shot|whole|ordinary)\\b/gi, '')
-      .replace(/\\s+/g, ' ')
+      .replace(/\b(each|pair|big|small|large|glass|shot|whole|ordinary)\b/gi, '')
+      .replace(/\s+/g, ' ')
       .trim() || String(item?.menu_categories?.name || 'food');
     return 'https://loremflickr.com/900/900/' + encodeURIComponent(keyword) + '?lock=' + stableLock(name);
   }
