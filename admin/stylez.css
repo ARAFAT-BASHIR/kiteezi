@@ -1073,3 +1073,46 @@ body.admin .nav-group[hidden]{display:none!important}
   body.admin .toolbar h1{font-size:22px!important}
   body.admin .admin table{min-width:650px}
 }
+
+/* === Final admin workspace positioning ===
+   Keep the desktop navigation as a true left rail. Older responsive overrides
+   reserved top space for a fixed mobile header; that rule must not affect
+   medium/desktop layouts where the content belongs beside the rail. */
+@media (min-width:901px){
+  body.admin #app.admin-shell{
+    display:grid!important;
+    grid-template-columns:240px minmax(0,1fr)!important;
+    width:100%!important;
+    min-height:100vh!important;
+  }
+  body.admin #app.admin-shell>.side{
+    position:sticky!important;
+    top:0!important;
+    width:auto!important;
+    height:100vh!important;
+    max-height:none!important;
+    overflow:auto!important;
+  }
+  body.admin #app.admin-shell>.main{
+    margin-left:0!important;
+    width:auto!important;
+    min-width:0!important;
+    padding:28px!important;
+  }
+  body.admin #app.admin-shell>.main>.toolbar{
+    margin:0 0 16px!important;
+    padding:0!important;
+  }
+  body.admin #app.admin-shell>.main .tab{
+    width:100%!important;
+    min-width:0!important;
+  }
+  body.admin #app.admin-shell>.main #assets,
+  body.admin #app.admin-shell>.main #audit{
+    margin-top:0!important;
+    padding-top:0!important;
+  }
+}
+@media (min-width:901px) and (max-width:1200px){
+  body.admin #app.admin-shell{grid-template-columns:210px minmax(0,1fr)!important}
+}
