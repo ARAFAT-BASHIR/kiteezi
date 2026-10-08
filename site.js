@@ -283,35 +283,69 @@
     }
   }
 
-  const MENU_IMAGE_MAP={
-  burger:'https://images.unsplash.com/photo-1767065703793-7012f5fced19?auto=format&fit=crop&w=900&q=80',
-  pizza:'https://images.unsplash.com/photo-1751368647711-2e2ee6d0b7c6?auto=format&fit=crop&w=900&q=80',
-  chicken:'https://images.unsplash.com/photo-1725728286008-6bdec0508a71?auto=format&fit=crop&w=900&q=80',
-  fish:'https://images.unsplash.com/photo-1519233991914-26a44330ccd7?auto=format&fit=crop&w=900&q=80',
-  salad:'https://images.unsplash.com/photo-1568106690134-f2ee2257a9ef?auto=format&fit=crop&w=900&q=80',
-  juice:'https://images.unsplash.com/photo-1617535394182-641e70651cd8?auto=format&fit=crop&w=900&q=80',
-  coffee:'https://images.unsplash.com/photo-1681477508108-6d3164936ac4?auto=format&fit=crop&w=900&q=80',
-  milkshake:'https://images.unsplash.com/photo-1553787499-6f9133860278?auto=format&fit=crop&w=900&q=80',
-  beer:'https://images.unsplash.com/photo-1597822738124-151fb72dcb79?auto=format&fit=crop&w=900&q=80',
-  wine:'https://images.unsplash.com/photo-1610458034932-dc165f29499e?auto=format&fit=crop&w=900&q=80',
-  whiskey:'https://images.unsplash.com/photo-1671713682265-991d47c88b85?auto=format&fit=crop&w=900&q=80',
-  breakfast:'https://images.unsplash.com/photo-1734770205674-d117e4ba7926?auto=format&fit=crop&w=900&q=80',
-  hotpot:'https://www.asiancookingmom.com/wp-content/uploads/2023/01/Hot-Pot-15-of-17-1.jpg',
-  default:'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80'
-};
-function menuImageFor(item){
-  if(item?.img_url)return item.img_url;
-  const hay=(String(item?.name||'')+' '+String(item?.menu_categories?.name||'')).toLowerCase();
-  for(const key of Object.keys(MENU_IMAGE_MAP)){if(key!=='default'&&hay.includes(key))return MENU_IMAGE_MAP[key]}
-  if(/goat|liver|beef|meat|steak|muchomo|sausage|kebab|chapati|rolex|chips|samosa|katogo|buffet|snack/.test(hay))return MENU_IMAGE_MAP.chicken;
-  if(/whisk|spirit|gin|vodka|cream|champagne/.test(hay))return MENU_IMAGE_MAP.whiskey;
-  if(/beer|lager|stout|cider/.test(hay))return MENU_IMAGE_MAP.beer;
-  if(/wine/.test(hay))return MENU_IMAGE_MAP.wine;
-  if(/juice|drink/.test(hay))return MENU_IMAGE_MAP.juice;
-  if(/breakfast/.test(hay))return MENU_IMAGE_MAP.breakfast;
-  if(/hot pot|hotpot/.test(hay))return MENU_IMAGE_MAP.hotpot;
-  return MENU_IMAGE_MAP.default;
-}
+  // Select photography from the specific dish name first. Do not use one generic
+  // category photo for every item.
+  const MENU_IMAGE_MAP = {
+    coffee: 'https://images.unsplash.com/photo-1681477508108-6d3164936ac4?auto=format&fit=crop&w=900&q=80',
+    katogo: 'https://uganda-evisa.com/images/traditional-ugandan-dish-katogo.jpg',
+    rolex: 'https://uganda-evisa.com/images/ugandan-rolex-rolls.jpg',
+    samosa: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80',
+    masala_chips: 'https://dtwaeonhht2im.cloudfront.net/Masala-Chips-1.jpg',
+    chicken_wings: 'https://tb-static.uber.com/prod/image-proc/processed_images/fca6c41b9dce16e60061c6861f7a5f25/5954bcb006b10dbfd0bc160f6370faf3.jpeg',
+    chicken_curry: 'https://media-assets.swiggy.com/swiggy/image/upload/fl_lossy%2Cf_auto%2Cq_auto/FOOD_CATALOG/IMAGES/CMS/2025/10/7/f27006ea-2afd-4422-930d-396e00040874_beb733e4-0990-4fdd-b684-8f995b022bf4.jpg',
+    chicken_pilawo: 'https://snapcalorie-webflow-website.s3.us-east-2.amazonaws.com/media/food_pics_v2/medium/chicken_pilau.jpg',
+    grilled_chicken: 'https://ik.imagekit.io/mva6zbib7/prod/recipes/f01b2e5a-4fc4-4d7f-866b-48f6cded80a2/grilovane_kure/grilovan%C3%A9_ku%C5%99e_TPoFKI94b.png',
+    burger: 'https://images.unsplash.com/photo-1767065703793-7012f5fced19?auto=format&fit=crop&w=900&q=80',
+    pizza: 'https://images.unsplash.com/photo-1751368647711-2e2ee6d0b7c6?auto=format&fit=crop&w=900&q=80',
+    fish: 'https://images.unsplash.com/photo-1519233991914-26a44330ccd7?auto=format&fit=crop&w=900&q=80',
+    salad: 'https://images.unsplash.com/photo-1568106690134-f2ee2257a9ef?auto=format&fit=crop&w=900&q=80',
+    juice: 'https://images.unsplash.com/photo-1617535394182-641e70651cd8?auto=format&fit=crop&w=900&q=80',
+    milkshake: 'https://images.unsplash.com/photo-1553787499-6f9133860278?auto=format&fit=crop&w=900&q=80',
+    beer: 'https://images.unsplash.com/photo-1597822738124-151fb72dcb79?auto=format&fit=crop&w=900&q=80',
+    wine: 'https://images.unsplash.com/photo-1610458034932-dc165f29499e?auto=format&fit=crop&w=900&q=80',
+    spirits: 'https://images.unsplash.com/photo-1671713682265-991d47d88b85?auto=format&fit=crop&w=900&q=80',
+    default: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80'
+  };
+
+  const stableLock = value => {
+    let hash = 2166136261;
+    for (const ch of String(value || '').toLowerCase()) hash = Math.imul(hash ^ ch.charCodeAt(0), 16777619);
+    return Math.abs(hash >>> 0) + 1;
+  };
+
+  function menuImageFor(item) {
+    const name = String(item?.name || '').trim();
+    const hay = (name + ' ' + String(item?.menu_categories?.name || '')).toLowerCase();
+    const exact = [
+      [/katogo/, MENU_IMAGE_MAP.katogo],
+      [/rolex/, MENU_IMAGE_MAP.rolex],
+      [/coffee|tea/, MENU_IMAGE_MAP.coffee],
+      [/samosa/, MENU_IMAGE_MAP.samosa],
+      [/masala.*chips/, MENU_IMAGE_MAP.masala_chips],
+      [/chicken.*wings|wings/, MENU_IMAGE_MAP.chicken_wings],
+      [/chicken.*pilawo|pilawo|pilau/, MENU_IMAGE_MAP.chicken_pilawo],
+      [/indian.*curry.*chicken|chicken.*curry/, MENU_IMAGE_MAP.chicken_curry],
+      [/grilled chicken/, MENU_IMAGE_MAP.grilled_chicken],
+      [/burger/, MENU_IMAGE_MAP.burger],
+      [/pizza/, MENU_IMAGE_MAP.pizza],
+      [/fish/, MENU_IMAGE_MAP.fish],
+      [/salad/, MENU_IMAGE_MAP.salad],
+      [/juice/, MENU_IMAGE_MAP.juice],
+      [/milkshake|milk shake/, MENU_IMAGE_MAP.milkshake],
+      [/beer|lager|stout|cider/, MENU_IMAGE_MAP.beer],
+      [/wine/, MENU_IMAGE_MAP.wine],
+      [/whisk|gin|vodka|spirit|amarula|baileys|champagne|waragi/, MENU_IMAGE_MAP.spirits]
+    ];
+    for (const [pattern, url] of exact) if (pattern.test(hay)) return url;
+
+    const keyword = name
+      .replace(/\\([^)]*\\)/g, '')
+      .replace(/[^a-z0-9 ]/gi, ' ')
+      .replace(/\\b(each|pair|big|small|large|glass|shot|whole|ordinary)\\b/gi, '')
+      .replace(/\\s+/g, ' ')
+      .trim() || String(item?.menu_categories?.name || 'food');
+    return 'https://loremflickr.com/900/900/' + encodeURIComponent(keyword) + '?lock=' + stableLock(name);
+  }
 
 async function renderMenuCatalog() {
     const target = $('#menu-catalog');
