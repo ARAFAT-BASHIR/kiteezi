@@ -704,7 +704,14 @@ function route(x){
     sec.hidden=!active;
     sec.setAttribute('aria-hidden',active?'false':'true');
   });
-  return loadTabOnce(tab).catch(msg);
+  return loadTabOnce(tab).catch(err=>{
+    const section=document.getElementById(tab);
+    const message=humanAdminError(err,'We could not load this section right now.');
+    const target=section?.querySelector('[id$="Table"], [data-load-target]');
+    if(target) target.innerHTML='<div class="state">'+esc(message)+' <button type="button" class="btn" data-retry-tab>Retry</button></div>';
+    section?.querySelector('[data-retry-tab]')?.addEventListener('click',()=>loadTabOnce(tab,true).catch(msg));
+    msg(err);
+  });
 }
 async function loadDashboard(){
   const d=today();
@@ -1015,7 +1022,6 @@ function setupPos(){
   $('#posClear')?.addEventListener('click',posClear);
   $('#posPay')?.addEventListener('click',posPaymentModal);
   $('#posFulfillment')?.addEventListener('change',()=>{const x=$('#posFulfillment');const l=$('#posOrderTypeLabel');if(l)l.textContent=x?.selectedOptions?.[0]?.textContent||'Dine in'});
-  loadPosMenu().catch(msg);
 }
 
 async function loadOrders(){
@@ -1025,6 +1031,10 @@ async function loadOrders(){
   let q='/rest/v1/orders?select=*,customers(name,phone)&order=created_at.desc';
   if(filter!=='all')q+='&status=eq.'+filter;
   let rows=await api(q);
+  if(!rows.length){
+    $('#ordersTable').innerHTML='<div class="state">No orders have been recorded yet.</div>';
+    return;
+  }
   if(['chef','barista'].includes(profile?.role)){
     const oi=await api('/rest/v1/order_items?select=order_id,menu_items(name,station_id,service_stations(name))');
     const target=profile.role==='barista'?'Barista':'Kitchen';
@@ -1197,7 +1207,7 @@ async function loadDailyStock(){const d=$('#stockRunDate').value||today();$('#st
 async function loadPurchases(){
   if(!(hasPermission('purchase_orders.view')||hasPermission('purchase_orders.manage'))){setHTML('#purchaseOrdersTable','<div class="state">Purchase receiving is not part of this account.</div>');return;}
   const orders=await api('/rest/v1/purchase_orders?select=*&order=created_at.desc');
-  setHTML('#generatedPOTable',orders.length?'<table><tr><th>PO</th><th>Supplier</th><th>Reference</th><th>Status</th><th>Received</th><th>Paid</th><th>Total</th><th>Actions</th></tr>'+
+  setHTML('#purchaseOrdersTable',orders.length?'<table><tr><th>PO</th><th>Supplier</th><th>Reference</th><th>Status</th><th>Received</th><th>Paid</th><th>Total</th><th>Actions</th></tr>'+
     orders.map(o=>'<tr><td>'+esc(o.po_number||o.id.slice(0,8).toUpperCase())+'</td><td>'+esc(o.supplier||'')+'</td><td>'+esc(o.reference||'')+'</td><td>'+esc(o.status||'ordered')+'</td><td>'+esc(['received','partially_received'].includes(String(o.status))?'Yes':'No')+'</td><td>'+esc(o.payment_status||'unpaid')+'</td><td>UGX '+money(o.total)+'</td><td class="actions">'+
     (o.status!=='received'&&o.status!=='cancelled'?'<button class="btn" data-receive-po="'+o.id+'">Receive</button> ':'')+
     (String(o.payment_status||'unpaid')!=='paid'&&o.status!=='cancelled'?'<button class="btn" data-paid-po="'+o.id+'">Mark paid</button> ':'')+
