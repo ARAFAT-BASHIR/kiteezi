@@ -283,7 +283,37 @@
     }
   }
 
-  async function renderMenuCatalog() {
+  async const MENU_IMAGE_MAP={
+  burger:'https://images.unsplash.com/photo-1767065703793-7012f5fced19?auto=format&fit=crop&w=900&q=80',
+  pizza:'https://images.unsplash.com/photo-1751368647711-2e2ee6d0b7c6?auto=format&fit=crop&w=900&q=80',
+  chicken:'https://images.unsplash.com/photo-1725728286008-6bdec0508a71?auto=format&fit=crop&w=900&q=80',
+  fish:'https://images.unsplash.com/photo-1519233991914-26a44330ccd7?auto=format&fit=crop&w=900&q=80',
+  salad:'https://images.unsplash.com/photo-1568106690134-f2ee2257a9ef?auto=format&fit=crop&w=900&q=80',
+  juice:'https://images.unsplash.com/photo-1617535394182-641e70651cd8?auto=format&fit=crop&w=900&q=80',
+  coffee:'https://images.unsplash.com/photo-1681477508108-6d3164936ac4?auto=format&fit=crop&w=900&q=80',
+  milkshake:'https://images.unsplash.com/photo-1553787499-6f9133860278?auto=format&fit=crop&w=900&q=80',
+  beer:'https://images.unsplash.com/photo-1597822738124-151fb72dcb79?auto=format&fit=crop&w=900&q=80',
+  wine:'https://images.unsplash.com/photo-1610458034932-dc165f29499e?auto=format&fit=crop&w=900&q=80',
+  whiskey:'https://images.unsplash.com/photo-1671713682265-991d47c88b85?auto=format&fit=crop&w=900&q=80',
+  breakfast:'https://images.unsplash.com/photo-1734770205674-d117e4ba7926?auto=format&fit=crop&w=900&q=80',
+  hotpot:'https://www.asiancookingmom.com/wp-content/uploads/2023/01/Hot-Pot-15-of-17-1.jpg',
+  default:'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80'
+};
+function menuImageFor(item){
+  if(item?.img_url)return item.img_url;
+  const hay=(String(item?.name||'')+' '+String(item?.menu_categories?.name||'')).toLowerCase();
+  for(const key of Object.keys(MENU_IMAGE_MAP)){if(key!=='default'&&hay.includes(key))return MENU_IMAGE_MAP[key]}
+  if(/goat|liver|beef|meat|steak|muchomo|sausage|kebab|chapati|rolex|chips|samosa|katogo|buffet|snack/.test(hay))return MENU_IMAGE_MAP.chicken;
+  if(/whisk|spirit|gin|vodka|cream|champagne/.test(hay))return MENU_IMAGE_MAP.whiskey;
+  if(/beer|lager|stout|cider/.test(hay))return MENU_IMAGE_MAP.beer;
+  if(/wine/.test(hay))return MENU_IMAGE_MAP.wine;
+  if(/juice|drink/.test(hay))return MENU_IMAGE_MAP.juice;
+  if(/breakfast/.test(hay))return MENU_IMAGE_MAP.breakfast;
+  if(/hot pot|hotpot/.test(hay))return MENU_IMAGE_MAP.hotpot;
+  return MENU_IMAGE_MAP.default;
+}
+
+function renderMenuCatalog() {
     const target = $('#menu-catalog');
     if (!target) return;
     try {
@@ -342,9 +372,8 @@
             const onRequest = item.price_on_request === true || Number(item.price || 0) === 0;
             const price = onRequest ? 'Ask' : 'UGX ' + money(item.price);
             const serving = item.serving_unit ? ' / ' + escapeHtml(item.serving_unit) : '';
-            const image = item.img_url
-              ? '<div class="menu-item-image"><img src="' + escapeHtml(item.img_url) + '" alt="' + escapeHtml(item.alt_text || item.name) + '" loading="lazy"></div>'
-              : '';
+            const imageUrl = menuImageFor(item);
+            const image = '<div class="menu-item-image"><img src="' + escapeHtml(imageUrl) + '" alt="' + escapeHtml(item.alt_text || item.name) + '" loading="lazy" onerror="this.src=\'' + escapeHtml(MENU_IMAGE_MAP.default) + '\'"></div>';
             return '<div class="menu-item">' + image +
               '<div><h4>' + escapeHtml(item.name) + '</h4><p>' + escapeHtml(item.description || '') + '</p></div>' +
               '<div class="menu-price">' + price + serving + '</div></div>' +
