@@ -1101,7 +1101,7 @@ function setOrderView(view){
   items.hidden=key!=='items';
   orders.classList.toggle('order-view-status',key==='status');
   orders.classList.toggle('order-view-orders',key==='orders');
-  $('#ordersSubnav [data-order-view]').forEach(b=>b.classList.toggle('active',b.dataset.orderView===key));
+  $$('#ordersSubnav [data-order-view]').forEach(b=>b.classList.toggle('active',b.dataset.orderView===key));
 }
 function setupOrderViews(){
   const main=$('#ordersMainNav');
