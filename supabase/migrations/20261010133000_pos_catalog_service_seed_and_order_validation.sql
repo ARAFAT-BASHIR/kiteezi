@@ -28,13 +28,13 @@ where pi.menu_item_id = mi.id
 insert into public.pos_items
   (category_id,name,description,unit_price,price_on_request,is_available,
    fulfillment_mode,department_key,menu_item_id,img_url,alt_text,serving_unit,
-   sort_order,active)
+   pricing_mode,team_threshold,small_group_price,full_team_price,serves_people,sort_order,active)
 select
   pc.id,
   s.name,
   s.description,
-  greatest(0,coalesce(s.price,0)),
-  coalesce(s.price,0) <= 0,
+  greatest(0,case when s.pricing_mode='per_person_team' then coalesce(s.small_group_price,s.price,0) else coalesce(s.price,0) end),
+  case when s.pricing_mode='per_person_team' then false else s.price is null end,
   coalesce(s.active,true),
   'record_only',
   case
@@ -45,7 +45,7 @@ select
     else 'other'
   end,
   null,null,null,null,
-  0,true
+  coalesce(s.pricing_mode,'fixed'),s.team_threshold,s.small_group_price,s.full_team_price,null,0,true
 from public.services s
 join public.pos_categories pc on pc.name =
   case
@@ -90,6 +90,7 @@ declare
   v jsonb;
   v_pos_item public.pos_items%rowtype;
   v_qty numeric;
+  v_unit_price numeric;
   v_total numeric := 0;
 begin
   if not (private.has_permission('orders.manage') or private.has_permission('orders.create')) then
@@ -131,6 +132,13 @@ begin
 
     v_qty := coalesce((v->>'quantity')::numeric,1);
     if v_qty <= 0 or v_qty > 10000 then raise exception 'Quantity must be greater than zero and within the allowed limit'; end if;
+    v_unit_price := case
+      when v_pos_item.pricing_mode='per_person_team' and v_pos_item.team_threshold is not null
+        then case when v_qty < v_pos_item.team_threshold then coalesce(v_pos_item.small_group_price,v_pos_item.unit_price) else coalesce(v_pos_item.full_team_price,v_pos_item.unit_price) end
+      when v_pos_item.pricing_mode='fixed_package' and coalesce(v_pos_item.serves_people,0)>0
+        then coalesce(v_pos_item.unit_price,0) / greatest(1,ceil(v_qty / v_pos_item.serves_people))
+      else coalesce(v_pos_item.unit_price,0)
+    end;
     if v_pos_item.fulfillment_mode = 'preparation' and v_pos_item.menu_item_id is null then
       raise exception 'Prepared food and drinks must link to a menu item for kitchen/barista routing and inventory';
     end if;
@@ -146,8 +154,12 @@ begin
     insert into public.order_items
       (order_id,menu_item_id,pos_item_id,item_name_snapshot,qty,unit_price,notes)
     values
-      (v_order,v_pos_item.menu_item_id,v_pos_item.id,v_pos_item.name,v_qty,v_pos_item.unit_price,null);
-    v_total := v_total + v_qty * v_pos_item.unit_price;
+      (v_order,v_pos_item.menu_item_id,v_pos_item.id,v_pos_item.name,v_qty,v_unit_price,null);
+    v_total := v_total + case
+      when v_pos_item.pricing_mode='fixed_package' and coalesce(v_pos_item.serves_people,0)>0
+        then coalesce(v_pos_item.unit_price,0) * greatest(1,ceil(v_qty / v_pos_item.serves_people))
+      else v_qty * v_unit_price
+    end;
   end loop;
 
   update public.orders set total = v_total where id = v_order;
