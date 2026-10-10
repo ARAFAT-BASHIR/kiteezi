@@ -1620,7 +1620,7 @@ async function loadRolesAndPermissions(){
   const rp=await api('/rest/v1/role_permissions?select=role_id,permission_id');
   const byRole={}; (rp||[]).forEach(x=>(byRole[x.role_id]??=[]).push(x.permission_id));
   const staffByRole={}; (staff||[]).forEach(x=>{const role=String(x.role||'').toLowerCase();if(role)staffByRole[role]=(staffByRole[role]||0)+1;});
-  const protectedRoles=new Set(['owner','general_manager','manager','chef','barista','waitstaff','reception','swimming_coach','head_swimming_coach']);
+  const protectedRoles=new Set(['owner','ceo','general_manager','manager','chef','head_chef','head_coach','barista','bartender','cashier','waitstaff','reception','reception_manager','receptionist','swimming_coach','head_swimming_coach','swimming_manager','lifeguard','grounds_cleaning','events_coordinator','marketing_social_media','media_manager','procurement_officer','storekeeper','website_manager','accountant']);
   const canManage=hasPermission('staff.manage')||hasPermission('roles.manage');
   const roleRows=(roles||[]).map(r=>{
     const roleName=String(r.name||'').toLowerCase();
