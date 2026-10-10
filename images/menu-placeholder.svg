@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" role="img" aria-labelledby="title desc">
+  <title id="title">Kiteezi dining image placeholder</title>
+  <desc id="desc">A simple plate and leaf illustration on a warm cream background.</desc>
+  <rect width="600" height="400" rx="24" fill="#f3f5ef"/>
+  <circle cx="300" cy="176" r="108" fill="#1b4332" opacity=".08"/>
+  <circle cx="300" cy="176" r="83" fill="#fff" stroke="#1b4332" stroke-width="7"/>
+  <circle cx="300" cy="176" r="60" fill="#e7eee5" stroke="#d2ddd2" stroke-width="3"/>
+  <path d="M278 192c-19-26-7-53 25-66 12 25 7 48-25 66Z" fill="#6b9b64"/>
+  <path d="M282 190c8-24 20-39 34-51" fill="none" stroke="#1b4332" stroke-width="4" stroke-linecap="round"/>
+  <path d="M310 205c-5-24 9-44 38-48 5 25-7 43-38 48Z" fill="#d7a84a"/>
+  <path d="M312 203c13-15 24-25 35-31" fill="none" stroke="#8a6824" stroke-width="3" stroke-linecap="round"/>
+  <path d="M187 125v100m-12-100v28m24-28v28m-12 0v72m225-100v100m-12-100v35m24-35v35" fill="none" stroke="#1b4332" stroke-width="5" stroke-linecap="round"/>
+  <text x="300" y="326" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="700" letter-spacing="4" text-anchor="middle" fill="#1b4332">KITEEZI DINING</text>
+  <text x="300" y="353" font-family="Arial,Helvetica,sans-serif" font-size="13" letter-spacing="2" text-anchor="middle" fill="#65746b">FRESH • RELAXED • WELCOMING</text>
+</svg>
