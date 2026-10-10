@@ -980,7 +980,14 @@ function posRemoveItem(id){posCartItems=posCartItems.filter(x=>x.id!==id);posRen
 function posClear(){posCartItems=[];posRenderCart();posSetStatus('')}
 async function loadPosMenu(force=false){
   const shell=document.querySelector('.pos-shell');if(!shell)return;
-  if(!hasPermission('orders.create')&&!hasPermission('orders.manage')){shell.hidden=true;return}
+  if(!hasPermission('orders.create')&&!hasPermission('orders.manage')){
+    shell.hidden=true;
+    if(canViewPosDepartmentRecords()){
+      ensurePosManagementPanels();
+      loadPosDepartmentRecords().catch(msg);
+    }
+    return;
+  }
   shell.hidden=false;
   if(posMenuLoaded&&!force){ensurePosManagementPanels();return}
   try{
