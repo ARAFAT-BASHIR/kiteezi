@@ -96,6 +96,29 @@ begin
     update public.orders
     set payment_status='paid',paid_at=coalesce(paid_at,now())
     where booking_id=new.id and payment_status is distinct from 'paid';
+  elsif new.status='cancelled' and old.status is distinct from new.status then
+    -- Cancellation closes the operational handoff and releases any reservation.
+    -- A previously recorded payment is intentionally retained for the finance
+    -- team to reconcile/refund through its existing workflow; this trigger never
+    -- fabricates a refund or erases the payment trail.
+    for v_order_id in
+      select id from public.orders
+      where booking_id=new.id and status not in ('completed','cancelled')
+      for update
+    loop
+      perform private.release_order_inventory_reservation_internal(v_order_id);
+      update public.order_station_progress
+      set status='cancelled',
+          cancellation_reason='Linked booking cancelled',
+          cancelled_at=coalesce(cancelled_at,now()),
+          cancelled_by=auth.uid(),
+          updated_at=now()
+      where order_id=v_order_id and status<>'complete';
+      update public.orders
+      set status='cancelled',
+          customer_notes=concat_ws(E'\\n',nullif(trim(coalesce(customer_notes,'')),''),'Linked booking cancelled; reconcile any payment/refund.')
+      where id=v_order_id;
+    end loop;
   end if;
   return new;
 end;
