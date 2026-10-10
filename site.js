@@ -435,7 +435,7 @@ async function renderMenuCatalog() {
             const serving = item.serving_unit ? ' / ' + escapeHtml(item.serving_unit) : '';
             const imageUrl = imageAssignments.get(String(item.id)) || uniqueDishImageFor(item);
             const fallbackImageUrl = uniqueDishImageFor(item);
-            const image = '<div class="menu-item-image"><img src="' + escapeHtml(imageUrl) + '" alt="' + escapeHtml(item.alt_text || item.name) + '" loading="lazy" onerror="this.onerror=null;this.src=\\'' + escapeHtml(fallbackImageUrl) + '\\'"></div>';
+            const image = '<div class="menu-item-image"><img src="' + escapeHtml(imageUrl) + '" data-fallback-image="' + escapeHtml(fallbackImageUrl) + '" alt="' + escapeHtml(item.alt_text || item.name) + '" loading="lazy"></div>';
             return '<div class="menu-item">' + image +
               '<div><h4>' + escapeHtml(item.name) + '</h4><p>' + escapeHtml(item.description || '') + '</p></div>' +
               '<div class="menu-price">' + price + serving + '</div></div>' +
@@ -446,6 +446,14 @@ async function renderMenuCatalog() {
           }).join('');
           return '<article class="card"><div class="card-body"><span class="badge">' + escapeHtml(catName) + '</span>' + card + '</div></article>';
         }).join('');
+        target.querySelectorAll('img[data-fallback-image]').forEach(img => {
+          if (img.dataset.fallbackBound) return;
+          img.dataset.fallbackBound = '1';
+          img.addEventListener('error', () => {
+            const fallback = img.dataset.fallbackImage;
+            if (fallback && img.src !== fallback) img.src = fallback;
+          }, { once: true });
+        });
         bindMenuButtons();
         bindCartButtons();
       };
