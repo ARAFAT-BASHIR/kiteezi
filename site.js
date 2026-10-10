@@ -413,7 +413,7 @@ async function renderMenuCatalog() {
             const price = onRequest ? 'Ask' : 'UGX ' + money(item.price);
             const serving = item.serving_unit ? ' / ' + escapeHtml(item.serving_unit) : '';
             const imageUrl = menuImageFor(item);
-            const image = '<div class="menu-item-image"><img src="' + escapeHtml(imageUrl) + '" alt="' + escapeHtml(item.alt_text || item.name) + '" loading="lazy" onerror="this.src=\'' + escapeHtml(MENU_IMAGE_MAP.default) + '\'"></div>';
+            const image = '<div class="menu-item-image"><img src="' + escapeHtml(imageUrl) + '" alt="' + escapeHtml(item.alt_text || item.name) + '" loading="lazy" onerror="this.onerror=null;this.src=\'' + escapeHtml(MENU_IMAGE_MAP.default) + '\'"></div>';
             return '<div class="menu-item">' + image +
               '<div><h4>' + escapeHtml(item.name) + '</h4><p>' + escapeHtml(item.description || '') + '</p></div>' +
               '<div class="menu-price">' + price + serving + '</div></div>' +
