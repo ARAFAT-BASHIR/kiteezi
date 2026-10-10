@@ -55,4 +55,10 @@ $function$;
 
 revoke all on function private.initialize_order_station_progress(uuid) from public, anon, authenticated;
 
+-- Cover foreign keys used by department-record joins and deletion checks.
+create index if not exists idx_pos_department_records_pos_item_id
+  on public.pos_department_records(pos_item_id);
+create index if not exists idx_pos_department_records_recorded_by
+  on public.pos_department_records(recorded_by);
+
 commit;
