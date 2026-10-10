@@ -33,4 +33,26 @@ where pc.name in ('Food', 'Drinks', 'Photography')
     where pi.category_id = pc.id and pi.active = true
   );
 
+-- Never infer preparation completion from a display category name.
+create or replace function private.initialize_order_station_progress(p_order_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public, private, pg_catalog, pg_temp
+as $function$
+begin
+  insert into public.order_station_progress(order_id, station_id, status)
+  select oi.order_id, mi.station_id, 'waiting'
+  from public.order_items oi
+  join public.menu_items mi on mi.id = oi.menu_item_id
+  join public.service_stations ss on ss.id = mi.station_id and ss.active
+  where oi.order_id = p_order_id
+    and mi.station_id is not null
+  group by oi.order_id, mi.station_id
+  on conflict (order_id, station_id) do nothing;
+end;
+$function$;
+
+revoke all on function private.initialize_order_station_progress(uuid) from public, anon, authenticated;
+
 commit;
