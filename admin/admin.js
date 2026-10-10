@@ -897,9 +897,10 @@ const POS_IMAGE_MAP={
   samosa:'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80',
   default:'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80'
 };
-let posMenuItems=[],posCategories=[],posActiveCategory='',posCartItems=[],posMenuLoaded=false;
+let posMenuItems=[],posCategories=[],posActiveCategory='',posCartItems=[],posMenuLoaded=false,posImageAssignments=new Map();
 function posMoney(v){return 'UGX '+new Intl.NumberFormat('en-UG').format(Number(v)||0)}
 function posImageFor(item){
+  const assigned=posImageAssignments.get(String(item?.id||''));if(assigned)return assigned;
   if(item?.img_url)return item.img_url;
   const hay=(String(item?.name||'')+' '+String(item?.category||'')).toLowerCase();
   for(const key of Object.keys(POS_IMAGE_MAP)){if(key!=='default'&&hay.includes(key))return POS_IMAGE_MAP[key]}
@@ -983,6 +984,20 @@ async function loadPosMenu(force=false){
       in_stock:x.is_available===true,
       category:x.pos_categories?.name||'Other'
     }));
+    // Avoid reusing one photograph across different POS cards. For duplicate
+    // source URLs or missing photos, use a name-specific locked fallback.
+    posImageAssignments=new Map();
+    const usedPosImages=new Set();
+    posMenuItems.forEach(x=>{
+      const original=String(x.img_url||'').trim();
+      let image=original||posImageFor({...x,img_url:null});
+      if(!image||usedPosImages.has(image)){
+        const keywords=String(x.name||x.category||'food').replace(/[^a-z0-9 ]/gi,' ').replace(/\\s+/g,' ').trim()||'food';
+        image='https://loremflickr.com/900/900/'+encodeURIComponent(keywords)+'?lock='+encodeURIComponent(String(x.id||x.name||usedPosImages.size).replace(/-/g,''));
+      }
+      if(usedPosImages.has(image))image+='&item='+encodeURIComponent(String(x.id||x.name||usedPosImages.size));
+      usedPosImages.add(image);posImageAssignments.set(String(x.id),image);
+    });
     posMenuLoaded=true;posRenderCategories();posRenderProducts();posRenderCart();
     const status=$('#posMenuStatus');if(status)status.textContent=posMenuItems.length+' POS items available';
     ensurePosManagementPanels();
