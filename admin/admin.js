@@ -899,6 +899,10 @@ const POS_IMAGE_MAP={
 };
 let posMenuItems=[],posCategories=[],posActiveCategory='',posCartItems=[],posMenuLoaded=false,posImageAssignments=new Map();
 function posMoney(v){return 'UGX '+new Intl.NumberFormat('en-UG').format(Number(v)||0)}
+function posUniqueFallbackFor(item){
+  const keywords=String(item?.name||item?.category||'food').replace(/[^a-z0-9 ]/gi,' ').replace(/\s+/g,' ').trim()||'food';
+  return 'https://loremflickr.com/900/900/'+encodeURIComponent(keywords)+'?lock='+encodeURIComponent(String(item?.id||item?.name||'food').replace(/-/g,''));
+}
 function posImageFor(item){
   const assigned=posImageAssignments.get(String(item?.id||''));if(assigned)return assigned;
   if(item?.img_url)return item.img_url;
@@ -934,8 +938,13 @@ function posRenderProducts(){
   status.textContent=rows.length?rows.length+' menu item'+(rows.length===1?'':'s')+' available':'No menu items match your search.';
   box.innerHTML=rows.map(x=>{
     const image=posImageFor(x),qty=posCartItems.find(i=>i.id===x.id)?.quantity||0;
-    return '<article class="pos-product"><div class="pos-product-media"><img src="'+esc(image)+'" alt="'+esc(x.alt_text||x.name)+'" loading="lazy" onerror="this.src=\''+POS_IMAGE_MAP.default+'\'"></div><div class="pos-product-body"><div class="pos-product-name">'+esc(x.name)+'</div><div class="pos-product-meta">'+esc(x.description||x.serving_unit||x.category||'')+'</div><div class="pos-product-foot"><span class="pos-product-price">'+posMoney(x.price)+'</span><button type="button" class="btn btn-dark pos-add" data-pos-add="'+esc(x.id)+'">'+(qty?'+'+qty:'Add')+'</button></div></div></article>';
+    return '<article class="pos-product"><div class="pos-product-media"><img src="'+esc(image)+'" data-fallback-image="'+esc(posUniqueFallbackFor(x))+'" alt="'+esc(x.alt_text||x.name)+'" loading="lazy"></div><div class="pos-product-body"><div class="pos-product-name">'+esc(x.name)+'</div><div class="pos-product-meta">'+esc(x.description||x.serving_unit||x.category||'')+'</div><div class="pos-product-foot"><span class="pos-product-price">'+posMoney(x.price)+'</span><button type="button" class="btn btn-dark pos-add" data-pos-add="'+esc(x.id)+'">'+(qty?'+'+qty:'Add')+'</button></div></div></article>';
   }).join('');
+  box.querySelectorAll('img[data-fallback-image]').forEach(img=>{
+    if(img.dataset.fallbackBound)return;
+    img.dataset.fallbackBound='1';
+    img.addEventListener('error',()=>{const fallback=img.dataset.fallbackImage;if(fallback&&img.src!==fallback)img.src=fallback;},{once:true});
+  });
   box.querySelectorAll('[data-pos-add]').forEach(b=>b.onclick=()=>posAddItem(b.dataset.posAdd));
 }
 function posRenderCart(){
