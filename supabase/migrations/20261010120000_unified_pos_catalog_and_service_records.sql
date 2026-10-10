@@ -42,6 +42,57 @@ create index if not exists idx_pos_items_category_active
 create index if not exists idx_pos_items_department
   on public.pos_items(department_key, active);
 
+-- Seed the POS-only categories and copy existing sellable menu entries into the
+-- POS catalog. These are separate rows; adding future POS entries does not publish
+-- them to the public website.
+insert into public.pos_categories(name, description, sort_order, active)
+values
+  ('Food','Prepared meals and food items',10,true),
+  ('Drinks','Juice, soft drinks, water and alcoholic drinks',20,true),
+  ('Swimming','Swimming admissions and sessions',30,true),
+  ('Sports','Sports activities and facility use',40,true),
+  ('Photography','Photography packages and services',50,true),
+  ('Buffet & Events','Buffet, events and packages',60,true)
+on conflict (name) do update set description=excluded.description, sort_order=excluded.sort_order, active=true;
+
+insert into public.pos_items
+  (category_id,name,description,unit_price,price_on_request,is_available,fulfillment_mode,
+   department_key,menu_item_id,img_url,alt_text,serving_unit,sort_order,active)
+select
+  pc.id,
+  mi.name,
+  mi.description,
+  greatest(0,coalesce(mi.price,0)),
+  coalesce(mi.price_on_request,false),
+  coalesce(mi.in_stock,false),
+  case when mi.station_id is not null then 'preparation' else 'record_only' end,
+  case
+    when lower(coalesce(ss.name,'')) like '%barista%' or lower(coalesce(ss.name,'')) like '%bar%' then 'barista'
+    when lower(coalesce(ss.name,'')) like '%kitchen%' then 'kitchen'
+    else 'other'
+  end,
+  mi.id, mi.img_url, mi.alt_text, mi.serving_unit, 0, true
+from public.menu_items mi
+left join public.menu_categories mc on mc.id=mi.category_id
+left join public.service_stations ss on ss.id=mi.station_id
+join public.pos_categories pc on pc.name =
+  case when lower(coalesce(mc.name,'')) ~ '(drink|juice|water|beer|wine|spirit|beverage|barista)'
+    then 'Drinks' else 'Food' end
+on conflict (menu_item_id) do update set
+  category_id=excluded.category_id,
+  name=excluded.name,
+  description=excluded.description,
+  unit_price=excluded.unit_price,
+  price_on_request=excluded.price_on_request,
+  is_available=excluded.is_available,
+  fulfillment_mode=excluded.fulfillment_mode,
+  department_key=excluded.department_key,
+  img_url=excluded.img_url,
+  alt_text=excluded.alt_text,
+  serving_unit=excluded.serving_unit,
+  active=true,
+  updated_at=now();
+
 alter table public.pos_categories enable row level security;
 alter table public.pos_items enable row level security;
 
@@ -189,7 +240,7 @@ begin
   returning id into v_order;
 
   for v in select value from jsonb_array_elements(p_items) loop
-    select * into v_pos_item
+    select pi.* into v_pos_item
       from public.pos_items pi
       join public.pos_categories pc on pc.id = pi.category_id and pc.active
       where pi.id = (v->>'id')::uuid
