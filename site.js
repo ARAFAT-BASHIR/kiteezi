@@ -314,7 +314,7 @@
   };
 
   function menuImageFor(item) {
-    if (item?.img_url) return String(item.img_url);
+    if (item?.img_url && /^https?:\/\//i.test(String(item.img_url))) return String(item.img_url);
     const name = String(item?.name || '').trim();
     const hay = (name + ' ' + String(item?.menu_categories?.name || '')).toLowerCase();
     const exact = [
@@ -345,7 +345,7 @@
       .replace(/\b(each|pair|big|small|large|glass|shot|whole|ordinary)\b/gi, '')
       .replace(/\s+/g, ' ')
       .trim() || String(item?.menu_categories?.name || 'food');
-    return 'https://loremflickr.com/900/900/' + encodeURIComponent(keyword) + '?lock=' + stableLock(name);
+    if (/drink|juice|soda|water|lemonade|smoothie/.test(hay)) return MENU_IMAGE_MAP.juice;\n    if (/coffee|tea|barista/.test(hay)) return MENU_IMAGE_MAP.coffee;\n    if (/fish|tilapia/.test(hay)) return MENU_IMAGE_MAP.fish;\n    if (/salad|vegetable|fruit/.test(hay)) return MENU_IMAGE_MAP.salad;\n    return MENU_IMAGE_MAP.default;
   }
 
 async function renderMenuCatalog() {
