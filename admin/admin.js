@@ -479,17 +479,14 @@ function bindNotificationClicks(){document.querySelectorAll('.notification-item'
 async function markNotificationsRead(){await api('/rest/v1/notifications?recipient_user_id=eq.'+session.user.id+'&is_read=eq.false',{method:'PATCH',body:JSON.stringify({is_read:true})});await loadNotifications()}
 async function loadRequisitions(){
   const rows=await api('/rest/v1/requisitions?select=*,requisition_items(id,inventory_item_id,quantity,unit_code,estimated_unit_price,actual_unit_price,actual_total,inventory_items(name,unit))&order=created_at.desc');
-  const role=String(profile?.role||'').toLowerCase();
   const canManager=hasPermission('requisitions.approve.manager');
-  const canGM=hasPermission('requisitions.approve.gm');
   const canCEO=hasPermission('requisitions.approve.ceo');
   $('#requisitionsTable').innerHTML=rows.length?'<table><tr><th>Number</th><th>Requester</th><th>Status</th><th>Items</th><th>Action</th></tr>'+
     rows.map(r=>{
       const items=(r.requisition_items||[]).map(i=>esc(i.inventory_items?.name||i.inventory_item_id)+' × '+esc(i.quantity)+' '+esc(i.unit_code||i.inventory_items?.unit||'')+'<br><small>Est.: '+(i.estimated_unit_price!=null?'UGX '+money(Number(i.estimated_unit_price)*Number(i.quantity||0)):'Not provided')+' · Actual: '+(i.actual_unit_price!=null?'UGX '+money(Number(i.actual_total||0)):'Pending manager')+'</small>').join('<br>');
       let actions='';
       if(r.status==='manager_pending'&&canManager) actions='<button class="btn btn-dark" data-req-actual="'+r.id+'">Enter actual cost & approve</button> <button class="btn" data-req-edit="'+r.id+'">Edit</button> <button class="btn danger" data-req-reject="'+r.id+'">Reject</button>';
-      if(r.status==='gm_pending'&&canGM) actions='<button class="btn" data-req-approve="'+r.id+'" data-stage="gm">Confirm</button> <button class="btn" data-req-edit="'+r.id+'">Edit</button> <button class="btn danger" data-req-reject="'+r.id+'">Reject</button>';
-      if(r.status==='ceo_pending'&&canCEO) actions='<button class="btn" data-req-approve="'+r.id+'" data-stage="ceo">Confirm & Generate PO</button> <button class="btn" data-req-edit="'+r.id+'">Edit</button> <button class="btn danger" data-req-reject="'+r.id+'">Reject</button>';
+      if(r.status==='ceo_pending'&&canCEO) actions='<button class="btn" data-req-approve="'+r.id+'" data-stage="ceo">CEO approve & Generate PO</button> <button class="btn danger" data-req-reject="'+r.id+'">Reject</button>';
       if(profile?.role==='owner') actions += (actions?' ':'')+'<button class="btn danger" data-delete-requisition="'+r.id+'">Delete</button>';
       return '<tr data-req-row="'+r.id+'"><td>'+esc(r.requisition_number)+'</td><td>'+esc(r.requester_id)+'</td><td>'+esc(r.status)+'</td><td>'+items+'</td><td class="actions">'+actions+'</td></tr>';
     }).join('')+'</table>':'<div class="state">No requisitions.</div>';
@@ -528,7 +525,7 @@ async function enterRequisitionActualCost(id){
     try{
       const result=await api('/rest/v1/rpc/approve_requisition',{method:'POST',body:JSON.stringify({p_requisition_id:id,p_action:'approved',p_actual_items:actual_items})});
       closeModal(); await loadRequisitions(); loadGeneratedPOs().catch(()=>{});
-      if(result?.status==='gm_pending')showAdminToast('Approved','Actual costs saved and requisition sent to the General Manager.');
+      if(result?.status==='ceo_pending')showAdminToast('Manager approved','Actual costs saved and requisition sent to the CEO for final approval.');
     }catch(err){msg(err);}
   };
 }
@@ -537,9 +534,9 @@ async function editRequisition(id){
   const r=rows?.[0]; if(!r)return;
   const [inv]=await Promise.all([api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc'),loadUnitOptions()]);
   const line=(i={})=>'<div class="req-line" style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin:6px 0"><select name="item">'+inv.map(x=>'<option value="'+x.id+'" '+(x.id===i.inventory_item_id?'selected':'')+'>'+esc(x.name)+' ('+esc(x.unit)+')</option>').join('')+'</select><input name="qty" type="number" min="0.001" step="0.001" value="'+esc(i.quantity||'')+'"><select name="unit" required>'+unitOptionsHtml(i.unit_code||i.unit||'')+'</select><input name="price" type="number" min="0" step="0.01" value="'+esc(i.estimated_unit_price||'')+'"></div>';
-  modal('Edit requisition — reason required','<form id="reqEditForm" class="form"><p class="muted">The edit reason becomes part of the permanent approval audit trail.</p><textarea name="reason" required placeholder="Why are you changing this requisition?"></textarea><div id="reqLines">'+(r.requisition_items||[]).map(line).join('')+'</div><button type="button" class="btn" id="addReqLine">Add item</button> <button class="btn btn-dark">Save edit and approve</button></form>');
+  modal('Edit requisition — reason required','<form id="reqEditForm" class="form"><p class="muted">The edit reason becomes part of the permanent approval audit trail.</p><textarea name="reason" required placeholder="Why are you changing this requisition?"></textarea><div id="reqLines">'+(r.requisition_items||[]).map(line).join('')+'</div><button type="button" class="btn" id="addReqLine">Add item</button> <button class="btn btn-dark">Save edits</button></form>');
   $('#addReqLine').onclick=()=>$('#reqLines').insertAdjacentHTML('beforeend',line());
-  $('#reqEditForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const items=[...e.currentTarget.querySelectorAll('.req-line')].map(row=>({inventory_item_id:row.querySelector('[name=item]').value,quantity:Number(row.querySelector('[name=qty]').value||0),unit_code:row.querySelector('[name=unit]').value,estimated_unit_price:Number(row.querySelector('[name=price]').value||0)})).filter(x=>x.quantity>0);if(!String(f.get('reason')||'').trim())return alert('Edit reason is required.');try{await api('/rest/v1/rpc/approve_requisition',{method:'POST',body:JSON.stringify({p_requisition_id:id,p_action:'edited',p_items:items,p_reason:String(f.get('reason')).trim()})});closeModal();await loadRequisitions();}catch(err){msg(err)}};
+  $('#reqEditForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const items=[...e.currentTarget.querySelectorAll('.req-line')].map(row=>({inventory_item_id:row.querySelector('[name=item]').value,quantity:Number(row.querySelector('[name=qty]').value||0),unit_code:row.querySelector('[name=unit]').value,estimated_unit_price:Number(row.querySelector('[name=price]').value||0)})).filter(x=>x.quantity>0);if(!String(f.get('reason')||'').trim())return alert('Edit reason is required.');try{await api('/rest/v1/rpc/approve_requisition',{method:'POST',body:JSON.stringify({p_requisition_id:id,p_action:'edited',p_items:items,p_reason:String(f.get('reason')).trim()})});closeModal();await loadRequisitions();showAdminToast('Edits saved','Approval is still pending. Complete the approval step separately.');}catch(err){msg(err)}};
 }
 async function loadGeneratedPOs(){
   const rows=await api('/rest/v1/purchase_orders?select=id,po_number,requisition_id,status,supplier,reference,total,payment_status,generated_at,received_at,paid_at&order=generated_at.desc');
@@ -562,7 +559,7 @@ async function loadGeneratedPOs(){
 async function createRequisition(){
   const [inv]=await Promise.all([api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc'),loadUnitOptions()]);
   const line=()=>'<div class="req-new-line" style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin:6px 0"><select name="item">'+inv.map(x=>'<option value="'+x.id+'">'+esc(x.name)+' ('+esc(x.unit)+')</option>').join('')+'</select><input name="qty" type="number" min="0.001" step="0.001" placeholder="Qty" required><select name="unit" required>'+unitOptionsHtml()+'</select><input name="price" type="number" min="0" step="0.01" placeholder="Est. unit price"></div>';
-  modal('New requisition','<form id="newReqForm" class="form"><p class="muted">Your request is recorded against your department and converted to a purchase order without a Manager/GM approval bottleneck.</p><textarea name="notes" placeholder="Reason / notes"></textarea><div id="newReqLines">'+line()+'</div><button type="button" class="btn" id="addNewReqLine">Add item</button> <button class="btn btn-dark">Submit requisition</button></form>');
+  modal('New requisition','<form id="newReqForm" class="form"><p class="muted">Your request goes to the Manager first, then to the CEO. A purchase order is generated only after CEO approval.</p><textarea name="notes" placeholder="Reason / notes"></textarea><div id="newReqLines">'+line()+'</div><button type="button" class="btn" id="addNewReqLine">Add item</button> <button class="btn btn-dark">Submit requisition</button></form>');
   $('#addNewReqLine').onclick=()=>$('#newReqLines').insertAdjacentHTML('beforeend',line());
   $('#newReqForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const items=[...e.currentTarget.querySelectorAll('.req-new-line')].map(row=>({inventory_item_id:row.querySelector('[name=item]').value,quantity:Number(row.querySelector('[name=qty]').value||0),unit_code:row.querySelector('[name=unit]').value,estimated_unit_price:Number(row.querySelector('[name=price]').value||0)})).filter(x=>x.quantity>0);if(!items.length)return alert('Add at least one item.');try{await api('/rest/v1/rpc/create_requisition',{method:'POST',body:JSON.stringify({p_items:items,p_notes:f.get('notes')||null})});closeModal();await loadRequisitions();}catch(err){msg(err)}};
 }
