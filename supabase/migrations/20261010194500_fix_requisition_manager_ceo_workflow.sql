@@ -218,6 +218,12 @@ begin
     return jsonb_build_object('id',v_req.id,'status','rejected');
   end if;
 
+  -- Editing records a version and audit entry but never counts as approval.
+  -- The approver must explicitly submit the separate approval action afterward.
+  if p_action='edited' then
+    return jsonb_build_object('id',v_req.id,'status',v_req.status,'action','edited');
+  end if;
+
   if v_stage='manager' then
     update public.requisitions set status='ceo_pending',manager_approved_at=now(),updated_at=now() where id=v_req.id;
     perform public.create_role_notification('ceo','requisition_manager_approved','Requisition awaiting CEO approval','A requisition has passed the Manager checkpoint and needs your final approval.','requisition',v_req.id);
@@ -250,7 +256,7 @@ begin
   return jsonb_build_object('id',v_req.id,'status','approved_po_generated','purchase_order_id',v_po,'purchase_order_number',v_po_number);
 end $$;
 
-revoke all on function public.approve_requisition(uuid,text,jsonb,text,jsonb) from public;
+revoke all on function public.approve_requisition(uuid,text,jsonb,text,jsonb) from public, anon;
 grant execute on function public.approve_requisition(uuid,text,jsonb,text,jsonb) to authenticated;
 
 -- The General Manager is view-only and must not be able to create requisitions.
