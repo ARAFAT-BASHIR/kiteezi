@@ -313,21 +313,30 @@
     return Math.abs(hash >>> 0) + 1;
   };
 
-  function menuImageFor(item) {
-    if (item?.img_url) return String(item.img_url);
+  function uniqueDishImageFor(item) {
     const name = String(item?.name || '').trim();
-    const hay = (name + ' ' + String(item?.menu_categories?.name || '')).toLowerCase();
+    const category = String(item?.menu_categories?.name || 'food').trim();
+    const keywords = /chicken.*pilawo|chicken.*pilau|pilawo|pilau/i.test(name)
+      ? 'chicken pilau rice'
+      : (name + ' ' + category).replace(/[^a-z0-9 ]/gi, ' ').replace(/\s+/g, ' ').trim();
+    return 'https://loremflickr.com/900/900/' + encodeURIComponent(keywords || 'food') + '?lock=' + stableLock(name || category);
+  }
+
+  function menuImageFor(item) {
+    const name = String(item?.name || '').trim();
+    const categoryName = String(item?.menu_categories?.name || '');
+    const hay = (name + ' ' + categoryName).toLowerCase();
     const exact = [
+      [/chicken.*pilawo|chicken.*pilau|pilawo|pilau/, MENU_IMAGE_MAP.chicken_pilawo],
+      [/chicken.*wings|wings/, MENU_IMAGE_MAP.chicken_wings],
+      [/indian.*curry.*chicken|chicken.*curry/, MENU_IMAGE_MAP.chicken_curry],
+      [/grilled chicken/, MENU_IMAGE_MAP.grilled_chicken],
+      [/chicken.*rolex|rolex/, MENU_IMAGE_MAP.rolex],
+      [/chicken.*burger|burger/, MENU_IMAGE_MAP.burger],
       [/katogo/, MENU_IMAGE_MAP.katogo],
-      [/rolex/, MENU_IMAGE_MAP.rolex],
       [/coffee|tea/, MENU_IMAGE_MAP.coffee],
       [/samosa/, MENU_IMAGE_MAP.samosa],
       [/masala.*chips/, MENU_IMAGE_MAP.masala_chips],
-      [/chicken.*wings|wings/, MENU_IMAGE_MAP.chicken_wings],
-      [/chicken.*pilawo|pilawo|pilau/, MENU_IMAGE_MAP.chicken_pilawo],
-      [/indian.*curry.*chicken|chicken.*curry/, MENU_IMAGE_MAP.chicken_curry],
-      [/grilled chicken/, MENU_IMAGE_MAP.grilled_chicken],
-      [/burger/, MENU_IMAGE_MAP.burger],
       [/pizza/, MENU_IMAGE_MAP.pizza],
       [/fish/, MENU_IMAGE_MAP.fish],
       [/salad/, MENU_IMAGE_MAP.salad],
@@ -338,14 +347,25 @@
       [/whisk|gin|vodka|spirit|amarula|baileys|champagne|waragi/, MENU_IMAGE_MAP.spirits]
     ];
     for (const [pattern, url] of exact) if (pattern.test(hay)) return url;
-
-    const keyword = name
-      .replace(/\([^)]*\)/g, '')
-      .replace(/[^a-z0-9 ]/gi, ' ')
+    if (/chicken/i.test(name)) return uniqueDishImageFor(item);
+    if (item?.img_url) return String(item.img_url);
+    const keyword = name.replace(/\([^)]*\)/g, '').replace(/[^a-z0-9 ]/gi, ' ')
       .replace(/\b(each|pair|big|small|large|glass|shot|whole|ordinary)\b/gi, '')
-      .replace(/\s+/g, ' ')
-      .trim() || String(item?.menu_categories?.name || 'food');
+      .replace(/\s+/g, ' ').trim() || categoryName || 'food';
     return 'https://loremflickr.com/900/900/' + encodeURIComponent(keyword) + '?lock=' + stableLock(name);
+  }
+
+  function buildMenuImageAssignments(items) {
+    const used = new Set();
+    const assignments = new Map();
+    (items || []).forEach(item => {
+      let url = menuImageFor(item);
+      if (used.has(url)) url = uniqueDishImageFor(item);
+      if (used.has(url)) url += '&item=' + encodeURIComponent(String(item.id || item.name || used.size));
+      used.add(url);
+      assignments.set(String(item.id), url);
+    });
+    return assignments;
   }
 
 async function renderMenuCatalog() {
@@ -355,6 +375,7 @@ async function renderMenuCatalog() {
       // Menu items are the critical payload. Optional CMS copy must not
       // prevent the actual menu catalogue from rendering.
       const items = await getMenuItems();
+      const imageAssignments = buildMenuImageAssignments(items || []);
       let pages = [];
       try {
         pages = await supabaseFetch('/rest/v1/cms_pages?select=title,content&slug=eq.menu&published=eq.true&limit=1');
@@ -412,8 +433,9 @@ async function renderMenuCatalog() {
             const onRequest = item.price_on_request === true || Number(item.price || 0) === 0;
             const price = onRequest ? 'Ask' : 'UGX ' + money(item.price);
             const serving = item.serving_unit ? ' / ' + escapeHtml(item.serving_unit) : '';
-            const imageUrl = menuImageFor(item);
-            const image = '<div class="menu-item-image"><img src="' + escapeHtml(imageUrl) + '" alt="' + escapeHtml(item.alt_text || item.name) + '" loading="lazy" onerror="this.src=\'' + escapeHtml(MENU_IMAGE_MAP.default) + '\'"></div>';
+            const imageUrl = imageAssignments.get(String(item.id)) || uniqueDishImageFor(item);
+            const fallbackImageUrl = uniqueDishImageFor(item);
+            const image = '<div class="menu-item-image"><img src="' + escapeHtml(imageUrl) + '" alt="' + escapeHtml(item.alt_text || item.name) + '" loading="lazy" onerror="this.onerror=null;this.src=\\'' + escapeHtml(fallbackImageUrl) + '\\'"></div>';
             return '<div class="menu-item">' + image +
               '<div><h4>' + escapeHtml(item.name) + '</h4><p>' + escapeHtml(item.description || '') + '</p></div>' +
               '<div class="menu-price">' + price + serving + '</div></div>' +
