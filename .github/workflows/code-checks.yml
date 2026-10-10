@@ -128,7 +128,9 @@ jobs:
           block = js.split(marker, 1)[1]
           block = block.split("setupPos();restore();", 1)[0]
           refs = set(re.findall(r"\$\(['\"]#([A-Za-z][\w-]*)['\"]\)\.(?:onclick|oninput|onchange|onsubmit|addEventListener)", block))
-          missing = sorted(x for x in refs if x not in ids)
+          # countForm is created dynamically when the stock-count modal opens.
+          dynamic_ids = {"countForm"}
+          missing = sorted(x for x in refs if x not in ids and x not in dynamic_ids)
           if missing:
               print("Admin startup references missing DOM ids:", ", ".join(missing))
               raise SystemExit(1)
