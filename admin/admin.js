@@ -755,6 +755,11 @@ async function deleteBusinessRecord(type,id,after){
   try{await api('/rest/v1/rpc/admin_delete_business_record',{method:'POST',body:JSON.stringify({p_type:type,p_id:id})});if(typeof after==='function')await after();}catch(e){msg(e)}
 }
 async function deleteTestRecord(type,id){if(profile?.role!=='owner')return;const labels={booking:'booking',order:'order',inquiry:'inquiry',purchase_order:'purchase order',stock_movement:'stock movement',menu_recipe:'recipe',review:'review',gallery_item:'gallery item',media:'website media',announcement:'announcement',service_log:'service tally',staff_task:'staff task',daily_count:'daily inventory count',notification:'notification',email_message:'email message'};const label=labels[type]||'record';if(!confirm('Delete this '+label+' permanently? This cannot be undone.'))return;try{await api('/rest/v1/rpc/owner_delete_test_record',{method:'POST',body:JSON.stringify({p_type:type,p_id:id})});if(type==='booking')await loadBookings();else if(type==='order')await loadOrders();else if(type==='requisition')await loadRequisitions();else if(type==='inquiry')await loadInquiries();else if(type==='purchase_order')await loadPurchases();else if(type==='stock_movement')await loadStockMovements();else if(type==='review')await loadReviews();else if(type==='gallery_item')await loadGallery();else if(type==='media'||type==='announcement')await loadContent();else if(type==='service_log')await loadServiceTally();else if(type==='staff_task')await loadTasks();else if(type==='daily_count')await loadDailyStock();}catch(e){msg(e)}}
+function bookingStatusLabel(booking){
+  const status=String(booking?.status||'').toLowerCase();
+  if(status==='pending')return booking?.ceo_approved_at?'Awaiting Manager confirmation':'Awaiting CEO approval';
+  return ({confirmed:'Confirmed',completed:'Completed',cancelled:'Cancelled'}[status]||'Status needs review');
+}
 async function loadBookings(){
   const filter=$('#bookingFilter')?.value||'all';
   let q='/rest/v1/bookings?select=*,customers(name,phone),services(name)&order=booking_date.desc,start_time.asc';
@@ -782,7 +787,7 @@ async function loadBookings(){
         const completeBtn=actionAllowed('bookings.complete')&&active?'<button class="btn" data-complete-booking="'+r.id+'">Completed</button> ':'';
         const cancelBtn=actionAllowed('bookings.cancel')&&active?'<button class="btn" data-cancel-booking="'+r.id+'">Cancel</button> ':'';
         const deleteBtn=hasPermission('bookings.delete')?'<button class="btn danger" data-delete-booking="'+r.id+'">Delete</button> ':'';
-        return '<tr data-b="'+r.id+'"><td>'+esc(r.booking_date)+' '+esc(r.start_time||'')+'</td><td>'+esc(customer)+'<br>'+esc(r.customers?.phone||'')+'</td><td>'+esc(r.people)+'</td><td>UGX '+money(r.total)+'</td><td>'+esc(r.status)+(r.ceo_approved_at?' · CEO approved':'')+'</td><td>'+esc(r.payment_status||'unpaid')+'</td><td class="actions">'+ceoBtn+managerBtn+paidBtn+completeBtn+cancelBtn+deleteBtn+'</td></tr>';
+        return '<tr data-b="'+r.id+'"><td>'+esc(r.booking_date)+' '+esc(r.start_time||'')+'</td><td>'+esc(customer)+'<br>'+esc(r.customers?.phone||'')+'</td><td>'+esc(r.people)+'</td><td>UGX '+money(r.total)+'</td><td>'+esc(bookingStatusLabel(r))+'</td><td>'+esc(String(r.payment_status||'unpaid').toLowerCase()==='paid'?'Paid':'Unpaid')+'</td><td class="actions">'+ceoBtn+managerBtn+paidBtn+completeBtn+cancelBtn+deleteBtn+'</td></tr>';
       }).join('')+'</table>';
   };
   setHTML('#bookingTable','<h3>Today\'s bookings</h3>'+renderRows(todayRows)+'<h3 style="margin-top:24px">Upcoming bookings</h3>'+renderRows(upcomingRows)+'<h3 style="margin-top:24px">Previous bookings</h3>'+renderRows(previousRows));
