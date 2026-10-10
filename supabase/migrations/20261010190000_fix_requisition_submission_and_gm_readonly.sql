@@ -14,6 +14,9 @@ declare
   v_item jsonb;
   v_version uuid;
   v_department text;
+  v_inventory_item uuid;
+  v_unit text;
+  v_estimated numeric;
 begin
   if v_uid is null or v_org is null or not public.has_permission('requisitions.create') then
     raise exception 'You are not permitted to create requisitions.';
@@ -60,11 +63,18 @@ begin
       raise exception 'Every requisition item requires a valid inventory item and positive quantity.';
     end if;
 
-    if not exists (
-      select 1 from public.inventory_items ii
-      where ii.id = (v_item->>'inventory_item_id')::uuid
-        and ii.active = true
-    ) then
+    v_inventory_item := (v_item->>'inventory_item_id')::uuid;
+    v_estimated := nullif(v_item->>'estimated_unit_price', '')::numeric;
+    if v_estimated < 0 then
+      raise exception 'Estimated unit prices cannot be negative.';
+    end if;
+
+    select ii.unit into v_unit
+    from public.inventory_items ii
+    where ii.id = v_inventory_item
+      and ii.active = true;
+
+    if not found then
       raise exception 'One of the selected inventory items is no longer available.';
     end if;
 
@@ -72,36 +82,21 @@ begin
       requisition_id, inventory_item_id, quantity, unit_code,
       estimated_unit_price, actual_unit_price
     )
-    select
-      v_req,
-      ii.id,
-      (v_item->>'quantity')::numeric,
-      coalesce(nullif(v_item->>'unit_code', ''), ii.unit),
-      case
-        when nullif(v_item->>'estimated_unit_price', '') is null then null
-        when (v_item->>'estimated_unit_price')::numeric < 0 then
-          null
-        else (v_item->>'estimated_unit_price')::numeric
-      end,
-      null
-    from public.inventory_items ii
-    where ii.id = (v_item->>'inventory_item_id')::uuid
-      and ii.active = true;
-
-    if not found then
-      raise exception 'One of the selected inventory items is no longer available.';
-    end if;
+    values (
+      v_req, v_inventory_item, (v_item->>'quantity')::numeric,
+      coalesce(nullif(v_item->>'unit_code', ''), v_unit),
+      v_estimated, null
+    );
 
     insert into public.requisition_version_items(
       version_id, inventory_item_id, quantity, unit_code,
       estimated_unit_price, actual_unit_price
     )
-    select
-      v_version, ri.inventory_item_id, ri.quantity, ri.unit_code,
-      ri.estimated_unit_price, null
-    from public.requisition_items ri
-    where ri.requisition_id = v_req
-      and ri.inventory_item_id = (v_item->>'inventory_item_id')::uuid;
+    values (
+      v_version, v_inventory_item, (v_item->>'quantity')::numeric,
+      coalesce(nullif(v_item->>'unit_code', ''), v_unit),
+      v_estimated, null
+    );
   end loop;
 
   perform public.create_role_notification(
