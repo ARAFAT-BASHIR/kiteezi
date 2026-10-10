@@ -142,6 +142,7 @@ begin
   select id into v_prev_version from public.requisition_versions where requisition_id=v_req.id and version_number=v_req.current_version;
 
   if p_action='edited' then
+    if v_stage='ceo' then raise exception 'CEO-stage requisitions cannot be edited. Reject and resubmit the requisition for Manager review if items must change.'; end if;
     if nullif(trim(coalesce(p_reason,'')),'') is null then raise exception 'A reason is mandatory whenever an approver edits a requisition.'; end if;
     if jsonb_typeof(p_items)<>'array' or jsonb_array_length(p_items)=0 then raise exception 'Edited requisitions must contain at least one item.'; end if;
 
