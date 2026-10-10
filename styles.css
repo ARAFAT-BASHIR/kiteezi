@@ -223,7 +223,7 @@ body.team-profile-open{overflow:hidden}
 @media(max-width:600px){.team-profile-dialog{padding:22px;border-radius:16px}.team-profile-photo{max-height:260px}}
 
 /* Consistent responsive navigation: keep the full menu usable on tablet and mobile. */
-@media(max-width:1100px){
+@media(max-width:1240px){
   .nav .navin{position:relative}
   .nav .links{
     display:none;
