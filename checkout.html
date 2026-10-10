@@ -169,6 +169,8 @@
         </small>
       </span>
     </a>
+<button class="mobile btn" data-mobile aria-label="Open navigation" aria-expanded="false" type="button">☰</button>
+
 
     <nav class="links">
       <a href="menu.html">Menu</a>
@@ -180,10 +182,14 @@
       >
         Continue Shopping
       </a>
-    </nav>
+    <a href="tracking.html?type=order">Track Order</a><a href="tracking.html?type=booking">Track Booking</a></nav>
 
   </div>
 </header>
+<script>
+(function(){const b=document.querySelector('[data-mobile]'),n=document.querySelector('.links');if(!b||!n)return;b.addEventListener('click',()=>{const open=n.classList.toggle('open');b.setAttribute('aria-expanded',open?'true':'false');b.setAttribute('aria-label',open?'Close navigation':'Open navigation');});})();
+</script>
+
 
 
 <main class="checkout">
