@@ -173,9 +173,8 @@
     */
     if (settings.phone) {
       const phone = settings.phone;
-      const phoneLink =
-        settings.phone_link ||
-        'tel:' + cleanPhone(phone);
+      const phoneTarget = cleanPhone(settings.phone_link || phone);
+      const phoneLink = phoneTarget ? 'tel:' + phoneTarget : '';
 
       document
         .querySelectorAll(
@@ -187,7 +186,7 @@
           if (
             element.matches('a')
           ) {
-            element.href = phoneLink;
+            element.href = phoneLink || '#';
           }
         });
 
@@ -215,13 +214,11 @@
       settings.whatsapp_number ||
       cleanWhatsApp(settings.whatsapp);
 
+    const configuredWhatsappLink = safeUrl(settings.whatsapp_link, {allowRelative: false});
     const whatsappLink =
-      settings.whatsapp_link ||
-      (
-        whatsappNumber
-          ? 'https://wa.me/' + whatsappNumber
-          : ''
-      );
+      (configuredWhatsappLink && /^https:\/\/(?:wa\.me|api\.whatsapp\.com)\//i.test(configuredWhatsappLink))
+        ? configuredWhatsappLink
+        : (whatsappNumber ? 'https://wa.me/' + whatsappNumber : '');
 
     if (whatsappLink) {
       document
