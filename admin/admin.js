@@ -972,15 +972,20 @@ async function loadPosMenu(force=false){
   shell.hidden=false;
   if(posMenuLoaded&&!force)return;
   try{
+    // The POS catalogue is deliberately sourced only from pos_categories/pos_items.
+    // Public menu entries appear here only when an administrator has explicitly linked
+    // them to a POS item; POS-only services never need a public menu record.
     const [cats,items]=await Promise.all([
-      api('/rest/v1/menu_categories?select=id,name,sort_order&active=eq.true&order=sort_order.asc,name.asc'),
-      api('/rest/v1/menu_items?select=id,name,description,price,price_on_request,in_stock,img_url,alt_text,category_id,serving_unit,menu_categories(name)&in_stock=eq.true&price_on_request=eq.false&order=name.asc')
+      api('/rest/v1/pos_categories?select=id,name,sort_order&active=eq.true&order=sort_order.asc,name.asc'),
+      api('/rest/v1/pos_items?select=id,name,description,unit_price,price_on_request,is_available,active,fulfillment_mode,department_key,menu_item_id,img_url,alt_text,category_id,serving_unit,pricing_mode,team_threshold,small_group_price,full_team_price,serves_people,sort_order,pos_categories(name),menu_items(in_stock,price_on_request)&active=eq.true&is_available=eq.true&price_on_request=eq.false&order=sort_order.asc,name.asc')
     ]);
     posCategories=Array.isArray(cats)?cats:[];
-    posMenuItems=(Array.isArray(items)?items:[]).map(x=>({...x,category:x.menu_categories?.name||'Other'}));
+    posMenuItems=(Array.isArray(items)?items:[])
+      .filter(x=>!x.menu_item_id||(x.menu_items?.in_stock===true&&x.menu_items?.price_on_request!==true))
+      .map(x=>({...x,price:Number(x.unit_price)||0,category:x.pos_categories?.name||'Other'}));
     posMenuLoaded=true;posRenderCategories();posRenderProducts();posRenderCart();
-    $('#posMenuStatus').textContent=posMenuItems.length+' menu items available';
-  }catch(e){posMenuLoaded=false;const el=$('#posMenuStatus');if(el)el.textContent='Unable to load the live menu. Please refresh and try again.';msg(e)}
+    $('#posMenuStatus').textContent=posMenuItems.length+' POS items available';
+  }catch(e){posMenuLoaded=false;const el=$('#posMenuStatus');if(el)el.textContent='Unable to load Point of Sale items. Please refresh and try again.';msg(e)}
 }
 function posPaymentModal(){
   if(!posCartItems.length){posSetStatus('Add at least one item before proceeding to payment.',true);return}
