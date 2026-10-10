@@ -58,6 +58,17 @@ jobs:
           fi
           echo "Public client security invariants passed."
 
+      - name: Parse every CSS stylesheet
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=$(find . -type f -name "*.css" -not -path "./node_modules/*" | sort)
+          test -n "$files"
+          while IFS= read -r file; do
+            echo "Parsing $file"
+            npx --yes postcss-cli "$file" --output /tmp/kiteezi-css-check.css
+          done <<< "$files"
+
       - name: Check inline JavaScript and local HTML references
         shell: bash
         run: |
