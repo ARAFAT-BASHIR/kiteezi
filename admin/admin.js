@@ -958,7 +958,7 @@ function posRenderCart(){
   if(!box)return;
   box.innerHTML=posCartItems.length?posCartItems.map(x=>{
     const image=posImageFor(x);
-    return '<div class="pos-cart-line"><div class="pos-cart-thumb"><img src="'+esc(image)+'" alt="" loading="lazy"></div><div><div class="pos-cart-line-name">'+esc(x.name)+'</div><div class="pos-cart-line-price">'+posMoney(posEffectiveUnitPrice(x,x.quantity))+' each</div><div class="pos-qty"><button type="button" data-pos-dec="'+x.id+'">−</button><span>'+x.quantity+'</span><button type="button" data-pos-inc="'+x.id+'">+</button></div></div><div><strong>'+posMoney((Number(x.price)||0)*x.quantity)+'</strong><button type="button" class="pos-remove" aria-label="Remove '+esc(x.name)+'" data-pos-remove="'+x.id+'">×</button></div></div>';
+    return '<div class="pos-cart-line"><div class="pos-cart-thumb"><img src="'+esc(image)+'" alt="" loading="lazy"></div><div><div class="pos-cart-line-name">'+esc(x.name)+'</div><div class="pos-cart-line-price">'+posMoney(posEffectiveUnitPrice(x,x.quantity))+' each</div><div class="pos-qty"><button type="button" data-pos-dec="'+x.id+'">−</button><span>'+x.quantity+'</span><button type="button" data-pos-inc="'+x.id+'">+</button></div></div><div><strong>'+posMoney(posEffectiveUnitPrice(x,x.quantity)*x.quantity)+'</strong><button type="button" class="pos-remove" aria-label="Remove '+esc(x.name)+'" data-pos-remove="'+x.id+'">×</button></div></div>';
   }).join(''):'<div class="state">No items yet.</div>';
   box.querySelectorAll('[data-pos-inc]').forEach(b=>b.onclick=()=>posChangeQty(b.dataset.posInc,1));
   box.querySelectorAll('[data-pos-dec]').forEach(b=>b.onclick=()=>posChangeQty(b.dataset.posDec,-1));
