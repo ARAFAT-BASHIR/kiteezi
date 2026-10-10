@@ -10,8 +10,8 @@ insert into public.pos_items
    fulfillment_mode,department_key,menu_item_id,img_url,alt_text,serving_unit,
    sort_order,active)
 select
-  pc.id, b.name, b.description, greatest(0,coalesce(b.price,0)),
-  coalesce(b.price,0)<=0, coalesce(b.active,true),
+  pc.id, b.name, b.description, greatest(0,coalesce(b.price_per_person,0)),
+  coalesce(b.price_on_request,false), coalesce(b.active,true),
   'record_only','buffet',null,null,null,null,0,true
 from public.booking_bundles b
 join public.pos_categories pc on pc.name='Buffet & Events'
