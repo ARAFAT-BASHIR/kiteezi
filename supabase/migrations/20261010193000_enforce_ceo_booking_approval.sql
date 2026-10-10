@@ -40,12 +40,33 @@ begin
     end if;
   end if;
 
+  if old.status in ('completed', 'cancelled') and new.status is distinct from old.status then
+    raise exception 'Completed or cancelled bookings cannot be reopened.';
+  end if;
+
+  if new.status = 'pending' and old.status is distinct from new.status then
+    raise exception 'A booking cannot be returned to pending after processing has started.';
+  end if;
+
   if new.status = 'confirmed' and old.status is distinct from new.status then
     if new.ceo_approved_at is null or new.manager_approved_at is null then
       raise exception 'A booking must pass CEO approval and Manager confirmation before it can be confirmed.';
     end if;
     if new.manager_approved_by is distinct from auth.uid() then
       raise exception 'Only the Manager completing this approval step can confirm the booking.';
+    end if;
+  end if;
+
+  if new.status = 'completed' and old.status is distinct from new.status and old.status <> 'confirmed' then
+    raise exception 'Only confirmed bookings can be completed.';
+  end if;
+
+  if new.status = 'cancelled' and old.status is distinct from new.status then
+    if old.status in ('completed', 'cancelled') then
+      raise exception 'This booking cannot be cancelled.';
+    end if;
+    if nullif(trim(coalesce(new.cancellation_reason, '')), '') is null then
+      raise exception 'A cancellation reason is required.';
     end if;
   end if;
 
@@ -106,6 +127,9 @@ begin
   if p_status is not null then
     if p_status = 'confirmed' then
       raise exception 'Use CEO approval followed by Manager confirmation to confirm a booking.';
+    end if;
+    if p_status = 'cancelled' and p_payment_status = 'paid' then
+      raise exception 'A cancelled booking cannot be marked as paid.';
     end if;
     if p_status = 'completed' and not public.has_permission('bookings.complete') then
       raise exception 'You are not permitted to complete bookings.';
