@@ -922,7 +922,7 @@ function posSetStatus(message,error=false){
   el.textContent=message||'';el.classList.toggle('show',!!message);el.style.color=error?'#8b2222':'';
 }
 function posEffectiveUnitPrice(item,quantity=1){if(item?.pricing_mode==='per_person_team'&&Number(item.team_threshold)>0)return Number(quantity)<Number(item.team_threshold)?Number(item.small_group_price??item.price)||0:Number(item.full_team_price??item.price)||0;return Number(item?.price)||0}
-function posPriceLabel(item){if(item?.pricing_mode==='per_person_team'&&Number(item.team_threshold)>0)return posMoney(item.small_group_price??item.price)+' / person · '+posMoney(item.full_team_price??item.price)+' from '+item.team_threshold;return posMoney(item.price)}
+function posPriceLabel(item){if(item?.pricing_mode==='per_person_team'&&Number(item.team_threshold)>0)return posMoney(item.small_group_price??item.price)+' / person · '+posMoney(item.full_team_price??item.price)+' from '+item.team_threshold;if(item?.pricing_mode==='fixed_package'&&Number(item.serves_people)>0)return posMoney(item.price)+' / package · serves '+item.serves_people;return posMoney(item.price)}
 function posCartTotal(){return posCartItems.reduce((s,x)=>s+posEffectiveUnitPrice(x,x.quantity)*Number(x.quantity||0),0)}
 function posRenderCategories(){
   const box=$('#posCategoryTabs');if(!box)return;
@@ -940,7 +940,7 @@ function posRenderProducts(){
   status.textContent=rows.length?rows.length+' menu item'+(rows.length===1?'':'s')+' available':'No menu items match your search.';
   box.innerHTML=rows.map(x=>{
     const image=posImageFor(x),qty=posCartItems.find(i=>i.id===x.id)?.quantity||0;
-    return '<article class="pos-product"><div class="pos-product-media"><img src="'+esc(image)+'" data-fallback-image="'+esc(posUniqueFallbackFor(x))+'" alt="'+esc(x.alt_text||x.name)+'" loading="lazy"></div><div class="pos-product-body"><div class="pos-product-name">'+esc(x.name)+'</div><div class="pos-product-meta">'+esc(x.description||x.serving_unit||x.category||'')+'</div><div class="pos-product-foot"><span class="pos-product-price">'+posPriceLabel(x)+'</span><button type="button" class="btn btn-dark pos-add" data-pos-add="'+esc(x.id)+'">'+(qty?'+'+qty:'Add')+'</button></div></div></article>';
+    return '<article class="pos-product"><div class="pos-product-media"><img src="'+esc(image)+'" data-fallback-image="'+esc(posUniqueFallbackFor(x))+'" alt="'+esc(x.alt_text||x.name)+'" loading="lazy"></div><div class="pos-product-body"><div class="pos-product-name">'+esc(x.name)+'</div><div class="pos-product-meta">'+esc(x.description||x.serving_unit||(x.pricing_mode==='fixed_package'&&Number(x.serves_people)>0?'Package · serves '+x.serves_people:x.category)||'')+'</div><div class="pos-product-foot"><span class="pos-product-price">'+posPriceLabel(x)+'</span><button type="button" class="btn btn-dark pos-add" data-pos-add="'+esc(x.id)+'">'+(qty?'+'+qty:'Add')+'</button></div></div></article>';
   }).join('');
   box.querySelectorAll('img[data-fallback-image]').forEach(img=>{
     if(img.dataset.fallbackBound)return;
