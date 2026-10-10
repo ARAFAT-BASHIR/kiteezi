@@ -477,21 +477,29 @@ function toggleNotifications(){const p=$('#notificationPanel');p.style.display=p
 function startNotificationPolling(){if(notificationPoll)clearInterval(notificationPoll);notificationPoll=setInterval(()=>{if(!document.hidden)loadNotifications().catch(()=>{});},10000);}
 function bindNotificationClicks(){document.querySelectorAll('.notification-item').forEach(el=>el.onclick=async()=>{try{const n=notificationCache.get(el.dataset.notification);if(n)await openNotification(n);}catch(e){msg(e)}})}
 async function markNotificationsRead(){await api('/rest/v1/notifications?recipient_user_id=eq.'+session.user.id+'&is_read=eq.false',{method:'PATCH',body:JSON.stringify({is_read:true})});await loadNotifications()}
+function requisitionStatusLabel(status){
+  const labels={
+    draft:'Draft',
+    manager_pending:'Awaiting Manager review and actual pricing',
+    gm_pending:'Awaiting Owner approval',
+    ceo_pending:'Awaiting Owner approval',
+    approved_po_generated:'Purchase order generated',
+    rejected:'Rejected'
+  };
+  return labels[String(status||'').toLowerCase()]||'Status needs review';
+}
 async function loadRequisitions(){
   const rows=await api('/rest/v1/requisitions?select=*,requisition_items(id,inventory_item_id,quantity,unit_code,estimated_unit_price,actual_unit_price,actual_total,inventory_items(name,unit))&order=created_at.desc');
-  const role=String(profile?.role||'').toLowerCase();
   const canManager=hasPermission('requisitions.approve.manager');
-  const canGM=hasPermission('requisitions.approve.gm');
   const canCEO=hasPermission('requisitions.approve.ceo');
   $('#requisitionsTable').innerHTML=rows.length?'<table><tr><th>Number</th><th>Requester</th><th>Status</th><th>Items</th><th>Action</th></tr>'+
     rows.map(r=>{
       const items=(r.requisition_items||[]).map(i=>esc(i.inventory_items?.name||i.inventory_item_id)+' × '+esc(i.quantity)+' '+esc(i.unit_code||i.inventory_items?.unit||'')+'<br><small>Est.: '+(i.estimated_unit_price!=null?'UGX '+money(Number(i.estimated_unit_price)*Number(i.quantity||0)):'Not provided')+' · Actual: '+(i.actual_unit_price!=null?'UGX '+money(Number(i.actual_total||0)):'Pending manager')+'</small>').join('<br>');
       let actions='';
       if(r.status==='manager_pending'&&canManager) actions='<button class="btn btn-dark" data-req-actual="'+r.id+'">Enter actual cost & approve</button> <button class="btn" data-req-edit="'+r.id+'">Edit</button> <button class="btn danger" data-req-reject="'+r.id+'">Reject</button>';
-      if(r.status==='gm_pending'&&canGM) actions='<button class="btn" data-req-approve="'+r.id+'" data-stage="gm">Confirm</button> <button class="btn" data-req-edit="'+r.id+'">Edit</button> <button class="btn danger" data-req-reject="'+r.id+'">Reject</button>';
-      if(r.status==='ceo_pending'&&canCEO) actions='<button class="btn" data-req-approve="'+r.id+'" data-stage="ceo">Confirm & Generate PO</button> <button class="btn" data-req-edit="'+r.id+'">Edit</button> <button class="btn danger" data-req-reject="'+r.id+'">Reject</button>';
+      if((r.status==='gm_pending'||r.status==='ceo_pending')&&canCEO) actions='<button class="btn" data-req-approve="'+r.id+'" data-stage="ceo">Confirm & Generate PO</button> <button class="btn" data-req-edit="'+r.id+'">Edit</button> <button class="btn danger" data-req-reject="'+r.id+'">Reject</button>';
       if(profile?.role==='owner') actions += (actions?' ':'')+'<button class="btn danger" data-delete-requisition="'+r.id+'">Delete</button>';
-      return '<tr data-req-row="'+r.id+'"><td>'+esc(r.requisition_number)+'</td><td>'+esc(r.requester_id)+'</td><td>'+esc(r.status)+'</td><td>'+items+'</td><td class="actions">'+actions+'</td></tr>';
+      return '<tr data-req-row="'+r.id+'"><td>'+esc(r.requisition_number)+'</td><td>'+esc(r.requester_id)+'</td><td>'+esc(requisitionStatusLabel(r.status))+'</td><td>'+items+'</td><td class="actions">'+actions+'</td></tr>';
     }).join('')+'</table>':'<div class="state">No requisitions.</div>';
   $$('[data-req-actual]').forEach(b=>b.onclick=()=>enterRequisitionActualCost(b.dataset.reqActual));
   $$('[data-req-approve]').forEach(b=>b.onclick=async()=>{try{await api('/rest/v1/rpc/approve_requisition',{method:'POST',body:JSON.stringify({p_requisition_id:b.dataset.reqApprove,p_action:'approved'})});await loadRequisitions();loadGeneratedPOs().catch(()=>{});}catch(e){msg(e)}});
@@ -528,7 +536,7 @@ async function enterRequisitionActualCost(id){
     try{
       const result=await api('/rest/v1/rpc/approve_requisition',{method:'POST',body:JSON.stringify({p_requisition_id:id,p_action:'approved',p_actual_items:actual_items})});
       closeModal(); await loadRequisitions(); loadGeneratedPOs().catch(()=>{});
-      if(result?.status==='gm_pending')showAdminToast('Approved','Actual costs saved and requisition sent to the General Manager.');
+      if(result?.status==='ceo_pending')showAdminToast('Actual costs saved','The requisition is now awaiting the Owner’s final approval.');
     }catch(err){msg(err);}
   };
 }
