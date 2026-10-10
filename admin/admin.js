@@ -1888,16 +1888,10 @@ async function sendStaffNotification(){if(!canSendStaffNotifications())return ms
 async function sendPasswordRecovery(email){const r=await fetch(URL+'/auth/v1/recover',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({email,redirect_to:location.origin+location.pathname+'?password_reset=1'})});if(!r.ok){const d=await r.json().catch(()=>null);throw Error(d?.msg||d?.message||'Password recovery could not be started.')}return true}
 async function saveMyAccountSecurity(email,password){const body={};if(email)body.email=email;if(password)body.password=password;if(!Object.keys(body).length)throw Error('Enter an email or new password.');const r=await fetch(URL+'/auth/v1/user',{method:'PUT',headers:{apikey:KEY,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json().catch(()=>null);if(!r.ok)throw Error(d?.msg||d?.message||'Account security changes could not be saved.');if(d?.access_token){session.access_token=d.access_token;session.refresh_token=d.refresh_token||session.refresh_token;writeAdminSession(session)}return d}
 async function openMyAccountSecurity(){const u=session?.user||{};modal('My account & security','<form id="myAccountForm" class="form"><label>Email<input name="email" type="email" value="'+esc(u.email||'')+'" required></label><label>New password<input name="password" type="password" minlength="8" autocomplete="new-password" placeholder="Leave blank to keep current password"></label><label>Confirm new password<input name="confirm" type="password" minlength="8" autocomplete="new-password"></label><button class="btn btn-dark">Save account changes</button><div class="notice" id="myAccountStatus" hidden></div></form><hr><h3>Password recovery</h3><p class="muted">Send a recovery email to the account email address.</p><button class="btn" id="sendMyRecovery" type="button">Send recovery email</button>');$('#myAccountForm').onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.currentTarget),email=String(fd.get('email')||'').trim(),pw=String(fd.get('password')||''),confirm=String(fd.get('confirm')||'');if(pw&&pw!==confirm)return alert('The new passwords do not match.');const s=$('#myAccountStatus');try{await saveMyAccountSecurity(email,pw);if(s){s.hidden=false;s.textContent='Account security updated.'}}catch(err){if(s){s.hidden=false;s.className='notice danger';s.textContent=humanAdminError(err,'Account security could not be updated.')}}};$('#sendMyRecovery').onclick=async()=>{try{await sendPasswordRecovery(String(session?.user?.email||''));alert('Password recovery email sent.')}catch(err){msg(err)}}}
-function settingLabel(key){
-  return String(key||'')
-    .replace(/_/g,' ')
-    .replace(/\b\w/g,m=>m.toUpperCase());
-}
 async function loadSettings(){
   if(!hasPermission('site_settings.manage')) return;
   const rows=await api('/rest/v1/site_settings?select=key,value&order=key.asc');
   const r=Array.isArray(rows)?rows:[];
-  const known=new Set(Array.from(document.querySelectorAll('[data-set]')).map(x=>x.dataset.set).filter(Boolean));
   r.forEach(row=>{
     const value=row?.value??'';
     document.querySelectorAll('[data-set="'+CSS.escape(String(row.key))+'"]').forEach(el=>{
@@ -1911,13 +1905,6 @@ async function loadSettings(){
     const v=logo?.value||'';
     preview.src=v?(v.startsWith('http')?v:'../'+v.replace(/^\/+/,'')):'';
     preview.hidden=!v;
-  }
-  const extras=r.filter(x=>!known.has(String(x.key)));
-  const table=$('#settingsTable');
-  if(table){
-    table.innerHTML=extras.length
-      ? extras.map(x=>'<label><strong>'+esc(settingLabel(x.key))+'</strong><input data-set="'+esc(x.key)+'" value="'+esc(x.value||'')+'"></label>').join('')
-      : '<div class="settings-empty full">No additional settings.</div>';
   }
 }
 async function saveSettings(){
