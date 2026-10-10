@@ -1,6 +1,8 @@
 -- Owner-only test-data cleanup expansion.
 -- Intentionally excludes audit logs and master/configuration tables.
-alter table public.requisitions add column if not exists deleted_at timestamptz; alter table public.requisitions add column if not exists deleted_by uuid references public.profiles(id); alter table public.requisitions add column if not exists deletion_reason text;\n\ncreate or replace function public.owner_delete_test_record(p_type text,p_id uuid)
+alter table public.requisitions add column if not exists deleted_at timestamptz; alter table public.requisitions add column if not exists deleted_by uuid references public.profiles(id); alter table public.requisitions add column if not exists deletion_reason text;
+
+create or replace function public.owner_delete_test_record(p_type text,p_id uuid)
 returns boolean
 language plpgsql
 security definer
