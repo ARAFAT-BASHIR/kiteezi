@@ -135,10 +135,9 @@ begin
     v_unit_price := case
       when v_pos_item.pricing_mode='per_person_team' and v_pos_item.team_threshold is not null
         then case when v_qty < v_pos_item.team_threshold then coalesce(v_pos_item.small_group_price,v_pos_item.unit_price) else coalesce(v_pos_item.full_team_price,v_pos_item.unit_price) end
-      when v_pos_item.pricing_mode='fixed_package' and coalesce(v_pos_item.serves_people,0)>0
-        then coalesce(v_pos_item.unit_price,0) / greatest(1,ceil(v_qty / v_pos_item.serves_people))
       else coalesce(v_pos_item.unit_price,0)
     end;
+    if v_unit_price < 0 then raise exception 'POS item price cannot be negative'; end if;
     if v_pos_item.fulfillment_mode = 'preparation' and v_pos_item.menu_item_id is null then
       raise exception 'Prepared food and drinks must link to a menu item for kitchen/barista routing and inventory';
     end if;
@@ -155,11 +154,7 @@ begin
       (order_id,menu_item_id,pos_item_id,item_name_snapshot,qty,unit_price,notes)
     values
       (v_order,v_pos_item.menu_item_id,v_pos_item.id,v_pos_item.name,v_qty,v_unit_price,null);
-    v_total := v_total + case
-      when v_pos_item.pricing_mode='fixed_package' and coalesce(v_pos_item.serves_people,0)>0
-        then coalesce(v_pos_item.unit_price,0) * greatest(1,ceil(v_qty / v_pos_item.serves_people))
-      else v_qty * v_unit_price
-    end;
+    v_total := v_total + v_qty * v_unit_price;
   end loop;
 
   update public.orders set total = v_total where id = v_order;
