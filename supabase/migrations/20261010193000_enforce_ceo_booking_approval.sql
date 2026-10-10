@@ -19,7 +19,7 @@ begin
 
   if new.ceo_approved_at is distinct from old.ceo_approved_at
      or new.ceo_approved_by is distinct from old.ceo_approved_by then
-    if v_role not in ('ceo', 'owner') then
+    if coalesce(v_role, '') not in ('ceo', 'owner') then
       raise exception 'Only the CEO can approve a booking.';
     end if;
     if new.ceo_approved_at is not null and new.ceo_approved_by is distinct from auth.uid() then
@@ -29,7 +29,7 @@ begin
 
   if new.manager_approved_at is distinct from old.manager_approved_at
      or new.manager_approved_by is distinct from old.manager_approved_by then
-    if v_role not in ('manager', 'owner') then
+    if coalesce(v_role, '') not in ('manager', 'owner') then
       raise exception 'Only the Manager can confirm a CEO-approved booking.';
     end if;
     if new.ceo_approved_at is null then
@@ -128,8 +128,8 @@ begin
     if p_status = 'confirmed' then
       raise exception 'Use CEO approval followed by Manager confirmation to confirm a booking.';
     end if;
-    if p_status = 'cancelled' and p_payment_status = 'paid' then
-      raise exception 'A cancelled booking cannot be marked as paid.';
+    if p_status = 'cancelled' then
+      raise exception 'Use the Cancel booking action so a cancellation reason is recorded.';
     end if;
     if p_status = 'completed' and not public.has_permission('bookings.complete') then
       raise exception 'You are not permitted to complete bookings.';
