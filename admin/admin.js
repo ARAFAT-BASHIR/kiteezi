@@ -973,11 +973,16 @@ async function loadPosMenu(force=false){
   if(posMenuLoaded&&!force)return;
   try{
     const [cats,items]=await Promise.all([
-      api('/rest/v1/menu_categories?select=id,name,sort_order&active=eq.true&order=sort_order.asc,name.asc'),
-      api('/rest/v1/menu_items?select=id,name,description,price,price_on_request,in_stock,img_url,alt_text,category_id,serving_unit,menu_categories(name)&in_stock=eq.true&price_on_request=eq.false&order=name.asc')
+      api('/rest/v1/pos_categories?select=id,name,sort_order&active=eq.true&order=sort_order.asc,name.asc'),
+      api('/rest/v1/pos_items?select=id,name,description,unit_price,price_on_request,is_available,img_url,alt_text,category_id,serving_unit,department_key,fulfillment_mode,pos_categories(name)&active=eq.true&is_available=eq.true&price_on_request=eq.false&order=sort_order.asc,name.asc')
     ]);
     posCategories=Array.isArray(cats)?cats:[];
-    posMenuItems=(Array.isArray(items)?items:[]).map(x=>({...x,category:x.menu_categories?.name||'Other'}));
+    posMenuItems=(Array.isArray(items)?items:[]).map(x=>({
+      ...x,
+      price:Number(x.unit_price)||0,
+      in_stock:x.is_available===true,
+      category:x.pos_categories?.name||'Other'
+    }));
     posMenuLoaded=true;posRenderCategories();posRenderProducts();posRenderCart();
     $('#posMenuStatus').textContent=posMenuItems.length+' menu items available';
   }catch(e){posMenuLoaded=false;const el=$('#posMenuStatus');if(el)el.textContent='Unable to load the live menu. Please refresh and try again.';msg(e)}
