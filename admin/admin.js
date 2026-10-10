@@ -27,7 +27,7 @@ const TAB_PERMISSIONS={
 const TAB_FALLBACK_PERMISSIONS={
   bookings:['bookings.view'],
   inventory:['inventory.all','inventory.operational','inventory.kitchen','inventory.bar','inventory.cleaning','inventory.swimming','inventory.service'],
-  restaurant:['orders.manage','orders.station_kitchen','orders.station_barista','orders.reception.view'],
+  restaurant:['orders.manage','orders.station_kitchen','orders.station_barista','orders.reception.view','orders.department.swimming','orders.department.sports','orders.department.photography','orders.department.buffet','orders.department.other'],
   menu:['menu.manage','menu.view','menu.public_content.manage'],
   inquiries:['inquiries.view','inquiries.catering','inquiries.drinks','inquiries.general','inquiries.swimming'],
   swimming_sessions:['swimming.manage','swimming.assigned'],
@@ -216,7 +216,7 @@ function applyRoleNavigation(){
   const nav=$('#nav');
   const modules=[
     ['dashboard','Dashboard',['dashboard.view']],
-    ['restaurant','Orders',['orders.view','orders.manage','orders.create','orders.station_kitchen','orders.station_barista','orders.reception.view']],
+    ['restaurant','Orders',['orders.view','orders.manage','orders.create','orders.station_kitchen','orders.station_barista','orders.reception.view','orders.department.swimming','orders.department.sports','orders.department.photography','orders.department.buffet','orders.department.other']],
     ['bookings','Bookings',['bookings.view','bookings.manage']],
     ['inventory','Inventory',['inventory.view','inventory.all','inventory.operational','inventory.manage','inventory.kitchen','inventory.bar','inventory.cleaning','inventory.swimming','inventory.count','inventory.adjust']],
     ['menu','Menu',['menu.view','menu.manage','menu.public_content.manage']],
@@ -1228,6 +1228,10 @@ function setupPos(){
 }
 
 async function loadOrders(){
+  if(!(hasPermission('orders.view')||hasPermission('orders.manage')||hasPermission('orders.create')||hasPermission('orders.station_kitchen')||hasPermission('orders.station_barista')||hasPermission('orders.reception.view'))&&canViewPosDepartmentRecords()){
+    const table=$('#ordersTable');if(table)table.innerHTML='<div class="state">Your role can view authorized department service records, but not the master order list.</div>';
+    ensurePosManagementPanels();await loadPosDepartmentRecords();return;
+  }
   if(profile?.role==='reception_manager'){await loadReceptionOrders();return;}
   if(['chef','barista'].includes(profile?.role)){await loadStationOrders();return;}
   const filter=$('#orderStatusFilter').value;
