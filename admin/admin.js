@@ -27,7 +27,7 @@ const TAB_PERMISSIONS={
 const TAB_FALLBACK_PERMISSIONS={
   bookings:['bookings.view'],
   inventory:['inventory.all','inventory.operational','inventory.kitchen','inventory.bar','inventory.cleaning','inventory.swimming','inventory.service'],
-  restaurant:['orders.manage','orders.station_kitchen','orders.station_barista','orders.reception.view'],
+  restaurant:['orders.manage','orders.station_kitchen','orders.station_barista','orders.reception.view','orders.department.swimming','orders.department.sports','orders.department.photography','orders.department.buffet','orders.department.other'],
   menu:['menu.manage','menu.view','menu.public_content.manage'],
   inquiries:['inquiries.view','inquiries.catering','inquiries.drinks','inquiries.general','inquiries.swimming'],
   swimming_sessions:['swimming.manage','swimming.assigned'],
@@ -78,6 +78,7 @@ async function bootAdmin(authSession){
     session=authSession||JSON.parse(sessionStorage.getItem('kiteezi_admin_session')||'null');
     if(!session?.access_token||!session?.user?.id)throw Error('No valid admin session.');
     writeAdminSession(session);
+    restorePosCartDraft();
     const p=await api('/rest/v1/profiles?select=*&id=eq.'+encodeURIComponent(session.user.id)+'&limit=1');
     profile=p?.[0];
     if(!profile?.active)throw Error('This Kiteezi staff profile is inactive.');
@@ -187,14 +188,8 @@ async function show(){
   try{
     await dashboardPromise;
     loadedTabs.add('dashboard');
-    history.replaceState(null,'',location.search+'#dashboard');
-    document.querySelectorAll('[data-tab]').forEach(a=>a.classList.toggle('active',a.dataset.tab==='dashboard'));
-    document.querySelectorAll('.tab').forEach(sec=>{
-      const active=sec.id==='dashboard';
-      sec.classList.toggle('active',active);
-      sec.hidden=!active;
-      sec.setAttribute('aria-hidden',active?'false':'true');
-    });
+    const requestedTab=decodeURIComponent(location.hash.slice(1)||localStorage.getItem('kiteezi_admin_active_tab')||'dashboard');
+    await route(requestedTab);
   }catch(e){
     console.error('Admin route initialization failed:',e);
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
@@ -216,7 +211,7 @@ function applyRoleNavigation(){
   const nav=$('#nav');
   const modules=[
     ['dashboard','Dashboard',['dashboard.view']],
-    ['restaurant','Orders',['orders.view','orders.manage','orders.create','orders.station_kitchen','orders.station_barista','orders.reception.view']],
+    ['restaurant','Orders',['orders.view','orders.manage','orders.create','orders.station_kitchen','orders.station_barista','orders.reception.view','orders.department.swimming','orders.department.sports','orders.department.photography','orders.department.buffet','orders.department.other']],
     ['bookings','Bookings',['bookings.view','bookings.manage']],
     ['inventory','Inventory',['inventory.view','inventory.all','inventory.operational','inventory.manage','inventory.kitchen','inventory.bar','inventory.cleaning','inventory.swimming','inventory.count','inventory.adjust']],
     ['menu','Menu',['menu.view','menu.manage','menu.public_content.manage']],
@@ -698,6 +693,8 @@ function route(x){
   if(requested==='reports')x='accounting';
   const desired=x||'dashboard';
   tab=canOpenTab(desired)?desired:(canOpenTab('dashboard')?'dashboard':Object.keys(TAB_PERMISSIONS).find(canOpenTab)||'dashboard');
+  try{localStorage.setItem('kiteezi_admin_active_tab',tab)}catch{}
+  if(location.hash!=='#'+tab)history.replaceState(null,'',location.search+'#'+tab);
   document.querySelectorAll('[data-tab]').forEach(a=>a.classList.toggle('active',a.dataset.tab===tab));
   document.querySelectorAll('.tab').forEach(sec=>{
     const active=sec.id===tab;
@@ -897,9 +894,19 @@ const POS_IMAGE_MAP={
   samosa:'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80',
   default:'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80'
 };
-let posMenuItems=[],posCategories=[],posActiveCategory='',posCartItems=[],posMenuLoaded=false;
+let posMenuItems=[],posCategories=[],posActiveCategory='',posCartItems=[],posMenuLoaded=false,posImageAssignments=new Map();
+const POS_CART_STORAGE_PREFIX='kiteezi_pos_cart_v1:';
+function posCartStorageKey(){return POS_CART_STORAGE_PREFIX+String(session?.user?.id||'anonymous')}
+function restorePosCartDraft(){try{const saved=JSON.parse(localStorage.getItem(posCartStorageKey())||'[]');posCartItems=Array.isArray(saved)?saved.filter(x=>x&&x.id&&Number(x.quantity)>0).map(x=>({id:String(x.id),quantity:Math.min(10000,Math.max(1,Number(x.quantity)||1))})):[]}catch{posCartItems=[]}}
+function persistPosCartDraft(){try{localStorage.setItem(posCartStorageKey(),JSON.stringify(posCartItems.map(x=>({id:String(x.id),quantity:Math.min(10000,Math.max(1,Number(x.quantity)||1))}))))}catch{}}
+function reconcilePosCartDraft(){posCartItems=posCartItems.map(saved=>{const item=posMenuItems.find(x=>String(x.id)===String(saved.id));return item?{...item,quantity:saved.quantity}:null}).filter(Boolean);persistPosCartDraft()}
 function posMoney(v){return 'UGX '+new Intl.NumberFormat('en-UG').format(Number(v)||0)}
+function posUniqueFallbackFor(item){
+  const keywords=String(item?.name||item?.category||'food').replace(/[^a-z0-9 ]/gi,' ').replace(/\s+/g,' ').trim()||'food';
+  return 'https://loremflickr.com/900/900/'+encodeURIComponent(keywords)+'?lock='+encodeURIComponent(String(item?.id||item?.name||'food').replace(/-/g,''));
+}
 function posImageFor(item){
+  const assigned=posImageAssignments.get(String(item?.id||''));if(assigned)return assigned;
   if(item?.img_url)return item.img_url;
   const hay=(String(item?.name||'')+' '+String(item?.category||'')).toLowerCase();
   for(const key of Object.keys(POS_IMAGE_MAP)){if(key!=='default'&&hay.includes(key))return POS_IMAGE_MAP[key]}
@@ -916,7 +923,9 @@ function posSetStatus(message,error=false){
   const el=$('#posStatus');if(!el)return;
   el.textContent=message||'';el.classList.toggle('show',!!message);el.style.color=error?'#8b2222':'';
 }
-function posCartTotal(){return posCartItems.reduce((s,x)=>s+(Number(x.price)||0)*(Number(x.quantity)||0),0)}
+function posEffectiveUnitPrice(item,quantity=1){if(item?.pricing_mode==='per_person_team'&&Number(item.team_threshold)>0)return Number(quantity)<Number(item.team_threshold)?Number(item.small_group_price??item.price)||0:Number(item.full_team_price??item.price)||0;return Number(item?.price)||0}
+function posPriceLabel(item){if(item?.pricing_mode==='per_person_team'&&Number(item.team_threshold)>0)return posMoney(item.small_group_price??item.price)+' / person · '+posMoney(item.full_team_price??item.price)+' from '+item.team_threshold;if(item?.pricing_mode==='fixed_package'&&Number(item.serves_people)>0)return posMoney(item.price)+' / package · serves '+item.serves_people;return posMoney(item.price)}
+function posCartTotal(){return posCartItems.reduce((s,x)=>s+posEffectiveUnitPrice(x,x.quantity)*Number(x.quantity||0),0)}
 function posRenderCategories(){
   const box=$('#posCategoryTabs');if(!box)return;
   const all=[{id:'',name:'All categories'}].concat(posCategories);
@@ -933,11 +942,17 @@ function posRenderProducts(){
   status.textContent=rows.length?rows.length+' menu item'+(rows.length===1?'':'s')+' available':'No menu items match your search.';
   box.innerHTML=rows.map(x=>{
     const image=posImageFor(x),qty=posCartItems.find(i=>i.id===x.id)?.quantity||0;
-    return '<article class="pos-product"><div class="pos-product-media"><img src="'+esc(image)+'" alt="'+esc(x.alt_text||x.name)+'" loading="lazy" onerror="this.src=\''+POS_IMAGE_MAP.default+'\'"></div><div class="pos-product-body"><div class="pos-product-name">'+esc(x.name)+'</div><div class="pos-product-meta">'+esc(x.description||x.serving_unit||x.category||'')+'</div><div class="pos-product-foot"><span class="pos-product-price">'+posMoney(x.price)+'</span><button type="button" class="btn btn-dark pos-add" data-pos-add="'+esc(x.id)+'">'+(qty?'+'+qty:'Add')+'</button></div></div></article>';
+    return '<article class="pos-product"><div class="pos-product-media"><img src="'+esc(image)+'" data-fallback-image="'+esc(posUniqueFallbackFor(x))+'" alt="'+esc(x.alt_text||x.name)+'" loading="lazy"></div><div class="pos-product-body"><div class="pos-product-name">'+esc(x.name)+'</div><div class="pos-product-meta">'+esc(x.description||x.serving_unit||(x.pricing_mode==='fixed_package'&&Number(x.serves_people)>0?'Package · serves '+x.serves_people:x.category)||'')+'</div><div class="pos-product-foot"><span class="pos-product-price">'+posPriceLabel(x)+'</span><button type="button" class="btn btn-dark pos-add" data-pos-add="'+esc(x.id)+'">'+(qty?'+'+qty:'Add')+'</button></div></div></article>';
   }).join('');
+  box.querySelectorAll('img[data-fallback-image]').forEach(img=>{
+    if(img.dataset.fallbackBound)return;
+    img.dataset.fallbackBound='1';
+    img.addEventListener('error',()=>{const fallback=img.dataset.fallbackImage;if(fallback&&img.src!==fallback)img.src=fallback;},{once:true});
+  });
   box.querySelectorAll('[data-pos-add]').forEach(b=>b.onclick=()=>posAddItem(b.dataset.posAdd));
 }
 function posRenderCart(){
+  persistPosCartDraft();
   const box=$('#posCart'),count=$('#posCartCount'),sub=$('#posSubtotal'),total=$('#posTotal');
   const n=posCartItems.reduce((s,x)=>s+Number(x.quantity||0),0),sum=posCartTotal();
   if(count)count.textContent=n+' item'+(n===1?'':'s');
@@ -946,7 +961,7 @@ function posRenderCart(){
   if(!box)return;
   box.innerHTML=posCartItems.length?posCartItems.map(x=>{
     const image=posImageFor(x);
-    return '<div class="pos-cart-line"><div class="pos-cart-thumb"><img src="'+esc(image)+'" alt="" loading="lazy"></div><div><div class="pos-cart-line-name">'+esc(x.name)+'</div><div class="pos-cart-line-price">'+posMoney(x.price)+' each</div><div class="pos-qty"><button type="button" data-pos-dec="'+x.id+'">−</button><span>'+x.quantity+'</span><button type="button" data-pos-inc="'+x.id+'">+</button></div></div><div><strong>'+posMoney((Number(x.price)||0)*x.quantity)+'</strong><button type="button" class="pos-remove" aria-label="Remove '+esc(x.name)+'" data-pos-remove="'+x.id+'">×</button></div></div>';
+    return '<div class="pos-cart-line"><div class="pos-cart-thumb"><img src="'+esc(image)+'" alt="" loading="lazy"></div><div><div class="pos-cart-line-name">'+esc(x.name)+'</div><div class="pos-cart-line-price">'+posMoney(posEffectiveUnitPrice(x,x.quantity))+' each</div><div class="pos-qty"><button type="button" data-pos-dec="'+x.id+'">−</button><span>'+x.quantity+'</span><button type="button" data-pos-inc="'+x.id+'">+</button></div></div><div><strong>'+posMoney(posEffectiveUnitPrice(x,x.quantity)*x.quantity)+'</strong><button type="button" class="pos-remove" aria-label="Remove '+esc(x.name)+'" data-pos-remove="'+x.id+'">×</button></div></div>';
   }).join(''):'<div class="state">No items yet.</div>';
   box.querySelectorAll('[data-pos-inc]').forEach(b=>b.onclick=()=>posChangeQty(b.dataset.posInc,1));
   box.querySelectorAll('[data-pos-dec]').forEach(b=>b.onclick=()=>posChangeQty(b.dataset.posDec,-1));
@@ -968,19 +983,121 @@ function posRemoveItem(id){posCartItems=posCartItems.filter(x=>x.id!==id);posRen
 function posClear(){posCartItems=[];posRenderCart();posSetStatus('')}
 async function loadPosMenu(force=false){
   const shell=document.querySelector('.pos-shell');if(!shell)return;
-  if(!hasPermission('orders.create')&&!hasPermission('orders.manage')){shell.hidden=true;return}
+  if(!hasPermission('orders.create')&&!hasPermission('orders.manage')){
+    shell.hidden=true;
+    if(canViewPosDepartmentRecords()){
+      ensurePosManagementPanels();
+      loadPosDepartmentRecords().catch(msg);
+    }
+    return;
+  }
   shell.hidden=false;
-  if(posMenuLoaded&&!force)return;
+  if(posMenuLoaded&&!force){ensurePosManagementPanels();return}
   try{
     const [cats,items]=await Promise.all([
-      api('/rest/v1/menu_categories?select=id,name,sort_order&active=eq.true&order=sort_order.asc,name.asc'),
-      api('/rest/v1/menu_items?select=id,name,description,price,price_on_request,in_stock,img_url,alt_text,category_id,serving_unit,menu_categories(name)&in_stock=eq.true&price_on_request=eq.false&order=name.asc')
+      api('/rest/v1/pos_categories?select=id,name,sort_order,active&active=eq.true&order=sort_order.asc,name.asc'),
+      api('/rest/v1/pos_items?select=id,name,description,unit_price,price_on_request,is_available,img_url,alt_text,category_id,serving_unit,department_key,fulfillment_mode,menu_item_id,pricing_mode,team_threshold,small_group_price,full_team_price,serves_people,pos_categories(name)&active=eq.true&is_available=eq.true&price_on_request=eq.false&order=sort_order.asc,name.asc')
     ]);
     posCategories=Array.isArray(cats)?cats:[];
-    posMenuItems=(Array.isArray(items)?items:[]).map(x=>({...x,category:x.menu_categories?.name||'Other'}));
+    posMenuItems=(Array.isArray(items)?items:[]).map(x=>({
+      ...x,
+      price:Number(x.unit_price)||0,
+      in_stock:x.is_available===true,
+      category:x.pos_categories?.name||'Other'
+    }));
+    // Avoid reusing one photograph across different POS cards. For duplicate
+    // source URLs or missing photos, use a name-specific locked fallback.
+    posImageAssignments=new Map();
+    const usedPosImages=new Set();
+    posMenuItems.forEach(x=>{
+      const original=String(x.img_url||'').trim();
+      let image=original||posImageFor({...x,img_url:null});
+      if(!image||usedPosImages.has(image)){
+        const keywords=String(x.name||x.category||'food').replace(/[^a-z0-9 ]/gi,' ').replace(/\\s+/g,' ').trim()||'food';
+        image='https://loremflickr.com/900/900/'+encodeURIComponent(keywords)+'?lock='+encodeURIComponent(String(x.id||x.name||usedPosImages.size).replace(/-/g,''));
+      }
+      if(usedPosImages.has(image))image+='&item='+encodeURIComponent(String(x.id||x.name||usedPosImages.size));
+      usedPosImages.add(image);posImageAssignments.set(String(x.id),image);
+    });
+    reconcilePosCartDraft();
     posMenuLoaded=true;posRenderCategories();posRenderProducts();posRenderCart();
-    $('#posMenuStatus').textContent=posMenuItems.length+' menu items available';
-  }catch(e){posMenuLoaded=false;const el=$('#posMenuStatus');if(el)el.textContent='Unable to load the live menu. Please refresh and try again.';msg(e)}
+    const status=$('#posMenuStatus');if(status)status.textContent=posMenuItems.length+' POS items available';
+    ensurePosManagementPanels();
+    if(hasPermission('orders.manage'))loadPosCatalogManager().catch(e=>console.warn('POS catalog management unavailable',e));
+    if(canViewPosDepartmentRecords())loadPosDepartmentRecords().catch(e=>console.warn('POS department records unavailable',e));
+  }catch(e){posMenuLoaded=false;const el=$('#posMenuStatus');if(el)el.textContent='Unable to load the POS catalog. Please refresh and try again.';msg(e)}
+}
+function canViewPosDepartmentRecords(){
+  return profile?.role==='owner'||hasPermission('orders.manage')||
+    ['swimming','sports','photography','buffet','other'].some(k=>hasPermission('orders.department.'+k));
+}
+function ensurePosManagementPanels(){
+  const shell=document.querySelector('.pos-shell');if(!shell)return;
+  let tools=document.getElementById('posCatalogManager');
+  if(!tools){
+    tools=document.createElement('section');tools.id='posCatalogManager';tools.className='panel';tools.hidden=true;
+    tools.innerHTML='<div class="toolbar"><div><h3>POS-only catalog</h3><p class="muted">Changes here do not publish to the public website menu.</p></div><div class="toolbar"><button type="button" class="btn" id="posNewCategory">Add POS category</button><button type="button" class="btn btn-dark" id="posNewItem">Add POS item</button><button type="button" class="btn" id="posRefreshCatalog">Refresh catalog</button></div></div><div id="posCatalogTable" class="state">Open the POS to load catalog management.</div>';
+    shell.insertAdjacentElement('afterend',tools);
+    $('#posNewCategory').onclick=()=>editPosCategory().catch(msg);
+    $('#posNewItem').onclick=()=>editPosItem().catch(msg);
+    $('#posRefreshCatalog').onclick=()=>loadPosCatalogManager().catch(msg);
+  }
+  tools.hidden=!hasPermission('orders.manage');
+  let records=document.getElementById('posDepartmentRecords');
+  if(!records){
+    records=document.createElement('section');records.id='posDepartmentRecords';records.className='panel';records.hidden=true;
+    records.innerHTML='<div class="toolbar"><div><h3>Department service records</h3><p class="muted">Reference records only. Sales totals and payments remain on the master order.</p></div><button type="button" class="btn btn-dark" id="refreshPosDepartmentRecords">Refresh records</button></div><div id="posDepartmentRecordsTable" class="state">No records loaded.</div>';
+    tools.insertAdjacentElement('afterend',records);
+    $('#refreshPosDepartmentRecords').onclick=()=>loadPosDepartmentRecords().catch(msg);
+  }
+  records.hidden=!canViewPosDepartmentRecords();
+}
+async function loadPosCatalogManager(){
+  const box=$('#posCatalogTable');if(!box||!hasPermission('orders.manage'))return;
+  box.innerHTML='<div class="state">Loading POS catalog…</div>';
+  const [cats,items,menu]=await Promise.all([
+    api('/rest/v1/pos_categories?select=id,name,description,sort_order,active&order=sort_order.asc,name.asc'),
+    api('/rest/v1/pos_items?select=id,name,description,unit_price,price_on_request,is_available,fulfillment_mode,department_key,category_id,menu_item_id,pricing_mode,team_threshold,small_group_price,full_team_price,serves_people,sort_order,active,pos_categories(name),menu_items(name)&order=sort_order.asc,name.asc'),
+    api('/rest/v1/menu_items?select=id,name,station_id,in_stock,price,price_on_request&order=name.asc')
+  ]);
+  const allCats=Array.isArray(cats)?cats:[];
+  const allItems=Array.isArray(items)?items:[];
+  window.__KITEEZI_POS_EDIT_CACHE__={categories:allCats,items:allItems,menu:Array.isArray(menu)?menu:[]};
+  box.innerHTML='<div class="table-scroll"><table><tr><th>POS item</th><th>Category</th><th>Department</th><th>Type</th><th>Price</th><th>Availability</th><th>Public-menu link</th><th>Actions</th></tr>'+
+    (allItems.length?allItems.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.pos_categories?.name||'')+'</td><td>'+esc(x.department_key)+'</td><td>'+esc(x.fulfillment_mode)+'</td><td>UGX '+money(x.unit_price)+'</td><td>'+((x.active&&x.is_available)?'Available':'Unavailable')+'</td><td>'+esc(x.menu_items?.name||'Service-only')+'</td><td><button type="button" class="btn" data-edit-pos-item="'+esc(x.id)+'">Edit</button> <button type="button" class="btn" data-toggle-pos-item="'+esc(x.id)+'">'+(x.active?'Deactivate':'Activate')+'</button></td></tr>').join(''):'<tr><td colspan="8">No POS items yet. Add a POS item below.</td></tr>')+'</table></div>'+
+    '<h4>Categories</h4><div class="toolbar">'+(allCats.map(c=>'<span class="pill">'+esc(c.name)+' <button type="button" class="btn" data-edit-pos-category="'+esc(c.id)+'">Edit</button></span>').join(' ')||'No categories')+'</div>';
+  box.querySelectorAll('[data-edit-pos-item]').forEach(b=>b.onclick=()=>editPosItem(b.dataset.editPosItem).catch(msg));
+  box.querySelectorAll('[data-toggle-pos-item]').forEach(b=>b.onclick=async()=>{const x=allItems.find(v=>v.id===b.dataset.togglePosItem);if(!x)return;try{await api('/rest/v1/pos_items?id=eq.'+encodeURIComponent(x.id),{method:'PATCH',body:JSON.stringify({active:!x.active,updated_at:new Date().toISOString()})});posMenuLoaded=false;await loadPosCatalogManager();await loadPosMenu(true)}catch(e){msg(e)}});
+  box.querySelectorAll('[data-edit-pos-category]').forEach(b=>b.onclick=()=>editPosCategory(b.dataset.editPosCategory).catch(msg));
+}
+async function editPosCategory(id=null){
+  if(!hasPermission('orders.manage'))throw Error('Only authorized managers can edit the POS catalog.');
+  const cache=window.__KITEEZI_POS_EDIT_CACHE__||{categories:[]};
+  const x=id?cache.categories.find(c=>c.id===id):{name:'',description:'',sort_order:((cache.categories||[]).length+1)*10,active:true};
+  if(!x)throw Error('POS category not found.');
+  modal(id?'Edit POS category':'Add POS category','<form id="posCategoryForm" class="form"><label>Category name<input name="name" required maxlength="80" value="'+esc(x.name)+'"></label><label>Description<textarea name="description">'+esc(x.description||'')+'</textarea></label><label>Display order<input name="sort_order" type="number" step="1" value="'+Number(x.sort_order||0)+'"></label><button class="btn btn-dark">Save category</button></form>');
+  $('#posCategoryForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const payload={name:String(f.get('name')||'').trim(),description:String(f.get('description')||'').trim()||null,sort_order:Number(f.get('sort_order')||0),updated_at:new Date().toISOString()};if(!payload.name)return;try{await api(id?'/rest/v1/pos_categories?id=eq.'+encodeURIComponent(id):'/rest/v1/pos_categories',{method:id?'PATCH':'POST',body:JSON.stringify(payload)});closeModal();posMenuLoaded=false;await loadPosCatalogManager();await loadPosMenu(true)}catch(err){msg(err)}};
+}
+async function editPosItem(id=null){
+  if(!hasPermission('orders.manage'))throw Error('Only authorized managers can edit the POS catalog.');
+  const cache=window.__KITEEZI_POS_EDIT_CACHE__||{categories:[],items:[],menu:[]};
+  const x=id?cache.items.find(i=>i.id===id):{name:'',description:'',unit_price:0,price_on_request:false,is_available:true,fulfillment_mode:'record_only',department_key:'swimming',category_id:cache.categories[0]?.id||'',menu_item_id:null,img_url:'',alt_text:'',serving_unit:'',pricing_mode:'fixed',team_threshold:null,small_group_price:null,full_team_price:null,serves_people:null,sort_order:0,active:true};
+  if(!x)throw Error('POS item not found.');
+  if(!cache.categories.length)throw Error('Create a POS category first.');
+  const opts=(rows,selected)=>rows.map(v=>'<option value="'+esc(v.id)+'" '+(String(v.id)===String(selected||'')?'selected':'')+'>'+esc(v.name)+'</option>').join('');
+  const menuOpts='<option value="">No public menu link (service-only)</option>'+opts(cache.menu,x.menu_item_id);
+  modal(id?'Edit POS item':'Add POS item','<form id="posItemForm" class="form"><label>Name<input name="name" maxlength="120" required value="'+esc(x.name)+'"></label><label>Description<textarea name="description">'+esc(x.description||'')+'</textarea></label><label>POS category<select name="category_id" required>'+opts(cache.categories,x.category_id)+'</select></label><label>Base price (UGX)<input name="unit_price" type="number" min="0" step="1" required value="'+Number(x.unit_price||0)+'"></label><label>Pricing mode<select name="pricing_mode">'+['fixed','per_person','per_person_team','fixed_package'].map(v=>'<option value="'+v+'" '+(v===(x.pricing_mode||'fixed')?'selected':'')+'>'+v.replace(/_/g,' ')+'</option>').join('')+'</select></label><label>Team threshold<input name="team_threshold" type="number" min="1" step="1" value="'+(x.team_threshold||'')+'"></label><label>Small group price (UGX)<input name="small_group_price" type="number" min="0" step="1" value="'+(x.small_group_price??'')+'"></label><label>Full team price (UGX)<input name="full_team_price" type="number" min="0" step="1" value="'+(x.full_team_price??'')+'"></label><label>People served per package<input name="serves_people" type="number" min="1" step="1" value="'+(x.serves_people||'')+'"></label><label><input type="checkbox" name="price_on_request" '+(x.price_on_request?'checked':'')+'> Price on request</label><label><input type="checkbox" name="is_available" '+(x.is_available?'checked':'')+'> Available to sell</label><label>Fulfillment<select name="fulfillment_mode"><option value="record_only" '+(x.fulfillment_mode==='record_only'?'selected':'')+'>Record-only service</option><option value="preparation" '+(x.fulfillment_mode==='preparation'?'selected':'')+'>Kitchen / barista preparation</option></select></label><label>Department<select name="department_key">'+['kitchen','barista','swimming','sports','photography','buffet','other'].map(v=>'<option '+(v===x.department_key?'selected':'')+'>'+v+'</option>').join('')+'</select></label><label>Linked public menu item<select name="menu_item_id">'+menuOpts+'</select></label><label>Image URL<input name="img_url" type="url" value="'+esc(x.img_url||'')+'"></label><label>Image alt text<input name="alt_text" value="'+esc(x.alt_text||'')+'"></label><label>Serving unit<input name="serving_unit" value="'+esc(x.serving_unit||'')+'"></label><label>Display order<input name="sort_order" type="number" step="1" value="'+Number(x.sort_order||0)+'"></label><button class="btn btn-dark">Save POS item</button></form>');
+  $('#posItemForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const mode=String(f.get('fulfillment_mode'));const menuId=String(f.get('menu_item_id')||'')||null;const dept=String(f.get('department_key')||'other');if(mode==='preparation'&&!menuId){alert('Prepared items must link to a public menu item so existing kitchen/barista routing and stock logic can continue.');return}const payload={name:String(f.get('name')||'').trim(),description:String(f.get('description')||'').trim()||null,category_id:String(f.get('category_id')),unit_price:Number(f.get('unit_price')||0),pricing_mode:String(f.get('pricing_mode')||'fixed'),team_threshold:Number(f.get('team_threshold')||0)||null,small_group_price:Number(f.get('small_group_price')||0)||null,full_team_price:Number(f.get('full_team_price')||0)||null,serves_people:Number(f.get('serves_people')||0)||null,price_on_request:f.get('price_on_request')==='on',is_available:f.get('is_available')==='on',fulfillment_mode:mode,department_key:dept,menu_item_id:menuId,img_url:String(f.get('img_url')||'').trim()||null,alt_text:String(f.get('alt_text')||'').trim()||null,serving_unit:String(f.get('serving_unit')||'').trim()||null,sort_order:Number(f.get('sort_order')||0),updated_at:new Date().toISOString()};try{await api(id?'/rest/v1/pos_items?id=eq.'+encodeURIComponent(id):'/rest/v1/pos_items',{method:id?'PATCH':'POST',body:JSON.stringify(payload)});closeModal();posMenuLoaded=false;await loadPosCatalogManager();await loadPosMenu(true)}catch(err){msg(err)}};
+}
+async function loadPosDepartmentRecords(){
+  const panel=$('#posDepartmentRecords'),box=$('#posDepartmentRecordsTable');if(!panel||!box||!canViewPosDepartmentRecords())return;
+  panel.hidden=false;box.innerHTML='<div class="state">Loading department records…</div>';
+  try{
+    let rows=await api('/rest/v1/pos_department_records?select=id,order_id,order_item_id,pos_item_id,department_key,item_name_snapshot,quantity,unit_price,recorded_at,notes&order=recorded_at.desc&limit=300');
+    const scoped=['swimming','sports','photography','buffet','other'].filter(k=>hasPermission('orders.department.'+k));
+    if(profile?.role!=='owner'&&!hasPermission('orders.manage')&&scoped.length)rows=rows.filter(r=>scoped.includes(r.department_key));
+    box.innerHTML=rows.length?'<div class="table-scroll"><table><tr><th>Recorded</th><th>Department</th><th>Service</th><th>Qty</th><th>Unit price</th><th>Order reference</th><th>Notes</th></tr>'+rows.map(r=>'<tr><td>'+esc(new Date(r.recorded_at).toLocaleString())+'</td><td>'+esc(r.department_key)+'</td><td>'+esc(r.item_name_snapshot)+'</td><td>'+esc(r.quantity)+'</td><td>UGX '+money(r.unit_price)+'</td><td>'+esc(String(r.order_id).slice(0,8).toUpperCase())+'</td><td>'+esc(r.notes||'')+'</td></tr>').join('')+'</table></div>':'<div class="state">No confirmed record-only services are recorded yet.</div>';
+  }catch(e){box.innerHTML='<div class="state danger">Department records could not be loaded. Check department permissions and apply the latest database migration.</div>';console.warn(e)}
 }
 function posPaymentModal(){
   if(!posCartItems.length){posSetStatus('Add at least one item before proceeding to payment.',true);return}
@@ -1003,7 +1120,7 @@ function posPaymentModal(){
       const reference=method==='cash'?'Cash received '+received+'; change '+(received-total):String(fd.get('reference')||'').trim()||null;
       await api('/rest/v1/rpc/record_pos_payment',{method:'POST',body:JSON.stringify({p_order_id:orderId,p_payment_method:method,p_reference:reference})});
       closeModal();posClear();$('#posCustomerName').value='';$('#posPhone').value='';$('#posNotes').value='';
-      posSetStatus('Order #'+String(orderId).slice(0,8).toUpperCase()+' saved and marked paid. It remains open until the authorized order confirmation workflow starts preparation.');
+      posSetStatus('Payment recorded for order #'+String(orderId).slice(0,8).toUpperCase()+'. The order remains open until an authorized manager confirms it.');
       await loadOrders();
     }catch(err){error.innerHTML='<div class="pos-payment-error">'+esc(humanAdminError(err,'We could not complete this POS payment. The order was not marked paid.'))+'</div>';msg(err);submit.disabled=false;submit.textContent='Complete Payment & Save Order'}
   };
@@ -1140,6 +1257,7 @@ function setupOrderViews(){
 function setupPos(){
   if(window.__KITEEZI_POS_BOUND__)return;window.__KITEEZI_POS_BOUND__=true;
   $('#posSearch')?.addEventListener('input',posRenderProducts);
+  ensurePosManagementPanels();
   $('#posRefreshMenu')?.addEventListener('click',()=>loadPosMenu(true).catch(msg));
   $('#posClear')?.addEventListener('click',posClear);
   $('#posPay')?.addEventListener('click',posCreateUnpaidOrder);
@@ -1147,6 +1265,10 @@ function setupPos(){
 }
 
 async function loadOrders(){
+  if(!(hasPermission('orders.view')||hasPermission('orders.manage')||hasPermission('orders.create')||hasPermission('orders.station_kitchen')||hasPermission('orders.station_barista')||hasPermission('orders.reception.view'))&&canViewPosDepartmentRecords()){
+    const table=$('#ordersTable');if(table)table.innerHTML='<div class="state">Your role can view authorized department service records, but not the master order list.</div>';
+    ensurePosManagementPanels();await loadPosDepartmentRecords();return;
+  }
   if(profile?.role==='reception_manager'){await loadReceptionOrders();return;}
   if(['chef','barista'].includes(profile?.role)){await loadStationOrders();return;}
   const filter=$('#orderStatusFilter').value;
@@ -1297,7 +1419,7 @@ const cfg=Object.fromEntries((settings||[]).map(x=>[x.key,x.value||'']));const l
 const rows=(items||[]).map(x=>{const qty=Number(x.qty)||0,unit=Number(x.unit_price)||0;return '<tr><td>'+esc(x.item_name_snapshot||x.menu_items?.name||'Item')+'</td><td>'+qty+'</td><td>UGX '+money(unit)+'</td><td>UGX '+money(qty*unit)+'</td></tr>'}).join('');
 const saved=localStorage.getItem('kiteezi-print-profile')||'80mm';const pageSize=saved==='58mm'?'58mm auto':saved==='80mm'?'80mm auto':saved==='a5'?'A5 portrait':'A4 portrait';
 const w=window.open('','_blank','width=760,height=900');if(!w)throw Error('Please allow pop-ups to print the receipt.');
-const css='@page{size:'+pageSize+';margin:0}body{font:14px Arial,sans-serif;color:#17231c;margin:0;padding:28px;background:#fff}.receipt{max-width:680px;margin:auto;border:1px solid #dfe6e1;border-radius:16px;padding:28px}.head{display:flex;justify-content:space-between;gap:20px;border-bottom:2px solid #17231c;padding-bottom:18px}.logo{max-width:180px;max-height:80px;object-fit:contain}.meta{text-align:right}.muted{color:#68756d}.items{width:100%;border-collapse:collapse;margin-top:24px}.items th,.items td{padding:10px 6px;border-bottom:1px solid #e5e9e6;text-align:left}.items th:nth-child(n+2),.items td:nth-child(n+2){text-align:right}.total{margin-top:18px;text-align:right;font-size:20px;font-weight:800}.foot{margin-top:26px;padding-top:14px;border-top:1px solid #e5e9e6;text-align:center}.actions{margin-top:20px;text-align:center}.print-58mm{width:58mm}.print-80mm{width:80mm}.print-58mm .receipt,.print-80mm .receipt{width:100%;box-sizing:border-box;border:0;border-radius:0;margin:0;padding:4mm}.print-58mm{font-size:11px}.print-58mm .head{display:block;text-align:center}.print-58mm .meta{text-align:center;margin-top:4px}.print-58mm .logo{max-width:42mm}.print-58mm .items{font-size:10px;margin-top:10px}.print-58mm .items th,.print-58mm .items td{padding:3px 1px}.print-58mm .total{font-size:15px}.print-80mm .receipt{max-width:none}.a4,.a5{width:100%}@media print{body{padding:0}.receipt{border:0;border-radius:0}.actions{display:none}}';
+const css='*{box-sizing:border-box}@page{size:'+pageSize+';margin:0}body{font:14px Arial,sans-serif;color:#17231c;margin:0;padding:28px;background:#fff}.receipt{max-width:680px;margin:auto;border:1px solid #dfe6e1;border-radius:16px;padding:28px}.head{display:flex;justify-content:space-between;gap:20px;border-bottom:2px solid #17231c;padding-bottom:18px}.logo{max-width:180px;max-height:80px;object-fit:contain}.meta{text-align:right}.muted{color:#68756d}.items{width:100%;border-collapse:collapse;margin-top:24px}.items th,.items td{padding:10px 6px;border-bottom:1px solid #e5e9e6;text-align:left}.items th:nth-child(n+2),.items td:nth-child(n+2){text-align:right}.total{margin-top:18px;text-align:right;font-size:20px;font-weight:800}.foot{margin-top:26px;padding-top:14px;border-top:1px solid #e5e9e6;text-align:center}.actions{margin-top:20px;text-align:center}.print-58mm{width:58mm;max-width:100%;padding:0}.print-80mm{width:80mm;max-width:100%;padding:0}.print-58mm .receipt,.print-80mm .receipt{width:100%;box-sizing:border-box;border:0;border-radius:0;margin:0;padding:4mm}.print-58mm{font-size:11px}.print-58mm .head{display:block;text-align:center}.print-58mm .meta{text-align:center;margin-top:4px}.print-58mm .logo{max-width:42mm}.print-58mm .items{font-size:10px;margin-top:10px}.print-58mm .items th,.print-58mm .items td{padding:3px 1px}.print-58mm .total{font-size:15px}.print-80mm .receipt{max-width:none}.a4,.a5{width:100%}@media print{body{padding:0}.receipt{border:0;border-radius:0}.actions{display:none}}';
 const html='<!doctype html><html><head><title>Receipt '+esc(id.slice(0,8).toUpperCase())+'</title><style>'+css+'</style></head><body class="print-'+esc(saved)+'"><div class="receipt"><div class="head"><div>'+(logo?'<img class="logo" src="'+esc(logo)+'" alt="Kiteezi Recreational Center">':'<h2>Kiteezi Recreational Center</h2>')+'</div><div class="meta"><strong>RECEIPT</strong><br>#'+esc(id.slice(0,8).toUpperCase())+'<br><span class="muted">'+esc(order.created_at||'')+'</span></div></div><p><strong>Customer:</strong> '+esc(order.customers?.name||'Walk-in customer')+'<br><strong>Phone:</strong> '+esc(order.customers?.phone||'')+'<br><strong>Payment:</strong> '+esc(order.payment_status||'unpaid')+'<br><strong>Fulfillment:</strong> '+esc(order.fulfillment_method||'pickup')+'</p><table class="items"><thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead><tbody>'+rows+'</tbody></table><div class="total">TOTAL: UGX '+money(order.total)+'</div><div class="foot">'+esc(cfg.business_name||'Kiteezi Recreational Center')+'<br>'+esc(cfg.phone||'')+'<br>Thank you for choosing Kiteezi.</div><div class="actions"><label>Printer paper: <select id="paper"><option value="58mm">58 mm thermal</option><option value="80mm">80 mm thermal</option><option value="a5">A5</option><option value="a4">A4</option></select></label> <button onclick="const v=document.getElementById(\'paper\').value;document.body.className=\'print-\'+v;localStorage.setItem(\'kiteezi-print-profile\',v);window.print()">Print / Save PDF</button></div></div><script>document.getElementById(\'paper\').value=\''+esc(saved)+'\';document.getElementById(\'paper\').addEventListener(\'change\',function(){document.body.className=\'print-\'+this.value;localStorage.setItem(\'kiteezi-print-profile\',this.value)})</script></body></html>';
 w.document.write(html);w.document.close();w.focus();setTimeout(()=>w.print(),250);
 }
