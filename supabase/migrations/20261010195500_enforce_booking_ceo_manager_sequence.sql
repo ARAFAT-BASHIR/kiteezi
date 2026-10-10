@@ -88,9 +88,6 @@ begin
     if old.status in ('completed', 'cancelled') then
       raise exception 'This booking cannot be cancelled.';
     end if;
-    if nullif(trim(coalesce(new.cancellation_reason, '')), '') is null then
-      raise exception 'A cancellation reason is required.';
-    end if;
   end if;
 
   return new;
