@@ -38,6 +38,7 @@ declare
   v_order_id uuid;
   v_line record;
   v_pos_item_id uuid;
+  v_line_qty numeric;
 begin
   if new.status = 'confirmed' and old.status is distinct from new.status then
     select id into v_order_id from public.orders where booking_id=new.id;
@@ -51,8 +52,10 @@ begin
 
       for v_line in
         select bc.id,bc.component_type,bc.menu_item_id,bc.name_snapshot,
-               bc.description_snapshot,bc.unit_price,bc.quantity,bc.price_on_request
+               bc.description_snapshot,bc.unit_price,bc.quantity,bc.price_on_request,
+               bb.pricing_mode as bundle_pricing_mode,bb.serves_people
         from public.booking_components bc
+        left join public.booking_bundles bb on bb.id=bc.bundle_id
         where bc.booking_id=new.id
         order by bc.created_at,bc.id
       loop
@@ -71,11 +74,18 @@ begin
           limit 1;
         end if;
 
+        v_line_qty := case
+          when v_line.component_type='buffet'
+            and v_line.bundle_pricing_mode='fixed_package'
+            and coalesce(v_line.serves_people,0)>0
+            then greatest(1,ceil(coalesce(v_line.quantity,1)::numeric/v_line.serves_people))
+          else greatest(1,coalesce(v_line.quantity,1))
+        end;
         insert into public.order_items
           (order_id,menu_item_id,pos_item_id,item_name_snapshot,qty,unit_price,notes)
         values
           (v_order_id,v_line.menu_item_id,v_pos_item_id,v_line.name_snapshot,
-           greatest(1,coalesce(v_line.quantity,1)),greatest(0,coalesce(v_line.unit_price,0)),
+           v_line_qty,greatest(0,coalesce(v_line.unit_price,0)),
            'Booking component: '||coalesce(v_line.component_type,'service'));
       end loop;
 
