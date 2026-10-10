@@ -970,11 +970,11 @@ async function loadPosMenu(force=false){
   const shell=document.querySelector('.pos-shell');if(!shell)return;
   if(!hasPermission('orders.create')&&!hasPermission('orders.manage')){shell.hidden=true;return}
   shell.hidden=false;
-  if(posMenuLoaded&&!force)return;
+  if(posMenuLoaded&&!force){ensurePosManagementPanels();return}
   try{
     const [cats,items]=await Promise.all([
-      api('/rest/v1/pos_categories?select=id,name,sort_order&active=eq.true&order=sort_order.asc,name.asc'),
-      api('/rest/v1/pos_items?select=id,name,description,unit_price,price_on_request,is_available,img_url,alt_text,category_id,serving_unit,department_key,fulfillment_mode,pos_categories(name)&active=eq.true&is_available=eq.true&price_on_request=eq.false&order=sort_order.asc,name.asc')
+      api('/rest/v1/pos_categories?select=id,name,sort_order,active&active=eq.true&order=sort_order.asc,name.asc'),
+      api('/rest/v1/pos_items?select=id,name,description,unit_price,price_on_request,is_available,img_url,alt_text,category_id,serving_unit,department_key,fulfillment_mode,menu_item_id,pos_categories(name)&active=eq.true&is_available=eq.true&price_on_request=eq.false&order=sort_order.asc,name.asc')
     ]);
     posCategories=Array.isArray(cats)?cats:[];
     posMenuItems=(Array.isArray(items)?items:[]).map(x=>({
@@ -984,8 +984,83 @@ async function loadPosMenu(force=false){
       category:x.pos_categories?.name||'Other'
     }));
     posMenuLoaded=true;posRenderCategories();posRenderProducts();posRenderCart();
-    $('#posMenuStatus').textContent=posMenuItems.length+' menu items available';
-  }catch(e){posMenuLoaded=false;const el=$('#posMenuStatus');if(el)el.textContent='Unable to load the live menu. Please refresh and try again.';msg(e)}
+    const status=$('#posMenuStatus');if(status)status.textContent=posMenuItems.length+' POS items available';
+    ensurePosManagementPanels();
+    if(hasPermission('orders.manage'))loadPosCatalogManager().catch(e=>console.warn('POS catalog management unavailable',e));
+    if(canViewPosDepartmentRecords())loadPosDepartmentRecords().catch(e=>console.warn('POS department records unavailable',e));
+  }catch(e){posMenuLoaded=false;const el=$('#posMenuStatus');if(el)el.textContent='Unable to load the POS catalog. Please refresh and try again.';msg(e)}
+}
+function canViewPosDepartmentRecords(){
+  return profile?.role==='owner'||hasPermission('orders.manage')||
+    ['swimming','sports','photography','buffet','other'].some(k=>hasPermission('orders.department.'+k));
+}
+function ensurePosManagementPanels(){
+  const shell=document.querySelector('.pos-shell');if(!shell)return;
+  let tools=document.getElementById('posCatalogManager');
+  if(!tools){
+    tools=document.createElement('section');tools.id='posCatalogManager';tools.className='panel';tools.hidden=true;
+    tools.innerHTML='<div class="toolbar"><div><h3>POS-only catalog</h3><p class="muted">Changes here do not publish to the public website menu.</p></div><div class="toolbar"><button type="button" class="btn" id="posNewCategory">Add POS category</button><button type="button" class="btn btn-dark" id="posNewItem">Add POS item</button><button type="button" class="btn" id="posRefreshCatalog">Refresh catalog</button></div></div><div id="posCatalogTable" class="state">Open the POS to load catalog management.</div>';
+    shell.insertAdjacentElement('afterend',tools);
+    $('#posNewCategory').onclick=()=>editPosCategory().catch(msg);
+    $('#posNewItem').onclick=()=>editPosItem().catch(msg);
+    $('#posRefreshCatalog').onclick=()=>loadPosCatalogManager().catch(msg);
+  }
+  tools.hidden=!hasPermission('orders.manage');
+  let records=document.getElementById('posDepartmentRecords');
+  if(!records){
+    records=document.createElement('section');records.id='posDepartmentRecords';records.className='panel';records.hidden=true;
+    records.innerHTML='<div class="toolbar"><div><h3>Department service records</h3><p class="muted">Reference records only. Sales totals and payments remain on the master order.</p></div><button type="button" class="btn btn-dark" id="refreshPosDepartmentRecords">Refresh records</button></div><div id="posDepartmentRecordsTable" class="state">No records loaded.</div>';
+    tools.insertAdjacentElement('afterend',records);
+    $('#refreshPosDepartmentRecords').onclick=()=>loadPosDepartmentRecords().catch(msg);
+  }
+  records.hidden=!canViewPosDepartmentRecords();
+}
+async function loadPosCatalogManager(){
+  const box=$('#posCatalogTable');if(!box||!hasPermission('orders.manage'))return;
+  box.innerHTML='<div class="state">Loading POS catalog…</div>';
+  const [cats,items,menu]=await Promise.all([
+    api('/rest/v1/pos_categories?select=id,name,description,sort_order,active&order=sort_order.asc,name.asc'),
+    api('/rest/v1/pos_items?select=id,name,description,unit_price,price_on_request,is_available,fulfillment_mode,department_key,category_id,menu_item_id,sort_order,active,pos_categories(name),menu_items(name)&order=sort_order.asc,name.asc'),
+    api('/rest/v1/menu_items?select=id,name,station_id,in_stock,price,price_on_request&order=name.asc')
+  ]);
+  const allCats=Array.isArray(cats)?cats:[];
+  const allItems=Array.isArray(items)?items:[];
+  window.__KITEEZI_POS_EDIT_CACHE__={categories:allCats,items:allItems,menu:Array.isArray(menu)?menu:[]};
+  box.innerHTML='<div class="table-scroll"><table><tr><th>POS item</th><th>Category</th><th>Department</th><th>Type</th><th>Price</th><th>Availability</th><th>Public-menu link</th><th>Actions</th></tr>'+
+    (allItems.length?allItems.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.pos_categories?.name||'')+'</td><td>'+esc(x.department_key)+'</td><td>'+esc(x.fulfillment_mode)+'</td><td>UGX '+money(x.unit_price)+'</td><td>'+((x.active&&x.is_available)?'Available':'Unavailable')+'</td><td>'+esc(x.menu_items?.name||'Service-only')+'</td><td><button type="button" class="btn" data-edit-pos-item="'+esc(x.id)+'">Edit</button> <button type="button" class="btn" data-toggle-pos-item="'+esc(x.id)+'">'+(x.active?'Deactivate':'Activate')+'</button></td></tr>').join(''):'<tr><td colspan="8">No POS items yet. Add a POS item below.</td></tr>')+'</table></div>'+
+    '<h4>Categories</h4><div class="toolbar">'+(allCats.map(c=>'<span class="pill">'+esc(c.name)+' <button type="button" class="btn" data-edit-pos-category="'+esc(c.id)+'">Edit</button></span>').join(' ')||'No categories')+'</div>';
+  box.querySelectorAll('[data-edit-pos-item]').forEach(b=>b.onclick=()=>editPosItem(b.dataset.editPosItem).catch(msg));
+  box.querySelectorAll('[data-toggle-pos-item]').forEach(b=>b.onclick=async()=>{const x=allItems.find(v=>v.id===b.dataset.togglePosItem);if(!x)return;try{await api('/rest/v1/pos_items?id=eq.'+encodeURIComponent(x.id),{method:'PATCH',body:JSON.stringify({active:!x.active,updated_at:new Date().toISOString()})});posMenuLoaded=false;await loadPosCatalogManager();await loadPosMenu(true)}catch(e){msg(e)}});
+  box.querySelectorAll('[data-edit-pos-category]').forEach(b=>b.onclick=()=>editPosCategory(b.dataset.editPosCategory).catch(msg));
+}
+async function editPosCategory(id=null){
+  if(!hasPermission('orders.manage'))throw Error('Only authorized managers can edit the POS catalog.');
+  const cache=window.__KITEEZI_POS_EDIT_CACHE__||{categories:[]};
+  const x=id?cache.categories.find(c=>c.id===id):{name:'',description:'',sort_order:((cache.categories||[]).length+1)*10,active:true};
+  if(!x)throw Error('POS category not found.');
+  modal(id?'Edit POS category':'Add POS category','<form id="posCategoryForm" class="form"><label>Category name<input name="name" required maxlength="80" value="'+esc(x.name)+'"></label><label>Description<textarea name="description">'+esc(x.description||'')+'</textarea></label><label>Display order<input name="sort_order" type="number" step="1" value="'+Number(x.sort_order||0)+'"></label><button class="btn btn-dark">Save category</button></form>');
+  $('#posCategoryForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const payload={name:String(f.get('name')||'').trim(),description:String(f.get('description')||'').trim()||null,sort_order:Number(f.get('sort_order')||0),updated_at:new Date().toISOString()};if(!payload.name)return;try{await api(id?'/rest/v1/pos_categories?id=eq.'+encodeURIComponent(id):'/rest/v1/pos_categories',{method:id?'PATCH':'POST',body:JSON.stringify(payload)});closeModal();posMenuLoaded=false;await loadPosCatalogManager();await loadPosMenu(true)}catch(err){msg(err)}};
+}
+async function editPosItem(id=null){
+  if(!hasPermission('orders.manage'))throw Error('Only authorized managers can edit the POS catalog.');
+  const cache=window.__KITEEZI_POS_EDIT_CACHE__||{categories:[],items:[],menu:[]};
+  const x=id?cache.items.find(i=>i.id===id):{name:'',description:'',unit_price:0,price_on_request:false,is_available:true,fulfillment_mode:'record_only',department_key:'swimming',category_id:cache.categories[0]?.id||'',menu_item_id:null,img_url:'',alt_text:'',serving_unit:'',sort_order:0,active:true};
+  if(!x)throw Error('POS item not found.');
+  if(!cache.categories.length)throw Error('Create a POS category first.');
+  const opts=(rows,selected)=>rows.map(v=>'<option value="'+esc(v.id)+'" '+(String(v.id)===String(selected||'')?'selected':'')+'>'+esc(v.name)+'</option>').join('');
+  const menuOpts='<option value="">No public menu link (service-only)</option>'+opts(cache.menu,x.menu_item_id);
+  modal(id?'Edit POS item':'Add POS item','<form id="posItemForm" class="form"><label>Name<input name="name" maxlength="120" required value="'+esc(x.name)+'"></label><label>Description<textarea name="description">'+esc(x.description||'')+'</textarea></label><label>POS category<select name="category_id" required>'+opts(cache.categories,x.category_id)+'</select></label><label>Price (UGX)<input name="unit_price" type="number" min="0" step="1" required value="'+Number(x.unit_price||0)+'"></label><label><input type="checkbox" name="price_on_request" '+(x.price_on_request?'checked':'')+'> Price on request</label><label><input type="checkbox" name="is_available" '+(x.is_available?'checked':'')+'> Available to sell</label><label>Fulfillment<select name="fulfillment_mode"><option value="record_only" '+(x.fulfillment_mode==='record_only'?'selected':'')+'>Record-only service</option><option value="preparation" '+(x.fulfillment_mode==='preparation'?'selected':'')+'>Kitchen / barista preparation</option></select></label><label>Department<select name="department_key">'+['kitchen','barista','swimming','sports','photography','buffet','other'].map(v=>'<option '+(v===x.department_key?'selected':'')+'>'+v+'</option>').join('')+'</select></label><label>Linked public menu item<select name="menu_item_id">'+menuOpts+'</select></label><label>Image URL<input name="img_url" type="url" value="'+esc(x.img_url||'')+'"></label><label>Image alt text<input name="alt_text" value="'+esc(x.alt_text||'')+'"></label><label>Serving unit<input name="serving_unit" value="'+esc(x.serving_unit||'')+'"></label><label>Display order<input name="sort_order" type="number" step="1" value="'+Number(x.sort_order||0)+'"></label><button class="btn btn-dark">Save POS item</button></form>');
+  $('#posItemForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const mode=String(f.get('fulfillment_mode'));const menuId=String(f.get('menu_item_id')||'')||null;const dept=String(f.get('department_key')||'other');if(mode==='preparation'&&!menuId){alert('Prepared items must link to a public menu item so existing kitchen/barista routing and stock logic can continue.');return}const payload={name:String(f.get('name')||'').trim(),description:String(f.get('description')||'').trim()||null,category_id:String(f.get('category_id')),unit_price:Number(f.get('unit_price')||0),price_on_request:f.get('price_on_request')==='on',is_available:f.get('is_available')==='on',fulfillment_mode:mode,department_key:dept,menu_item_id:menuId,img_url:String(f.get('img_url')||'').trim()||null,alt_text:String(f.get('alt_text')||'').trim()||null,serving_unit:String(f.get('serving_unit')||'').trim()||null,sort_order:Number(f.get('sort_order')||0),updated_at:new Date().toISOString()};try{await api(id?'/rest/v1/pos_items?id=eq.'+encodeURIComponent(id):'/rest/v1/pos_items',{method:id?'PATCH':'POST',body:JSON.stringify(payload)});closeModal();posMenuLoaded=false;await loadPosCatalogManager();await loadPosMenu(true)}catch(err){msg(err)}};
+}
+async function loadPosDepartmentRecords(){
+  const panel=$('#posDepartmentRecords'),box=$('#posDepartmentRecordsTable');if(!panel||!box||!canViewPosDepartmentRecords())return;
+  panel.hidden=false;box.innerHTML='<div class="state">Loading department records…</div>';
+  try{
+    let rows=await api('/rest/v1/pos_department_records?select=id,order_id,order_item_id,pos_item_id,department_key,item_name_snapshot,quantity,unit_price,recorded_at,notes&order=recorded_at.desc&limit=300');
+    const scoped=['swimming','sports','photography','buffet','other'].filter(k=>hasPermission('orders.department.'+k));
+    if(profile?.role!=='owner'&&!hasPermission('orders.manage')&&scoped.length)rows=rows.filter(r=>scoped.includes(r.department_key));
+    box.innerHTML=rows.length?'<div class="table-scroll"><table><tr><th>Recorded</th><th>Department</th><th>Service</th><th>Qty</th><th>Unit price</th><th>Order reference</th><th>Notes</th></tr>'+rows.map(r=>'<tr><td>'+esc(new Date(r.recorded_at).toLocaleString())+'</td><td>'+esc(r.department_key)+'</td><td>'+esc(r.item_name_snapshot)+'</td><td>'+esc(r.quantity)+'</td><td>UGX '+money(r.unit_price)+'</td><td>'+esc(String(r.order_id).slice(0,8).toUpperCase())+'</td><td>'+esc(r.notes||'')+'</td></tr>').join('')+'</table></div>':'<div class="state">No confirmed record-only services are recorded yet.</div>';
+  }catch(e){box.innerHTML='<div class="state danger">Department records could not be loaded. Check department permissions and apply the latest database migration.</div>';console.warn(e)}
 }
 function posPaymentModal(){
   if(!posCartItems.length){posSetStatus('Add at least one item before proceeding to payment.',true);return}
@@ -1008,7 +1083,7 @@ function posPaymentModal(){
       const reference=method==='cash'?'Cash received '+received+'; change '+(received-total):String(fd.get('reference')||'').trim()||null;
       await api('/rest/v1/rpc/record_pos_payment',{method:'POST',body:JSON.stringify({p_order_id:orderId,p_payment_method:method,p_reference:reference})});
       closeModal();posClear();$('#posCustomerName').value='';$('#posPhone').value='';$('#posNotes').value='';
-      posSetStatus('Order #'+String(orderId).slice(0,8).toUpperCase()+' saved and marked paid. It remains open until the authorized order confirmation workflow starts preparation.');
+      posSetStatus('Payment recorded for order #'+String(orderId).slice(0,8).toUpperCase()+'. The order remains open until an authorized manager confirms it.');
       await loadOrders();
     }catch(err){error.innerHTML='<div class="pos-payment-error">'+esc(humanAdminError(err,'We could not complete this POS payment. The order was not marked paid.'))+'</div>';msg(err);submit.disabled=false;submit.textContent='Complete Payment & Save Order'}
   };
@@ -1145,6 +1220,7 @@ function setupOrderViews(){
 function setupPos(){
   if(window.__KITEEZI_POS_BOUND__)return;window.__KITEEZI_POS_BOUND__=true;
   $('#posSearch')?.addEventListener('input',posRenderProducts);
+  ensurePosManagementPanels();
   $('#posRefreshMenu')?.addEventListener('click',()=>loadPosMenu(true).catch(msg));
   $('#posClear')?.addEventListener('click',posClear);
   $('#posPay')?.addEventListener('click',posCreateUnpaidOrder);
