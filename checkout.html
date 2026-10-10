@@ -1051,7 +1051,11 @@
       clientRequestId =
         (window.crypto && typeof window.crypto.randomUUID === 'function')
           ? window.crypto.randomUUID()
-          : String(Date.now()) + '-' + Math.random().toString(36).slice(2);
+          : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, character => {
+              const random = Math.floor(Math.random() * 16);
+              const value = character === 'x' ? random : (random & 0x3) | 0x8;
+              return value.toString(16);
+            });
       localStorage.setItem(ORDER_REQUEST_KEY, clientRequestId);
     }
 
