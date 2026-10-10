@@ -345,7 +345,11 @@
       .replace(/\b(each|pair|big|small|large|glass|shot|whole|ordinary)\b/gi, '')
       .replace(/\s+/g, ' ')
       .trim() || String(item?.menu_categories?.name || 'food');
-    if (/drink|juice|soda|water|lemonade|smoothie/.test(hay)) return MENU_IMAGE_MAP.juice;\n    if (/coffee|tea|barista/.test(hay)) return MENU_IMAGE_MAP.coffee;\n    if (/fish|tilapia/.test(hay)) return MENU_IMAGE_MAP.fish;\n    if (/salad|vegetable|fruit/.test(hay)) return MENU_IMAGE_MAP.salad;\n    return MENU_IMAGE_MAP.default;
+    if (/drink|juice|soda|water|lemonade|smoothie/.test(hay)) return MENU_IMAGE_MAP.juice;
+    if (/coffee|tea|barista/.test(hay)) return MENU_IMAGE_MAP.coffee;
+    if (/fish|tilapia/.test(hay)) return MENU_IMAGE_MAP.fish;
+    if (/salad|vegetable|fruit/.test(hay)) return MENU_IMAGE_MAP.salad;
+    return MENU_IMAGE_MAP.default;
   }
 
 async function renderMenuCatalog() {
