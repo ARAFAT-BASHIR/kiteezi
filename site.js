@@ -262,6 +262,16 @@
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[char]));
 
+  function safeMenuImageUrl(value) {
+    const raw = String(value ?? '').trim();
+    if (!raw) return MENU_IMAGE_MAP.default;
+    try {
+      const parsed = new URL(raw, window.location.href);
+      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') return parsed.href;
+    } catch {}
+    return MENU_IMAGE_MAP.default;
+  }
+
 
   async function renderHomeMenu() {
     const target = $('#home-menu-catalog');
@@ -314,7 +324,7 @@
   };
 
   function menuImageFor(item) {
-    if (item?.img_url) return String(item.img_url);
+    if (item?.img_url) return safeMenuImageUrl(item.img_url);
     const name = String(item?.name || '').trim();
     const hay = (name + ' ' + String(item?.menu_categories?.name || '')).toLowerCase();
     const exact = [
@@ -413,7 +423,7 @@ async function renderMenuCatalog() {
             const price = onRequest ? 'Ask' : 'UGX ' + money(item.price);
             const serving = item.serving_unit ? ' / ' + escapeHtml(item.serving_unit) : '';
             const imageUrl = menuImageFor(item);
-            const image = '<div class="menu-item-image"><img src="' + escapeHtml(imageUrl) + '" alt="' + escapeHtml(item.alt_text || item.name) + '" loading="lazy" onerror="this.src=\'' + escapeHtml(MENU_IMAGE_MAP.default) + '\'"></div>';
+            const image = '<div class="menu-item-image"><img src="' + escapeHtml(imageUrl) + '" alt="' + escapeHtml(item.alt_text || item.name) + '" loading="lazy" data-menu-image-fallback></div>';
             return '<div class="menu-item">' + image +
               '<div><h4>' + escapeHtml(item.name) + '</h4><p>' + escapeHtml(item.description || '') + '</p></div>' +
               '<div class="menu-price">' + price + serving + '</div></div>' +
@@ -424,6 +434,13 @@ async function renderMenuCatalog() {
           }).join('');
           return '<article class="card"><div class="card-body"><span class="badge">' + escapeHtml(catName) + '</span>' + card + '</div></article>';
         }).join('');
+        target.querySelectorAll('img[data-menu-image-fallback]').forEach(img => {
+          img.addEventListener('error', () => {
+            if (img.dataset.fallbackApplied === 'true') return;
+            img.dataset.fallbackApplied = 'true';
+            img.src = MENU_IMAGE_MAP.default;
+          }, { once: true });
+        });
         bindMenuButtons();
         bindCartButtons();
       };
