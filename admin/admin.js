@@ -78,6 +78,7 @@ async function bootAdmin(authSession){
     session=authSession||JSON.parse(sessionStorage.getItem('kiteezi_admin_session')||'null');
     if(!session?.access_token||!session?.user?.id)throw Error('No valid admin session.');
     writeAdminSession(session);
+    restorePosCartDraft();
     const p=await api('/rest/v1/profiles?select=*&id=eq.'+encodeURIComponent(session.user.id)+'&limit=1');
     profile=p?.[0];
     if(!profile?.active)throw Error('This Kiteezi staff profile is inactive.');
@@ -187,14 +188,8 @@ async function show(){
   try{
     await dashboardPromise;
     loadedTabs.add('dashboard');
-    history.replaceState(null,'',location.search+'#dashboard');
-    document.querySelectorAll('[data-tab]').forEach(a=>a.classList.toggle('active',a.dataset.tab==='dashboard'));
-    document.querySelectorAll('.tab').forEach(sec=>{
-      const active=sec.id==='dashboard';
-      sec.classList.toggle('active',active);
-      sec.hidden=!active;
-      sec.setAttribute('aria-hidden',active?'false':'true');
-    });
+    const requestedTab=decodeURIComponent(location.hash.slice(1)||localStorage.getItem('kiteezi_admin_active_tab')||'dashboard');
+    await route(requestedTab);
   }catch(e){
     console.error('Admin route initialization failed:',e);
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
@@ -698,6 +693,8 @@ function route(x){
   if(requested==='reports')x='accounting';
   const desired=x||'dashboard';
   tab=canOpenTab(desired)?desired:(canOpenTab('dashboard')?'dashboard':Object.keys(TAB_PERMISSIONS).find(canOpenTab)||'dashboard');
+  try{localStorage.setItem('kiteezi_admin_active_tab',tab)}catch{}
+  if(location.hash!=='#'+tab)history.replaceState(null,'',location.search+'#'+tab);
   document.querySelectorAll('[data-tab]').forEach(a=>a.classList.toggle('active',a.dataset.tab===tab));
   document.querySelectorAll('.tab').forEach(sec=>{
     const active=sec.id===tab;
@@ -898,6 +895,11 @@ const POS_IMAGE_MAP={
   default:'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80'
 };
 let posMenuItems=[],posCategories=[],posActiveCategory='',posCartItems=[],posMenuLoaded=false,posImageAssignments=new Map();
+const POS_CART_STORAGE_PREFIX='kiteezi_pos_cart_v1:';
+function posCartStorageKey(){return POS_CART_STORAGE_PREFIX+String(session?.user?.id||'anonymous')}
+function restorePosCartDraft(){try{const saved=JSON.parse(localStorage.getItem(posCartStorageKey())||'[]');posCartItems=Array.isArray(saved)?saved.filter(x=>x&&x.id&&Number(x.quantity)>0).map(x=>({id:String(x.id),quantity:Math.min(10000,Math.max(1,Number(x.quantity)||1))})):[]}catch{posCartItems=[]}}
+function persistPosCartDraft(){try{localStorage.setItem(posCartStorageKey(),JSON.stringify(posCartItems.map(x=>({id:String(x.id),quantity:Math.min(10000,Math.max(1,Number(x.quantity)||1))}))))}catch{}}
+function reconcilePosCartDraft(){posCartItems=posCartItems.map(saved=>{const item=posMenuItems.find(x=>String(x.id)===String(saved.id));return item?{...item,quantity:saved.quantity}:null}).filter(Boolean);persistPosCartDraft()}
 function posMoney(v){return 'UGX '+new Intl.NumberFormat('en-UG').format(Number(v)||0)}
 function posUniqueFallbackFor(item){
   const keywords=String(item?.name||item?.category||'food').replace(/[^a-z0-9 ]/gi,' ').replace(/\s+/g,' ').trim()||'food';
@@ -950,6 +952,7 @@ function posRenderProducts(){
   box.querySelectorAll('[data-pos-add]').forEach(b=>b.onclick=()=>posAddItem(b.dataset.posAdd));
 }
 function posRenderCart(){
+  persistPosCartDraft();
   const box=$('#posCart'),count=$('#posCartCount'),sub=$('#posSubtotal'),total=$('#posTotal');
   const n=posCartItems.reduce((s,x)=>s+Number(x.quantity||0),0),sum=posCartTotal();
   if(count)count.textContent=n+' item'+(n===1?'':'s');
@@ -1016,6 +1019,7 @@ async function loadPosMenu(force=false){
       if(usedPosImages.has(image))image+='&item='+encodeURIComponent(String(x.id||x.name||usedPosImages.size));
       usedPosImages.add(image);posImageAssignments.set(String(x.id),image);
     });
+    reconcilePosCartDraft();
     posMenuLoaded=true;posRenderCategories();posRenderProducts();posRenderCart();
     const status=$('#posMenuStatus');if(status)status.textContent=posMenuItems.length+' POS items available';
     ensurePosManagementPanels();
