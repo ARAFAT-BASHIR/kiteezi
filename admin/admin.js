@@ -35,7 +35,7 @@ const TAB_FALLBACK_PERMISSIONS={
   staff:['staff.manage','roles.manage','staff.view']
 };
 const hasPermission=code=>profile?.role==='owner'||permissions.has(code);
-const canSeeTab=name=>name==='settings' ? Boolean(profile?.active) : (profile?.role==='general_manager' ? true : hasPermission(TAB_PERMISSIONS[name])||(TAB_FALLBACK_PERMISSIONS[name]||[]).some(hasPermission));
+const canSeeTab=name=>profile?.role==='owner'||(name==='settings' ? permissions.has('site_settings.manage') : (profile?.role==='general_manager' ? true : hasPermission(TAB_PERMISSIONS[name])||(TAB_FALLBACK_PERMISSIONS[name]||[]).some(hasPermission)));
 
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const setHTML=(s,v)=>{const el=$(s);if(el)el.innerHTML=v;};
