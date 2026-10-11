@@ -236,7 +236,7 @@ function applyRoleNavigation(){
     ['service_tally','Service Tally',['service_logs.create']],['assets','Assets',['reports.view','reports.financial']],
     ['settings','Settings',['site_settings.manage']],['audit','Audit Trail',['reports.view']],
   ];
-  const visibleIds=new Set(modules.filter(([,label,needed])=>needed.length?needed.some(hasPermission):false).map(([id])=>id));if(profile?.active)visibleIds.add('settings');if(profile?.role==='owner')visibleIds.add('customers');
+  const visibleIds=new Set(modules.filter(([,label,needed])=>needed.length?needed.some(hasPermission):false).map(([id])=>id));if(profile?.role==='owner')visibleIds.add('customers');
   if(nav){
     const groups=[
       ['OPERATIONS','operations',[['restaurant','Orders'],['bookings','Bookings'],['services','Sports & Services'],['swimming_timetable','Swimming Timetable'],['swimming_sessions','Swimming Sessions'],['tasks','Grounds / Tasks'],['inquiries','Customer Inquiries']]],
