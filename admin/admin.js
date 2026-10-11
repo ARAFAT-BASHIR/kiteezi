@@ -1254,7 +1254,7 @@ async function confirmOrderWithCocktailChoice(id,status,payment,phone,textMessag
       const components=selected.map(inventory_item_id=>({inventory_item_id,dish_type:'cocktail_component'}));
       try{
         for(const item of cocktailItems){
-          await api('/rest/v1/order_items?id=eq.'+encodeURIComponent(item.id),{method:'PATCH',body:JSON.stringify({shared_pool_components:components})});
+          await api('/rest/v1/rpc/set_order_item_shared_pool_components',{method:'POST',body:JSON.stringify({p_order_item_id:item.id,p_components:components})});
         }
         closeModal();
         await setOrderAndWhatsApp(id,status,payment,phone,textMessage);
