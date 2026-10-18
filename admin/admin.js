@@ -561,7 +561,7 @@ async function enterRequisitionActualCost(id){
     '<div><small class="muted">Actual total</small><div class="req-actual-total">UGX '+money(Number(i.actual_total||0))+'</div></div>'+
     '</div>';
   modal('Manager — actual requisition cost','<form id="reqActualForm" class="form"><p class="muted">The department estimate is preserved. Enter the actual unit price for every item. The system calculates each total from quantity × actual unit price. This is part of approval, not a requisition edit.</p><div id="reqActualLines">'+items.map(row).join('')+'</div><div id="reqActualSummary" class="notice"></div><button class="btn btn-dark" type="submit">Save actual cost & approve</button></form>');
-  const form=$('#reqActualForm'), lines=$('.req-actual-line',form), summary=$('#reqActualSummary');
+  const form=$('#reqActualForm'), lines=$$('.req-actual-line',form), summary=$('#reqActualSummary');
   const refresh=()=>{
     let total=0;
     lines.forEach(line=>{
