@@ -878,6 +878,13 @@ async function loadReceptionOrders(){
 
 /* === Integrated Orders / POS === */
 const POS_IMAGE_MAP={
+  football:'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=1000&q=85',
+  basketball:'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=1000&q=85',
+  swimming:'https://images.unsplash.com/photo-1530549387789-4c1017266635?auto=format&fit=crop&w=1000&q=85',
+  katogo:'https://uganda-evisa.com/images/traditional-ugandan-dish-katogo.jpg',
+  rolex:'https://uganda-evisa.com/images/ugandan-rolex-rolls.jpg',
+  masala:'https://dtwaeonhht2im.cloudfront.net/Masala-Chips-1.jpg',
+  pilawo:'https://snapcalorie-webflow-website.s3.us-east-2.amazonaws.com/media/food_pics_v2/medium/chicken_pilau.jpg',
   burger:'https://images.unsplash.com/photo-1767065703793-7012f5fced19?auto=format&fit=crop&w=900&q=80',
   pizza:'https://images.unsplash.com/photo-1751368647711-2e2ee6d0b7c6?auto=format&fit=crop&w=900&q=80',
   chicken:'https://images.unsplash.com/photo-1725728286008-6bdec0508a71?auto=format&fit=crop&w=900&q=80',
@@ -897,8 +904,13 @@ const POS_IMAGE_MAP={
 let posMenuItems=[],posCategories=[],posActiveCategory='',posCartItems=[],posMenuLoaded=false;
 function posMoney(v){return 'UGX '+new Intl.NumberFormat('en-UG').format(Number(v)||0)}
 function posImageFor(item){
-  if(item?.img_url)return item.img_url;
+  const savedUrl=String(item?.img_url||'').trim();
+  // The seeded LoremFlickr URLs are generated placeholders; use a curated item/category image instead.
+  if(savedUrl&&!/\/\/loremflickr\.com\//i.test(savedUrl))return savedUrl;
   const hay=(String(item?.name||'')+' '+String(item?.category||'')).toLowerCase();
+  if(/football/.test(hay))return POS_IMAGE_MAP.football;
+  if(/basketball/.test(hay))return POS_IMAGE_MAP.basketball;
+  if(/swimming|membership/.test(hay))return POS_IMAGE_MAP.swimming;
   for(const key of Object.keys(POS_IMAGE_MAP)){if(key!=='default'&&hay.includes(key))return POS_IMAGE_MAP[key]}
   if(/goat|liver|beef|meat|steak|muchomo|sausage|kebab|chapati|rolex|chips|samosa|katogo|buffet|snack/.test(hay))return POS_IMAGE_MAP.chicken;
   if(/whisk|spirit|gin|vodka|cream|champagne/.test(hay))return POS_IMAGE_MAP.whiskey;
