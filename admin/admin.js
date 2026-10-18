@@ -929,7 +929,16 @@ function posCartTotal(){return posCartItems.reduce((s,x)=>s+(Number(x.price)||0)
 function posRenderCategories(){
   const box=$('#posCategoryTabs');if(!box)return;
   const all=[{id:'',name:'All categories'}].concat(posCategories);
-  box.innerHTML=all.map(c=>'<button type="button" role="tab" class="'+(String(c.id)===String(posActiveCategory)?'active':'')+'" data-pos-category="'+esc(c.id)+'">'+esc(c.name)+'</button>').join('');
+  box.classList.add('pos-category-cards');
+  box.innerHTML=all.map(c=>{
+    const items=c.id?posMenuItems.filter(x=>String(x.category_id)===String(c.id)):posMenuItems;
+    const imageItem=items.find(x=>x.img_url&&String(x.img_url).indexOf('loremflickr.com')<0)||items[0];
+    const image=imageItem?posImageFor(imageItem):POS_IMAGE_MAP.default;
+    const selected=String(c.id)===String(posActiveCategory);
+    return '<button type="button" role="tab" aria-selected="'+(selected?'true':'false')+'" aria-pressed="'+(selected?'true':'false')+'" class="pos-category-card '+(selected?'active':'')+'" data-pos-category="'+esc(c.id)+'">'+
+      '<span class="pos-category-image"><img src="'+esc(image)+'" alt="" loading="lazy"></span>'+
+      '<span class="pos-category-card-name">'+esc(c.name)+'</span><span class="pos-category-card-count">'+items.length+' item'+(items.length===1?'':'s')+'</span></button>';
+  }).join('');
   box.querySelectorAll('[data-pos-category]').forEach(b=>b.onclick=()=>{posActiveCategory=b.dataset.posCategory||'';posRenderCategories();posRenderProducts()});
 }
 function posRenderProducts(){
