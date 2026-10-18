@@ -76,13 +76,12 @@
     };
   }
   const manageButton=$('#posManageCategories');
+  const syncManageButton=()=>{if(manageButton){manageButton.textContent='Manage POS catalogue';manageButton.hidden=!!profile&&!posAdminCanManage();}};
   if(manageButton){
-    manageButton.textContent='Manage POS catalogue';
-    manageButton.hidden=!posAdminCanManage();
+    syncManageButton();
     manageButton.addEventListener('click',()=>posOpenCatalogManager().catch(msg));
   }
-  /* Keep permission visibility in sync when the signed-in profile is loaded. */
-  document.addEventListener('click',e=>{
-    if(e.target?.closest?.('#posManageCategories'))$('#posManageCategories').hidden=!posAdminCanManage();
-  });
+  /* setupPos runs when the authenticated admin interface is initialized; sync visibility then. */
+  const originalSetupPos=setupPos;
+  setupPos=function(){originalSetupPos();syncManageButton();};
 })();
