@@ -419,7 +419,7 @@ async function loadInquiries(){
     }).join('')+'</table>':'<div class="state">No inquiries for your role.</div>';
   document.querySelectorAll('#inquiriesTable [data-delete-inquiry]').forEach(x=>x.onclick=()=>deleteTestRecord('inquiry',x.dataset.deleteInquiry));document.querySelectorAll('#inquiriesTable [data-inquiry-status]').forEach(el=>el.onchange=async()=>{await api('/rest/v1/inquiries?id=eq.'+encodeURIComponent(el.dataset.inquiryStatus),{method:'PATCH',body:JSON.stringify({status:el.value,updated_at:new Date().toISOString()})});});
 }
-let notificationInitialized=false;let notificationIds=new Set();let notificationCache=new Map();let notificationPoll=null;function showAdminToast(title,message){let t=document.getElementById('adminToast');if(!t){t=document.createElement('div');t.id='adminToast';t.style.cssText='position:fixed;right:18px;bottom:18px;z-index:200;background:#1b4332;color:#fff;padding:14px 16px;border-radius:12px;box-shadow:0 8px 30px #0003;max-width:360px';document.body.appendChild(t)}t.innerHTML='<strong>'+esc(title)+'</strong><div style="margin-top:4px">'+esc(message||'')+'</div>';setTimeout(()=>t.remove(),7000);}let pendingNotificationRecord=null;
+let notificationInitialized=false;let notificationIds=new Set();let notificationCache=new Map();let notificationPoll=null;let activeNotificationThreadId=null;function showAdminToast(title,message){let t=document.getElementById('adminToast');if(!t){t=document.createElement('div');t.id='adminToast';t.style.cssText='position:fixed;right:18px;bottom:18px;z-index:200;background:#1b4332;color:#fff;padding:14px 16px;border-radius:12px;box-shadow:0 8px 30px #0003;max-width:360px';document.body.appendChild(t)}t.innerHTML='<strong>'+esc(title)+'</strong><div style="margin-top:4px">'+esc(message||'')+'</div>';setTimeout(()=>t.remove(),7000);}let pendingNotificationRecord=null;
 function notificationTarget(n){
   const t=String(n.reference_type||'').toLowerCase();
   if(t==='booking'||t==='bookings')return 'bookings';
@@ -460,25 +460,69 @@ function focusNotificationRecord(){
 async function consumePendingNotification(){
   const id=new URLSearchParams(location.search).get('notification');
   if(!id||!session?.user?.id)return;
-  const rows=await api('/rest/v1/notifications?select=id,title,message,is_read,created_at,reference_type,reference_id&recipient_user_id=eq.'+encodeURIComponent(session.user.id)+'&id=eq.'+encodeURIComponent(id)+'&limit=1');
+  const rows=await api('/rest/v1/notifications?select=id,thread_id,sender_user_id,recipient_user_id,type,title,message,is_read,created_at,reference_type,reference_id,sender:profiles!notifications_sender_user_id_fkey(full_name,role)&recipient_user_id=eq.'+encodeURIComponent(session.user.id)+'&id=eq.'+encodeURIComponent(id)+'&limit=1');
   const cleanUrl=new window.URL(location.href);cleanUrl.searchParams.delete('notification');
   history.replaceState(null,'',cleanUrl.pathname+(cleanUrl.search?'?'+cleanUrl.searchParams.toString():'')+cleanUrl.hash);
-  const n=rows?.[0];if(n)await openNotification(n);
+  const n=rows?.[0];if(n){toggleNotificationPanel(true);await openNotification(n);}
+}
+function notificationSenderLabel(n){
+  if(!n?.sender_user_id)return 'Kiteezi System';
+  if(n.sender_user_id===session?.user?.id)return 'You';
+  return n.sender?.full_name||n.sender?.role?.replace(/_/g,' ')||'Kiteezi staff';
 }
 async function openNotification(n){
-  const target=notificationTarget(n);
-  if(!canOpenTab(target))return route('dashboard');
-  pendingNotificationRecord=n.reference_id?{id:n.reference_id,type:n.reference_type}:null;
-  if(n.id){await api('/rest/v1/notifications?id=eq.'+encodeURIComponent(n.id)+'&recipient_user_id=eq.'+encodeURIComponent(session.user.id),{method:'PATCH',body:JSON.stringify({is_read:true})});await loadNotifications();}
-  history.replaceState(null,'','#'+target);
-  await route(target);
-  if(!focusNotificationRecord()&&pendingNotificationRecord){setTimeout(()=>focusNotificationRecord(),300);setTimeout(()=>{if(pendingNotificationRecord&&!focusNotificationRecord())pendingNotificationRecord=null},1800);}
+  const threadId=n?.thread_id||n?.id;if(!threadId)return;
+  activeNotificationThreadId=threadId;
+  const panel=$('#notificationThreadPanel');if(panel)panel.innerHTML='<div class="state">Loading conversation…</div>';
+  const uid=encodeURIComponent(session.user.id);
+  const rows=await api('/rest/v1/notifications?select=id,thread_id,sender_user_id,recipient_user_id,type,title,message,is_read,created_at,reference_type,reference_id,sender:profiles!notifications_sender_user_id_fkey(full_name,role)&thread_id=eq.'+encodeURIComponent(threadId)+'&order=created_at.asc&limit=100');
+  const root=rows.find(x=>x.id===threadId)||rows[0]||n;
+  await api('/rest/v1/notifications?thread_id=eq.'+encodeURIComponent(threadId)+'&recipient_user_id=eq.'+uid+'&is_read=eq.false',{method:'PATCH',body:JSON.stringify({is_read:true})});
+  rows.forEach(x=>{if(x.recipient_user_id===session.user.id)x.is_read=true});
+  renderNotificationThread(root,rows);
+  await loadNotifications(true);
 }
-async function loadNotifications(){if(!session?.user?.id)return;const rows=await api('/rest/v1/notifications?select=id,title,message,is_read,created_at,reference_type,reference_id&recipient_user_id=eq.'+session.user.id+'&is_read=eq.false&order=created_at.desc&limit=30');if(notificationInitialized){rows.filter(x=>!notificationIds.has(x.id)).reverse().forEach(x=>showAdminToast(x.title,x.message));}notificationIds=new Set(rows.map(x=>x.id));notificationCache=new Map(rows.map(x=>[x.id,x]));notificationInitialized=true;bindNotificationClicks();const unread=rows.filter(x=>!x.is_read).length;$('#notificationCount').textContent=String(unread);$('#notificationList').innerHTML=rows.length?rows.map(x=>'<div class="cardx notification-item" data-notification="'+esc(x.id)+'" style="margin-bottom:8px;cursor:pointer;opacity:'+(x.is_read?'0.7':'1')+'"><strong>'+esc(x.title)+'</strong><div>'+esc(x.message||'')+'</div><small class="muted">'+esc(new Date(x.created_at).toLocaleString())+'</small></div>').join(''):'<div class="state">No notifications.</div>';}
-function toggleNotifications(){const p=$('#notificationPanel');p.style.display=p.style.display==='none'?'block':'none';if(p.style.display==='block')loadNotifications().catch(msg)}
-function startNotificationPolling(){if(notificationPoll)clearInterval(notificationPoll);notificationPoll=setInterval(()=>{if(!document.hidden)loadNotifications().catch(()=>{});},10000);}
+function renderNotificationThread(root,rows){
+  const panel=$('#notificationThreadPanel');if(!panel)return;
+  const canReply=!!root?.sender_user_id&&root.sender_user_id!==root.recipient_user_id;
+  const target=notificationTarget(root||{});
+  const canOpenRelated=!!root?.reference_id&&!!root?.reference_type&&canOpenTab(target);
+  panel.innerHTML='<div class="notification-thread-head"><div><div class="eyebrow">Conversation</div><h3>'+esc(root?.title||'Notification')+'</h3><small class="muted">'+esc(root?.created_at?new Date(root.created_at).toLocaleString():'')+'</small></div>'+(canOpenRelated?'<button class="btn" id="openNotificationRelated" type="button">Open related record</button>':'')+'</div>'+
+    '<div class="notification-thread-messages">'+(rows.length?rows.map(x=>'<article class="notification-message '+(x.sender_user_id===session?.user?.id?'sent':'received')+'"><div class="notification-message-meta"><strong>'+esc(notificationSenderLabel(x))+'</strong><time>'+esc(new Date(x.created_at).toLocaleString())+'</time></div><div class="notification-message-body">'+esc(x.message||x.title||'')+'</div></article>').join(''):'<div class="state">No messages in this conversation.</div>')+'</div>'+
+    (canReply?'<form id="notificationReplyForm" class="notification-reply-form"><label for="notificationReplyText">Reply</label><textarea id="notificationReplyText" name="message" rows="3" maxlength="2000" placeholder="Write your reply…" required></textarea><button class="btn btn-dark" type="submit">Send reply</button><div id="notificationReplyStatus" class="muted" role="status"></div></form>':'<div class="notification-system-note">This is an automated Kiteezi system alert and does not have a human sender to reply to.</div>');
+  $('#openNotificationRelated')?.addEventListener('click',async()=>{const cleanUrl=new window.URL(location.href);cleanUrl.searchParams.delete('notification');history.replaceState(null,'',cleanUrl.pathname+(cleanUrl.search?'?'+cleanUrl.searchParams.toString():'')+'#'+target);$('#notificationPanel').style.display='none';await route(target);pendingNotificationRecord={id:root.reference_id,type:root.reference_type};if(!focusNotificationRecord())setTimeout(focusNotificationRecord,300)});
+  $('#notificationReplyForm')?.addEventListener('submit',async e=>{
+    e.preventDefault();const form=e.currentTarget,button=form.querySelector('button[type="submit"]'),status=$('#notificationReplyStatus'),message=String(new FormData(form).get('message')||'').trim();
+    if(!message)return;if(button)button.disabled=true;if(status)status.textContent='Sending…';
+    try{const r=await fetch(PUSH_FUNCTION_URL,{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:JSON.stringify({action:'reply',thread_id:root.id||root.thread_id,message})});const d=await r.json().catch(()=>null);if(!r.ok)throw Error(d?.error||'Reply could not be sent.');form.reset();await openNotification(root);}
+    catch(err){if(status)status.textContent=humanAdminError(err,'Reply could not be sent.');}
+    finally{if(button)button.disabled=false;}
+  });
+}
+async function loadNotifications(preserveThread=false){
+  if(!session?.user?.id)return;
+  const uid=encodeURIComponent(session.user.id);
+  const rows=await api('/rest/v1/notifications?select=id,thread_id,sender_user_id,recipient_user_id,type,title,message,is_read,created_at,reference_type,reference_id,sender:profiles!notifications_sender_user_id_fkey(full_name,role)&or=(recipient_user_id.eq.'+uid+',sender_user_id.eq.'+uid+')&order=created_at.desc&limit=100');
+  if(notificationInitialized){rows.filter(x=>!notificationIds.has(x.id)&&x.recipient_user_id===session.user.id).reverse().forEach(x=>showAdminToast(x.title,x.message));}
+  notificationIds=new Set(rows.map(x=>x.id));notificationCache=new Map(rows.map(x=>[x.thread_id||x.id,x]));
+  notificationInitialized=true;
+  const unread=rows.filter(x=>x.recipient_user_id===session.user.id&&!x.is_read).length;
+  $('#notificationCount').textContent=String(unread);
+  const latestByThread=new Map();rows.forEach(x=>{const key=x.thread_id||x.id;if(!latestByThread.has(key))latestByThread.set(key,x)});
+  const latest=[...latestByThread.values()].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  $('#notificationList').innerHTML=latest.length?latest.map(x=>'<button type="button" class="notification-item '+(x.recipient_user_id===session.user.id&&!x.is_read?'unread':'')+'" data-notification="'+esc(x.thread_id||x.id)+'" aria-pressed="'+((activeNotificationThreadId===(x.thread_id||x.id))?'true':'false')+'"><strong>'+esc(x.title||'Notification')+'</strong><span class="notification-sender">'+esc(notificationSenderLabel(x))+' · '+esc(new Date(x.created_at).toLocaleString())+'</span><span class="notification-preview">'+esc(x.message||'')+'</span></button>').join(''):'<div class="state">No notifications yet.</div>';
+  bindNotificationClicks();
+}
+function toggleNotificationPanel(forceOpen=false){
+  const p=$('#notificationPanel');if(!p)return;
+  const open=forceOpen||p.style.display==='none';
+  p.style.display=open?'block':'none';
+  if(open)loadNotifications().catch(msg);
+}
+function toggleNotifications(){toggleNotificationPanel(false)}
+function startNotificationPolling(){if(notificationPoll)clearInterval(notificationPoll);notificationPoll=setInterval(()=>{if(!document.hidden)loadNotifications(true).catch(()=>{});},10000);}
 function bindNotificationClicks(){document.querySelectorAll('.notification-item').forEach(el=>el.onclick=async()=>{try{const n=notificationCache.get(el.dataset.notification);if(n)await openNotification(n);}catch(e){msg(e)}})}
-async function markNotificationsRead(){await api('/rest/v1/notifications?recipient_user_id=eq.'+session.user.id+'&is_read=eq.false',{method:'PATCH',body:JSON.stringify({is_read:true})});await loadNotifications()}
+async function markNotificationsRead(){await api('/rest/v1/notifications?recipient_user_id=eq.'+encodeURIComponent(session.user.id)+'&is_read=eq.false',{method:'PATCH',body:JSON.stringify({is_read:true})});await loadNotifications(true)}
 async function loadRequisitions(){
   const rows=await api('/rest/v1/requisitions?select=*,requisition_items(id,inventory_item_id,quantity,unit_code,estimated_unit_price,actual_unit_price,actual_total,inventory_items(name,unit))&order=created_at.desc');
   const canManager=hasPermission('requisitions.approve.manager');
