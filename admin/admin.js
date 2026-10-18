@@ -583,7 +583,7 @@ async function enterRequisitionActualCost(id){
   };
 }
 function wireRequisitionItemSearch(root){
-  $('.req-item-search',root).forEach(input=>{
+  $$('.req-item-search',root).forEach(input=>{
     if(input.dataset.searchWired==='true')return;
     input.dataset.searchWired='true';
     input.addEventListener('input',()=>{
