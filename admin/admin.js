@@ -466,7 +466,7 @@ async function consumePendingNotification(){
   const n=rows?.[0];if(n){toggleNotificationPanel(true);await openNotification(n);}
 }
 function notificationSenderLabel(n){
-  if(!n?.sender_user_id)return 'Kiteezi System';
+  if(!n?.sender_user_id)return n?.type==='manual'?'Sender not recorded':'Kiteezi System';
   if(n.sender_user_id===session?.user?.id)return 'You';
   return n.sender?.full_name||n.sender?.role?.replace(/_/g,' ')||'Kiteezi staff';
 }
