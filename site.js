@@ -324,7 +324,9 @@
   };
 
   function menuImageFor(item) {
-    if (item?.img_url) return safeMenuImageUrl(item.img_url);
+    // LoremFlickr URLs are generated placeholders, not verified menu photography.
+    // Prefer this file's item-specific image map over those seeded placeholder URLs.
+    if (item?.img_url && !/\/\/loremflickr\.com\//i.test(String(item.img_url))) return safeMenuImageUrl(item.img_url);
     const name = String(item?.name || '').trim();
     const hay = (name + ' ' + String(item?.menu_categories?.name || '')).toLowerCase();
     const exact = [
