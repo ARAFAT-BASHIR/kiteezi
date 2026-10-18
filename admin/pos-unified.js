@@ -74,6 +74,23 @@
         await posRefreshCatalogue();posSetStatus('Service added to the POS catalogue. It can now be added to a walk-in order.');posOpenCatalogManager();
       }catch(err){msg(err);submit.disabled=false}
     };
+    document.querySelectorAll('.posEditPriceForm').forEach(priceForm=>{
+      priceForm.onsubmit=async e=>{
+        e.preventDefault();
+        const itemId=priceForm.dataset.posItemId;
+        const input=priceForm.querySelector('[name="unit_price"]');
+        const price=Number(input?.value);
+        if(!itemId||!Number.isFinite(price)||price<0){msg(Error('Enter a valid price of zero or more.'));return}
+        const submit=priceForm.querySelector('button[type="submit"]');
+        if(submit)submit.disabled=true;
+        try{
+          await api('/rest/v1/pos_items?id=eq.'+encodeURIComponent(itemId),{method:'PATCH',body:JSON.stringify({unit_price:price,updated_at:new Date().toISOString()})});
+          await posRefreshCatalogue();
+          posSetStatus('POS price updated. This applies to future orders; existing orders remain unchanged.');
+          posOpenCatalogManager();
+        }catch(err){msg(err);if(submit)submit.disabled=false}
+      };
+    });
   }
   const manageButton=$('#posManageCategories');
   const syncManageButton=()=>{if(manageButton){manageButton.textContent='Manage POS catalogue';manageButton.hidden=!!profile&&!posAdminCanManage();}};
