@@ -512,6 +512,13 @@ async function loadNotifications(preserveThread=false){
   const latest=[...latestByThread.values()].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
   $('#notificationList').innerHTML=latest.length?latest.map(x=>'<button type="button" class="notification-item '+(x.recipient_user_id===session.user.id&&!x.is_read?'unread':'')+'" data-notification="'+esc(x.thread_id||x.id)+'" aria-pressed="'+((activeNotificationThreadId===(x.thread_id||x.id))?'true':'false')+'"><strong>'+esc(x.title||'Notification')+'</strong><span class="notification-sender">'+esc(notificationSenderLabel(x))+' · '+esc(new Date(x.created_at).toLocaleString())+'</span><span class="notification-preview">'+esc(x.message||'')+'</span></button>').join(''):'<div class="state">No notifications yet.</div>';
   bindNotificationClicks();
+  if(preserveThread&&activeNotificationThreadId&&$('#notificationPanel')?.style.display!=='none'){
+    const draft=$('#notificationReplyText')?.value||'';
+    const wasFocused=document.activeElement?.id==='notificationReplyText';
+    const threadRows=await api('/rest/v1/notifications?select=id,thread_id,sender_user_id,recipient_user_id,type,title,message,is_read,created_at,reference_type,reference_id,sender:profiles!notifications_sender_user_id_fkey(full_name,role)&thread_id=eq.'+encodeURIComponent(activeNotificationThreadId)+'&order=created_at.asc&limit=100');
+    const root=threadRows.find(x=>x.id===activeNotificationThreadId)||threadRows[0];
+    if(root){renderNotificationThread(root,threadRows);const input=$('#notificationReplyText');if(input&&draft)input.value=draft;if(input&&wasFocused)input.focus();}
+  }
 }
 function toggleNotificationPanel(forceOpen=false){
   const p=$('#notificationPanel');if(!p)return;
