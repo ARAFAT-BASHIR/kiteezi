@@ -548,6 +548,35 @@
     return classes[name] || 'fa-brands fa-globe';
   }
 
+  function ensureFooterSocialLinks() {
+    // Add X and TikTok to every public-page footer without duplicating
+    // links already present in a page's HTML. Their URLs are filled from
+    // the same active social_links records managed in the admin panel.
+    document.querySelectorAll('.footer .socials').forEach(container => {
+      const existing = new Set(
+        Array.from(container.querySelectorAll('[data-social]'))
+          .map(element => String(element.dataset.social || '').trim().toLowerCase())
+      );
+      [
+        { platform: 'x', label: 'X' },
+        { platform: 'tiktok', label: 'TikTok' }
+      ].forEach(item => {
+        if (existing.has(item.platform) ||
+            (item.platform === 'x' && existing.has('twitter'))) return;
+        const link = document.createElement('a');
+        link.dataset.social = item.platform;
+        link.href = '#';
+        link.hidden = true;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.setAttribute('aria-label', item.label);
+        link.title = item.label;
+        link.innerHTML = '<i class="' + socialIcon(item.platform) + '" aria-hidden="true"></i>';
+        container.appendChild(link);
+      });
+    });
+  }
+
   async function applySocialLinks() {
     const response = await fetch(
       url + '/rest/v1/social_links?select=platform,label,url,icon,sort_order&active=eq.true&order=sort_order.asc',
@@ -563,7 +592,7 @@
 
     document.querySelectorAll('[data-social]').forEach(element => {
       const requested = String(element.dataset.social || '').trim().toLowerCase();
-      const keys = requested === 'twitter' ? ['twitter', 'x'] : [requested];
+      const keys = (requested === 'twitter' || requested === 'x') ? ['x', 'twitter'] : [requested];
       const row = keys.map(key => byPlatform[key]).find(Boolean);
 
       if (!row || !row.url) {
@@ -598,6 +627,7 @@
     getSettings,
 
     refresh: async function () {
+      ensureFooterSocialLinks();
       /*
         Start independent reads together. Only load page-specific data when
         the current page actually has elements that use it.
