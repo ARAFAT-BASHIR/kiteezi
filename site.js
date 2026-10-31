@@ -330,8 +330,8 @@
       { url: 'https://snapcalorie-webflow-website.s3.us-east-2.amazonaws.com/media/food_pics_v2/beef_samosa.jpg', alt: 'Beef samosas' },
       { url: 'https://dtwaeonhht2im.cloudfront.net/Masala-Chips-1.jpg', alt: 'Masala chips' }
     ] },
-    { test: /^goat$/, images: [
-      { url: 'https://www.monitor.co.ug/resource/image/1602160/landscape_ratio3x2/1200/800/2202b0682f8f8eef5282eb622cd52db4/MB/life01-pic.jpg', alt: 'Ugandan roasted goat muchomo platter' }
+    { test: /goat/, images: [
+      { url: 'https://snapcalorie-webflow-website.s3.us-east-2.amazonaws.com/media/food_pics_v2/medium/goat_meat_stew.jpg', alt: 'Goat meat stew' }
     ] },
     { test: /^fish$/, images: [
       { url: 'https://shukranifoods.shop/media/Images/Food/2025/09/30/fryed-tilapia.jpg', alt: 'Whole fried tilapia with lime and tomato' }
@@ -339,8 +339,8 @@
     { test: /^chicken$/, images: [
       { url: 'https://figtree.embiro.tech/assets/roasted-chicken-r8aS-fPV.jpg', alt: 'Whole roasted chicken platter' }
     ] },
-    { test: /^liver$/, images: [
-      { url: 'https://res.cloudinary.com/solin-fitness/image/upload/c_scale%2Cw_800%2Cq_auto%2Cf_auto/single-meal-images/veupqwfkjfwuy7wwzhvs', alt: 'Pan-fried liver with caramelised onions' }
+    { test: /liver/, images: [
+      { url: 'https://blog.biletbayi.com/wp-content/uploads/2017/08/1-Tava-ci%C4%9Feri.jpg', alt: 'Pan-fried liver dish' }
     ] },
     { test: /burgers|pizzas/, images: [
       { url: 'https://images.unsplash.com/photo-1767065703793-7012f5fced19?auto=format&fit=crop&w=900&q=80', alt: 'Restaurant burger' },
@@ -541,8 +541,21 @@ async function renderMenuCatalog() {
 
         target.innerHTML = orderedGroups.map(([catName, rows]) => {
           const categoryImages = menuCategoryImagesFor(catName);
+          // If the category cover host blocks a request, fall back to a real
+          // uploaded product image from that same category (never a placeholder).
+          const categoryFallback = rows.find(item =>
+            item.img_url && !/\/\/loremflickr\.com\//i.test(String(item.img_url))
+          );
+          const categoryFallbackUrl = categoryFallback
+            ? safeMenuImageUrl(categoryFallback.img_url)
+            : '';
           const categoryVisuals = categoryImages.map(image =>
-            '<div class="menu-category-visual"><img src="' + escapeHtml(image.url) + '" alt="' + escapeHtml(image.alt) + '" loading="lazy" data-menu-category-image></div>'
+            '<div class="menu-category-visual"><img src="' + escapeHtml(image.url) +
+            '" alt="' + escapeHtml(image.alt) + '" loading="lazy" decoding="async"' +
+            (categoryFallbackUrl && categoryFallbackUrl !== image.url
+              ? ' data-fallback-src="' + escapeHtml(categoryFallbackUrl) + '"'
+              : '') +
+            ' data-menu-category-image></div>'
           ).join('');
           const productCards = rows.map(item => {
             const unavailable = item.in_stock === false;
@@ -571,8 +584,13 @@ async function renderMenuCatalog() {
           img.addEventListener('error', () => {
             if (img.dataset.fallbackApplied === 'true') return;
             img.dataset.fallbackApplied = 'true';
+            const fallback = img.dataset.fallbackSrc || '';
+            if (fallback && fallback !== img.src) {
+              img.src = fallback;
+              return;
+            }
             img.closest('.menu-category-visual')?.classList.add('menu-category-visual-failed');
-          }, { once: true });
+          });
         });
         bindMenuButtons();
         bindCartButtons();
@@ -868,36 +886,42 @@ async function renderMenuCatalog() {
   }
 
   function init() {
-    updateCartUI();
-    bindMenuButtons();
-    bindCartButtons();
-    renderMenuCatalog();
-    renderHomeMenu();
-    initMobileNavigation();
+    // Run page-specific work only where its UI exists. The site remains a
+    // normal multi-page website; this avoids unnecessary rendering and
+    // database reads on pages that do not use the menu or gallery.
+    const hasCartUI = !!document.querySelector(
+      '[data-cart-count], [data-cart-total], [data-cart-open], [data-add-to-cart]'
+    );
+    const hasMenuCatalog = !!$('#menu-catalog');
+    const hasHomeMenu = !!$('#home-menu-catalog');
+    const hasGalleryPreview = !!$('#home-gallery-preview');
+
+    if (hasCartUI) updateCartUI();
+    if (document.querySelector('[data-add-to-cart]')) bindMenuButtons();
+    if (document.querySelector('[data-cart-open]')) bindCartButtons();
+    if (hasMenuCatalog) renderMenuCatalog();
+    if (hasHomeMenu) renderHomeMenu();
+    if (document.querySelector('[data-mobile]')) initMobileNavigation();
+
     ensureSharedFooter();
     ensureBusinessEmailInFooters();
     initSiteYear();
     initInquiryAccess();
     preventDeadHashLinks();
-    renderGalleryPreview();
+
+    if (hasGalleryPreview) renderGalleryPreview();
 
     /*
-      content.js is the single owner
-      of site_settings.
+      content.js is the single owner of site_settings. It independently
+      loads page-specific records only when the current page needs them.
     */
     if (
       window.KiteeziContent &&
-      typeof
-        window.KiteeziContent.refresh ===
-        'function'
+      typeof window.KiteeziContent.refresh === 'function'
     ) {
-      window.KiteeziContent.refresh()
-        .catch(error => {
-          console.warn(
-            'Kiteezi content refresh failed:',
-            error
-          );
-        });
+      window.KiteeziContent.refresh().catch(error => {
+        console.warn('Kiteezi content refresh failed:', error);
+      });
     }
   }
 
