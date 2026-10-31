@@ -442,6 +442,8 @@ async function renderMenuCatalog() {
         if (summary) summary.textContent = filtered.length + ' menu item' + (filtered.length === 1 ? '' : 's') + ' shown';
 
         if (!filtered.length) {
+          const emptyCategoryNav = $('#menu-category-nav');
+          if (emptyCategoryNav) emptyCategoryNav.innerHTML = '';
           target.innerHTML = '<p class="muted">No menu items match your search or category. Try another search or choose All categories.</p>';
           return;
         }
