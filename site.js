@@ -317,6 +317,41 @@
     default: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80'
   };
 
+  // Category-level photography keeps the menu visually clear while all live
+  // product records, prices, stock data and cart identifiers remain unchanged.
+  const MENU_CATEGORY_IMAGE_MAP = [
+    { test: /chicken/, url: MENU_IMAGE_MAP.grilled_chicken, alt: 'Chicken dishes' },
+    { test: /fish|tilapia/, url: MENU_IMAGE_MAP.fish, alt: 'Fish dishes' },
+    { test: /goat/, url: 'https://tkpe6wrwxmgsladx.public.blob.vercel-storage.com/recipes/ugandan-goat-curry.jpg', alt: 'Ugandan goat curry' },
+    { test: /liver/, url: 'https://www.arise-app.com/images/dishes/en/stewed-liver-with-ugali-and-greens-160yx2.webp', alt: 'Stewed liver with greens' },
+    { test: /champagne|sparkling wine/, url: 'https://emeraldcork.com/cdn/shop/files/Mk3xgnM_-_Imgur_c23ea6ad-c30b-4874-900b-62ed70710b9b.jpg?v=1765320339&width=840', alt: 'Moet and Veuve Clicquot champagne bottles' },
+    { test: /wine/, url: 'https://haywirewinery.com/wp-content/uploads/2023/01/Shop-Online.jpg', alt: 'Red and white wine bottles' },
+    { test: /whisk(e|y)/, url: 'https://d1uzk9o9cg136f.cloudfront.net/f/16783302/rc/2018/11/05/49c3240d5180258662268cd5f21ec19518a08933_xlarge.jpg', alt: 'Two Glenmorangie whisky bottles' },
+    { test: /beer|lager|stout|cider/, url: 'https://afrovibesltd.com/cdn/shop/collections/Afro_Vibes_21_-_Composition.jpg?v=1619040863', alt: 'Club Pilsener and Nile Special beer bottles' },
+    { test: /hot\\s*pot|hotpot/, url: 'https://rimage.gnst.jp/rest/img/hcb9ruk70000/s_0qyz.jpg?t=1741704470', alt: 'Hot pot serving dish' },
+    { test: /milkshake|milk shake/, url: MENU_IMAGE_MAP.milkshake, alt: 'Milkshakes served in glasses' },
+    { test: /juice|soft drink|soda|beverage|drink/, url: MENU_IMAGE_MAP.juice, alt: 'Cold drinks and juices' },
+    { test: /breakfast/, url: 'https://static.wixstatic.com/media/4cd2c7_18c82179f2024d1589a747764f69c88e~mv2_d_2000_1333_s_2.jpg', alt: 'Breakfast spread' },
+    { test: /coffee|tea/, url: MENU_IMAGE_MAP.coffee, alt: 'Coffee and hot drinks' }
+  ];
+
+  function menuCategoryId(name) {
+    const slug = String(name || 'other').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'other';
+    return 'menu-category-' + slug;
+  }
+
+  function menuCategoryImageFor(categoryName, rows) {
+    const haystack = [categoryName, ...(rows || []).map(item => item.name || '')]
+      .join(' ').toLowerCase();
+    const match = MENU_CATEGORY_IMAGE_MAP.find(entry => entry.test.test(haystack));
+    return match || {
+      url: MENU_IMAGE_MAP.default,
+      alt: String(categoryName || 'Kiteezi menu category') + ' selection'
+    };
+  }
+
   const stableLock = value => {
     let hash = 2166136261;
     for (const ch of String(value || '').toLowerCase()) hash = Math.imul(hash ^ ch.charCodeAt(0), 16777619);
@@ -418,25 +453,46 @@ async function renderMenuCatalog() {
           grouped.get(itemCat).push(item);
         });
 
-        target.innerHTML = Array.from(grouped.entries()).map(([catName, rows]) => {
-          const card = rows.map(item => {
+        const orderedGroups = Array.from(grouped.entries()).sort((a, b) => {
+          const orderA = Number(a[1][0]?.menu_categories?.sort_order ?? 999);
+          const orderB = Number(b[1][0]?.menu_categories?.sort_order ?? 999);
+          return orderA - orderB || String(a[0]).localeCompare(String(b[0]));
+        });
+
+        const categoryNav = $('#menu-category-nav');
+        if (categoryNav) {
+          categoryNav.innerHTML = orderedGroups.map(([catName]) =>
+            '<a class="menu-category-link" href="#' + menuCategoryId(catName) + '">' +
+            escapeHtml(catName) + '</a>'
+          ).join('');
+        }
+
+        target.innerHTML = orderedGroups.map(([catName, rows]) => {
+          const categoryImage = menuCategoryImageFor(catName, rows);
+          const productCards = rows.map(item => {
             const unavailable = item.in_stock === false;
             const onRequest = item.price_on_request === true || Number(item.price || 0) === 0;
             const price = onRequest ? 'Ask' : 'UGX ' + money(item.price);
             const serving = item.serving_unit ? ' / ' + escapeHtml(item.serving_unit) : '';
-            const imageUrl = menuImageFor(item);
-            const image = '<div class="menu-item-image"><img src="' + escapeHtml(imageUrl) + '" alt="' + escapeHtml(item.alt_text || item.name) + '" loading="lazy" data-menu-image-fallback></div>';
-            return '<div class="menu-item">' + image +
-              '<div><h4>' + escapeHtml(item.name) + '</h4><p>' + escapeHtml(item.description || '') + '</p></div>' +
-              '<div class="menu-price">' + price + serving + '</div></div>' +
-              '<div class="menu-order-row"><span class="muted">' + price + '</span>' +
+            return '<article class="menu-product-card">' +
+              '<div class="menu-product-copy"><h4>' + escapeHtml(item.name) + '</h4>' +
+              (item.description ? '<p>' + escapeHtml(item.description) + '</p>' : '') + '</div>' +
+              '<div class="menu-product-footer"><span class="menu-product-price">' + price + serving + '</span>' +
               '<button type="button" class="btn btn-dark menu-add" data-add-to-cart data-menu-item-id="' + escapeHtml(item.id) + '"' +
               ((unavailable || onRequest) ? ' disabled' : '') + '>' +
-              (unavailable ? 'Unavailable' : onRequest ? 'Price on request' : 'Add to Cart') + '</button></div>';
+              (unavailable ? 'Unavailable' : onRequest ? 'Price on request' : 'Add to Cart') + '</button></div>' +
+              '</article>';
           }).join('');
-          return '<article class="card"><div class="card-body"><span class="badge">' + escapeHtml(catName) + '</span>' + card + '</div></article>';
+
+          return '<section class="menu-category-section" id="' + menuCategoryId(catName) + '">' +
+            '<div class="menu-category-cover">' +
+            '<img src="' + escapeHtml(categoryImage.url) + '" alt="' + escapeHtml(categoryImage.alt) + '" loading="lazy" data-menu-category-image>' +
+            '<div class="menu-category-cover-copy"><span class="menu-category-kicker">Kiteezi menu</span>' +
+            '<h3>' + escapeHtml(catName) + '</h3><p>' + rows.length + ' option' + (rows.length === 1 ? '' : 's') + ' to choose from</p></div>' +
+            '</div><div class="menu-product-grid">' + productCards + '</div></section>';
         }).join('');
-        target.querySelectorAll('img[data-menu-image-fallback]').forEach(img => {
+
+        target.querySelectorAll('img[data-menu-category-image]').forEach(img => {
           img.addEventListener('error', () => {
             if (img.dataset.fallbackApplied === 'true') return;
             img.dataset.fallbackApplied = 'true';
