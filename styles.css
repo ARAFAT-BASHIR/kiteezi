@@ -224,3 +224,93 @@ table{min-width:0}
 .team-profile-description{white-space:pre-line;line-height:1.7;color:#53675e}
 body.team-profile-open{overflow:hidden}
 @media(max-width:600px){.team-profile-dialog{padding:22px;border-radius:16px}.team-profile-photo{max-height:260px}}
+
+
+/* ============================================================
+   KITEEZI RECREATION CENTRE — OFFICIAL BRAND COLOUR THEME
+   CSS-only visual layer. No markup, scripts, data or workflows changed.
+   Palette: logo orange-red, blue, green and white.
+   ============================================================ */
+:root{
+  --green:#087fa5;          /* brand blue: primary structural colour */
+  --green2:#096b8c;         /* deeper blue for hover/contrast */
+  --gold:#f04b16;           /* logo orange-red: primary action colour */
+  --sand:#f3fafc;           /* clean cool-white section background */
+  --dark:#26343d;           /* readable charcoal */
+  --muted:#667780;          /* secondary text */
+  --white:#ffffff;
+  --accent:#78bf35;         /* logo green: supporting highlight */
+  --line:#e2edf0;
+  --shadow:0 16px 45px rgba(8,58,77,.12);
+}
+
+/* Navigation and brand identity */
+.topbar{background:#086f91}
+.nav{background:rgba(255,255,255,.97);border-bottom-color:var(--line)}
+.brand{color:var(--green)}
+.brand-mark{
+  background:linear-gradient(135deg,#087fa5 0 42%,#78bf35 42% 70%,#f04b16 70% 100%);
+  color:#fff;
+}
+.links a:hover,.links a.active{color:var(--gold)}
+.links a.active{font-weight:800}
+
+/* Primary actions use the logo orange-red; secondary actions stay blue */
+.btn-primary{background:var(--gold);color:#fff;box-shadow:0 6px 16px rgba(240,75,22,.18)}
+.btn-primary:hover{background:#d93d0d;transform:translateY(-1px)}
+.btn-dark{background:var(--green);color:#fff}
+.btn-dark:hover{background:var(--green2)}
+.btn-light{color:var(--green);border-color:#dcebf0}
+.mobile{background:var(--green)!important;color:#fff!important}
+
+/* Hero and section hierarchy */
+.hero{
+  background-image:linear-gradient(90deg,rgba(5,43,61,.88),rgba(5,43,61,.38)),url('https://images.unsplash.com/photo-1519315901367-f34ff9154487?auto=format&fit=crop&w=1800&q=85');
+}
+.eyebrow{color:#9bd85b}
+.section.sand{background:var(--sand)}
+.section-head h2{color:var(--green)}
+.page-hero{
+  background-image:linear-gradient(90deg,rgba(5,48,67,.9),rgba(5,48,67,.52)),url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1800&q=80');
+}
+.page-hero .eyebrow{color:#a6dc69}
+
+/* Cards, icons, pricing and status labels */
+.card{border-color:var(--line);box-shadow:0 8px 25px rgba(8,58,77,.055)}
+.card h3,.menu-item h4{color:var(--green)}
+.iconbox{background:#e9f5f8;color:var(--green)}
+.price,.menu-price{color:var(--green)}
+.badge{background:#eaf5f8;color:#086f91}
+.list li:before{color:var(--accent)}
+.stats .stat strong{color:var(--green)}
+.review{border-color:var(--line)}
+.stars{color:var(--gold)}
+.table th{background:#eaf5f8;color:var(--green)}
+.notice{border-left-color:var(--accent);background:#f5fbea}
+
+/* Calls to action and footer */
+.cta{background:linear-gradient(115deg,#075c7a,#087fa5)}
+.footer{background:#07384d}
+.footer a:hover{color:#a8dc6c}
+.socials a,.socials .social-link{background:rgba(255,255,255,.12)}
+.socials a:hover,.socials .social-link:hover{background:var(--gold)}
+[data-social-links] a{background:#eaf5f8;color:#086f91}
+
+/* Forms and keyboard focus */
+.form input:focus,.form select:focus,.form textarea:focus,
+.gallery-submit-form input:focus,.gallery-submit-form select:focus,
+.gallery-submit-form textarea:focus{
+  outline:2px solid rgba(8,127,165,.22);
+  border-color:var(--green);
+}
+.form input[type=checkbox],.gallery-submit-form .consent-row input[type=checkbox]{accent-color:var(--green)}
+.error{border-color:#c94b4b!important;background:#fff1f1!important;color:#8b2222!important}
+.danger{background:#8b2222!important}
+
+/* Mobile navigation follows the same brand palette */
+@media(max-width:900px){
+  .links{border-color:var(--line)}
+}
+@media(max-width:620px){
+  .links a:hover,.links a.active{background:#eaf5f8!important;color:var(--green)!important}
+}
