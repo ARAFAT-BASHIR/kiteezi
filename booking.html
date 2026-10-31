@@ -90,6 +90,14 @@
       .form-card{padding:20px}
     }
   </style>
+<style>
+.payment-instructions{margin-top:14px;padding:16px;border:1px solid #dce6df;border-radius:14px;background:#f4f1de;color:#1b4332}
+.payment-instructions h4{margin:0 0 8px;color:#1b4332}
+.payment-instructions p{margin:5px 0}
+.payment-network{padding:12px;margin:10px 0;background:#fff;border:1px solid #e1e8e2;border-radius:10px}
+.payment-network strong{display:block;margin-bottom:6px}
+.payment-instructions small{display:block;margin-top:10px;line-height:1.5}
+</style>
 </head>
 
 <body>
@@ -348,7 +356,7 @@ Preferred payment method
 >
 
 <option value="">
-Select
+Select payment method
 </option>
 
 <option value="Mobile Money">
@@ -359,11 +367,29 @@ Mobile Money
 Cash
 </option>
 
-<option value="Other">
-Other
-</option>
-
 </select>
+
+<div id="mobileMoneyInstructions" class="payment-instructions hidden" aria-live="polite">
+  <h4>Pay by Mobile Money</h4>
+  <p>Use either network below. Follow the dial instructions and enter the merchant code.</p>
+  <div class="payment-network">
+    <strong>MTN Mobile Money</strong>
+    <p>Dial <b>*165*3#</b></p>
+    <p>Enter merchant ID: <b>716644</b></p>
+    <p>Merchant name: <b>Kiteezi Recreational Center</b></p>
+  </div>
+  <div class="payment-network">
+    <strong>Airtel Money</strong>
+    <p>Dial <b>*185*9#</b></p>
+    <p>Enter merchant code: <b>4371872</b></p>
+    <p>Merchant name: <b>Kiteezi Recreational Center</b></p>
+  </div>
+  <small>Before confirming, check that the merchant name displayed on your phone is Kiteezi Recreational Center.</small>
+</div>
+
+<div id="cashPaymentNote" class="payment-instructions hidden" aria-live="polite">
+  Pay cash at the reception/cashier when you arrive.
+</div>
 
 </div>
 
@@ -487,6 +513,13 @@ if(requestedService==='training'){
 }
 const C=window.KITEEZI_CONFIG||{},URL=String(C.SUPABASE_URL||'').replace(/\/+$/,''),KEY=String(C.SUPABASE_ANON_KEY||'');
 const $=s=>document.querySelector(s),form=$('#bookingForm'),service=$('#service'),guests=$('#guests'),cateringBox=$('#cateringBox'),buffetBox=$('#buffetBox'),menuBox=$('#menuBox'),menuItems=$('#menuItems'),buffet=$('#buffet'),cateringType=$('#cateringType'),status=$('#bookingStatus'),submit=$('#submitBooking');let services=[],menus=[],buffets=[],buffetItems=[],buffetSelections={};
+const paymentMethod=$('#paymentMethod'),mobileMoneyInstructions=$('#mobileMoneyInstructions'),cashPaymentNote=$('#cashPaymentNote');
+function updatePaymentInstructions(){
+  const method=paymentMethod?.value||'';
+  mobileMoneyInstructions?.classList.toggle('hidden',method!=='Mobile Money');
+  cashPaymentNote?.classList.toggle('hidden',method!=='Cash');
+}
+paymentMethod?.addEventListener('change',updatePaymentInstructions);
 const esc=v=>String(v??'').replace(/[&<>"]/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[x]));const money=v=>'UGX '+new Intl.NumberFormat('en-UG').format(Number(v)||0);
 function humanBookingError(error,fallback='We could not complete the booking right now. Please try again in a moment.'){const m=String(error?.message??error??'').trim();if(!m||m==='[object Object]')return fallback;if(/(?:supabase|postgrest|pgrst|postgres|sql|schema|relation|column|constraint|permission denied|function .* does not exist|does not exist|http\s*\d{3}|\b(?:3f000|42883|42501|235\d{3})\b|fetch failed|network error|unexpected .* response|syntax error|jwt)/i.test(m)||/^\s*[\[{].*[\]}]\s*$/.test(m))return fallback;return m;}
 async function get(path){const r=await fetch(URL+path,{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw Error(humanBookingError(d?.message||d?.error||d,'We could not load the latest booking options. Please refresh and try again.'));return d}
@@ -510,7 +543,7 @@ function serviceComponent(){const id=service.value;return id?[{type:'service',id
 function components(){const a=serviceComponent(),b=['buffet','both'].includes(cateringType.value)&&buffet.value?[{type:'buffet',id:buffet.value,quantity:Number(guests.value)||1,options:selectedBuffetOptions()}]:[];return a.concat(b,selected())}
 function update(){updateCateringMode();const s=services.find(x=>x.id===service.value),p=Math.max(1,Number(guests.value)||1);$('#summaryService').textContent=s?.name||'—';$('#summaryDate').textContent=$('#bookingDate').value||'—';$('#summaryTime').textContent=$('#bookingTime').value||'—';$('#summaryGuests').textContent=p;const parts=[];if(buffet.value){const b=bundleFor(buffet.value);parts.push(b?.name||'Buffet');const err=buffetValidation();if(err)parts.push('('+err+')')}selected().forEach(x=>parts.push(menus.find(m=>m.id===x.id)?.name+' × '+x.quantity));$('#summaryCatering').textContent=parts.join(', ')||'None';let total=0;if(s){let u=Number(s.price||0);if(s.pricing_mode==='per_person_team')u=p>=Number(s.team_threshold||0)?Number(s.full_team_price||4000):Number(s.small_group_price||5000);total+=s.pricing_mode==='per_person_team'?u*p:u}if(buffet.value){const b=bundleFor(buffet.value);if(b&&!b.price_on_request){total+=b.pricing_mode==='fixed_package'?Number(b.price_per_person||0)*Math.max(1,Math.ceil(p/Number(b.serves_people||1))):Number(b.price_per_person||0)*p}}selected().forEach(x=>{const m=menus.find(y=>y.id===x.id);total+=Number(m?.price||0)*x.quantity});$('#summaryTotal').textContent=money(total)}
 [service,cateringType,buffet,guests,$('#bookingDate'),$('#bookingTime')].forEach(x=>x&&x.addEventListener('input',()=>{if(x===buffet){renderBuffet()}update() }));menuItems.addEventListener('change',update);
-form.addEventListener('submit',async e=>{e.preventDefault();if(!form.checkValidity())return form.reportValidity();if(!service.value){status.textContent='Select at least one service.';status.className='status show error';return}if(!isSportsOrSwimming()&&(!cateringType.value||cateringType.value==='none')){status.textContent='Please select a catering option for this type of booking.';status.className='status show error';return}if(['buffet','both'].includes(cateringType.value)&&buffet.value){const err=buffetValidation();if(err){status.textContent=err;status.className='status show error';return}}const data=new FormData(form);if(/school swimming/i.test(services.find(x=>x.id===service.value)?.name||'')&&(!schoolDay||!schoolTime)){status.textContent='Choose your weekly school swimming day and time first.';status.className='status show error';return}submit.disabled=true;submit.textContent='Submitting…';try{const r=await fetch(URL+'/rest/v1/rpc/submit_public_booking_v3',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify({p_customer_name:data.get('customerName'),p_phone:data.get('phone'),p_email:data.get('email')||null,p_booking_date:data.get('bookingDate'),p_start_time:data.get('bookingTime'),p_people:Number(data.get('guests')),p_notes:data.get('notes')||null,p_components:components()})});const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw Error(humanBookingError(d?.message||d?.error||d,'We could not submit your booking right now. Please try again in a moment.'));localStorage.setItem('kiteezi_track_phone_v1',String(data.get('phone')||''));form.reset();buffetSelections={};renderMenu();renderBuffet();update();status.innerHTML='Booking submitted — wait for confirmation.<br><a class="btn btn-dark" style="margin-top:12px;display:inline-flex" href="tracking.html?type=booking&id='+encodeURIComponent(d?.booking_id||'')+'">Check booking status</a>';status.className='status show success'}catch(e){status.textContent=humanBookingError(e,'We could not submit your booking right now. Please try again in a moment.');status.className='status show error'}finally{submit.disabled=false;submit.textContent='Submit Booking Request'}});
+form.addEventListener('submit',async e=>{e.preventDefault();if(!form.checkValidity())return form.reportValidity();if(!service.value){status.textContent='Select at least one service.';status.className='status show error';return}if(!isSportsOrSwimming()&&(!cateringType.value||cateringType.value==='none')){status.textContent='Please select a catering option for this type of booking.';status.className='status show error';return}if(['buffet','both'].includes(cateringType.value)&&buffet.value){const err=buffetValidation();if(err){status.textContent=err;status.className='status show error';return}}const data=new FormData(form);if(/school swimming/i.test(services.find(x=>x.id===service.value)?.name||'')&&(!schoolDay||!schoolTime)){status.textContent='Choose your weekly school swimming day and time first.';status.className='status show error';return}submit.disabled=true;submit.textContent='Submitting…';try{const r=await fetch(URL+'/rest/v1/rpc/submit_public_booking_v3',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify({p_customer_name:data.get('customerName'),p_phone:data.get('phone'),p_email:data.get('email')||null,p_booking_date:data.get('bookingDate'),p_start_time:data.get('bookingTime'),p_people:Number(data.get('guests')),p_notes:[data.get('notes')||'',data.get('paymentMethod')?'Preferred payment method: '+data.get('paymentMethod'):'' ].filter(Boolean).join('\\n')||null,p_components:components()})});const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw Error(humanBookingError(d?.message||d?.error||d,'We could not submit your booking right now. Please try again in a moment.'));localStorage.setItem('kiteezi_track_phone_v1',String(data.get('phone')||''));form.reset();buffetSelections={};renderMenu();renderBuffet();update();status.innerHTML='Booking submitted — wait for confirmation.<br><a class="btn btn-dark" style="margin-top:12px;display:inline-flex" href="tracking.html?type=booking&id='+encodeURIComponent(d?.booking_id||'')+'">Check booking status</a>';status.className='status show success'}catch(e){status.textContent=humanBookingError(e,'We could not submit your booking right now. Please try again in a moment.');status.className='status show error'}finally{submit.disabled=false;submit.textContent='Submit Booking Request'}});
 load().catch(e=>{status.textContent=humanBookingError(e,'We could not load the current services and menu options. Please refresh and try again.');status.className='status show error'});update();})();
 </script>
 
