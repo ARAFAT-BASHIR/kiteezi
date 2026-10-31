@@ -323,8 +323,8 @@
   // in each category. Bottle images use contain-fit so labels and full bottles stay visible.
   const MENU_CATEGORY_IMAGE_MAP = [
     { test: /^breakfast$/, images: [
-      { url: 'https://i0.wp.com/www.gorillasafariexperts.com/wp-content/uploads/2022/04/Most-popular-food-in-Uganda-dishes-rolex.jpg?fit=1076%2C654&ssl=1', alt: 'Ugandan rolex and egg breakfast' },
-      { url: 'https://uganda-evisa.com/images/traditional-ugandan-dish-katogo.jpg', alt: 'Ugandan katogo breakfast' }
+      { url: 'https://uganda-evisa.com/images/traditional-ugandan-dish-katogo.jpg', alt: 'Ugandan katogo breakfast' },
+      { url: 'https://img1.daumcdn.net/thumb/R1280x0.fjpg/?fname=http%3A%2F%2Ft1.daumcdn.net%2Fbrunch%2Fservice%2Fuser%2F5kO%2Fimage%2FEB7o6bTxHGTVmK-JlrLLQ5a6ID8.jpg', alt: 'Tea and coffee pot service' }
     ] },
     { test: /snacks|bites/, images: [
       { url: 'https://snapcalorie-webflow-website.s3.us-east-2.amazonaws.com/media/food_pics_v2/beef_samosa.jpg', alt: 'Beef samosas' },
@@ -355,7 +355,8 @@
     ] },
     { test: /soft drinks/, images: [
       { url: 'https://pbs.twimg.com/media/EnBhk1dW8AANmRD.jpg', alt: 'Minute Maid and Fanta soft drink bottles' },
-      { url: 'https://www.torbjorns-catering.no/wp-content/uploads/2019/01/Brus_assortert.jpg', alt: 'Cola, Fanta and Sprite soda bottles' }
+      { url: 'https://www.torbjorns-catering.no/wp-content/uploads/2019/01/Brus_assortert.jpg', alt: 'Cola, Fanta and Sprite soda bottles' },
+      { url: 'https://groceries.vohena.com/83-large_default/rwenzori-natural-mineral-water-500ml.jpg', alt: 'Rwenzori natural mineral water 500ml bottle' }
     ] },
     { test: /milk shakes/, images: [
       { url: 'https://images.unsplash.com/photo-1553787499-6f9133860278?auto=format&fit=crop&w=900&q=80', alt: 'Chocolate and vanilla milkshakes in glasses' }
