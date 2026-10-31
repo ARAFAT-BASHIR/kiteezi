@@ -429,11 +429,24 @@
   };
 
   function menuImageFor(item) {
+    // These signature dishes use deliberate dish-specific photography even if
+    // an older generic image URL is stored on the menu record.
+    const name = String(item?.name || '').trim();
+    const category = String(item?.menu_categories?.name || '');
+    const hay = (name + ' ' + category).toLowerCase();
+    if (/\bgoat\b/.test(hay)) {
+      return 'https://snapcalorie-webflow-website.s3.us-east-2.amazonaws.com/media/food_pics_v2/medium/goat_meat_stew.jpg';
+    }
+    if (/\bfish\b|tilapia/.test(hay)) {
+      return 'https://shukranifoods.shop/media/Images/Food/2025/09/30/fryed-tilapia.jpg';
+    }
+    if (/\bliver\b/.test(hay)) {
+      return 'https://blog.biletbayi.com/wp-content/uploads/2017/08/1-Tava-ci%C4%9Feri.jpg';
+    }
+
     // LoremFlickr URLs are generated placeholders, not verified menu photography.
     // Prefer this file's item-specific image map over those seeded placeholder URLs.
     if (item?.img_url && !/\/\/loremflickr\.com\//i.test(String(item.img_url))) return safeMenuImageUrl(item.img_url);
-    const name = String(item?.name || '').trim();
-    const hay = (name + ' ' + String(item?.menu_categories?.name || '')).toLowerCase();
     const exact = [
       [/katogo/, MENU_IMAGE_MAP.katogo],
       [/rolex/, MENU_IMAGE_MAP.rolex],
