@@ -60,6 +60,18 @@
       width:70px!important;
       padding:8px!important
     }
+    .booking-menu-tools{display:grid;gap:12px;margin:14px 0}
+    .booking-menu-tools input{width:100%;box-sizing:border-box;padding:13px 14px;border:1px solid #d7ddd8;border-radius:10px;font:inherit;background:#fff}
+    .booking-menu-categories{display:flex;gap:8px;flex-wrap:wrap}
+    .booking-menu-category{border:1px solid #cbd5ce;background:#fff;color:#1b4332;border-radius:999px;padding:8px 14px;font:inherit;font-size:.9rem;font-weight:700;cursor:pointer}
+    .booking-menu-category.active{background:#1b4332;border-color:#1b4332;color:#fff}
+    .booking-food-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .booking-food-grid .food-item{align-items:flex-start;min-width:0}
+    .booking-food-grid .food-item label{align-items:flex-start;min-width:0;flex:1}
+    .booking-food-grid .food-item label span{overflow-wrap:anywhere}
+    .booking-food-grid .quantity{flex:0 0 64px;margin-top:2px}
+    @media(max-width:900px){.booking-food-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:560px){.booking-food-grid{grid-template-columns:1fr}.booking-food-grid .food-item{padding:11px}}
     .summary{
       margin-top:20px;
       padding:18px;
@@ -316,11 +328,16 @@ Final buffet pricing is confirmed by Kiteezi staff.
 Choose menu items
 </label>
 
+<div class="booking-menu-tools">
+  <input id="bookingMenuSearch" type="search" placeholder="Search meals and drinks..." aria-label="Search menu items">
+  <div id="bookingMenuCategories" class="booking-menu-categories" aria-label="Menu categories"></div>
+  <small id="bookingMenuCount" class="muted" aria-live="polite"></small>
+</div>
 <div
   id="menuItems"
-  class="food-grid"
+  class="food-grid booking-food-grid"
 >
-Select your menu items below.
+Loading menu items...
 </div>
 
 </div>
@@ -525,11 +542,43 @@ function humanBookingError(error,fallback='We could not complete the booking rig
 async function get(path){const r=await fetch(URL+path,{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw Error(humanBookingError(d?.message||d?.error||d,'We could not load the latest booking options. Please refresh and try again.'));return d}
 async function load(){[services,menus,buffets,buffetItems]=await Promise.all([
 get('/rest/v1/services?select=id,name,description,active,price,pricing_mode,team_threshold,small_group_price,full_team_price&active=eq.true&order=name.asc'),
-get('/rest/v1/menu_items?select=id,name,description,price,price_on_request,in_stock&in_stock=eq.true&order=name.asc'),
+get('/rest/v1/menu_items?select=id,name,description,price,price_on_request,in_stock,category_id,menu_categories(name,sort_order)&in_stock=eq.true&order=name.asc'),
 get('/rest/v1/booking_bundles?select=id,name,description,price_per_person,price_on_request,pricing_mode,serves_people&active=eq.true&order=sort_order.asc'),
 get('/rest/v1/booking_bundle_items?select=id,bundle_id,name,description,component_area,selection_mode,min_select,max_select,item_quantity,sort_order&active=eq.true&order=bundle_id,sort_order')
 ]);const params=queryParams,requested=params.get('service'),wanted=String(requested||'').toLowerCase();const match=requested?services.find(x=>String(x.name||'').toLowerCase().replace(/\s+/g,'-').includes(wanted)||String(x.name||'').toLowerCase()===wanted):null;service.innerHTML='<option value="">Select service</option>'+services.filter(x=>!String(x.name||'').toLowerCase().includes('school swimming')).map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join('')+(match&&/school swimming/i.test(match.name)?'<option value="'+match.id+'" selected hidden>'+esc(match.name)+'</option>':'');if(match)service.value=match.id;const dateInput=$('#bookingDate'),timeInput=$('#bookingTime');if(schoolDay&&/school swimming/i.test(match?.name||'')){const d=nextDateForDay(schoolDay);if(dateInput)dateInput.value=d;if(timeInput)timeInput.value=schoolTime||'';dateInput.readOnly=true;timeInput.readOnly=true}if(params.get('date')&&dateInput)dateInput.value=params.get('date');if(params.get('time')&&timeInput)timeInput.value=params.get('time');buffet.innerHTML='<option value="">Select buffet</option>'+buffets.map(x=>'<option value="'+x.id+'">'+esc(x.name)+' — '+(x.pricing_mode==='fixed_package'?money(x.price_per_person)+' / platter (serves '+(x.serves_people||1)+')':(x.price_on_request?'Price on request':money(x.price_per_person)+'/person'))+'</option>').join('');renderMenu();renderBuffet();update()}
-function renderMenu(){menuItems.innerHTML=menus.map(x=>{const por=x.price_on_request||Number(x.price)===0;return '<div class="food-item"><label><input type="checkbox" data-id="'+x.id+'" '+(por?'disabled':'')+'><span><strong>'+esc(x.name)+'</strong><br><small>'+esc(x.description||'')+' · '+(por?'Price on request':money(x.price))+'</small></span></label><input class="quantity" data-q="'+x.id+'" type="number" min="1" value="1" '+(por?'disabled':'')+'></div>'}).join('');menuItems.querySelectorAll('[data-id]').forEach(x=>x.onchange=update);menuItems.querySelectorAll('[data-q]').forEach(x=>x.oninput=update)}
+let activeMenuCategory='All';
+function renderMenu(){
+  const search=$('#bookingMenuSearch'),categoryNav=$('#bookingMenuCategories'),count=$('#bookingMenuCount');
+  const categories=[...new Set(menus.map(x=>x.menu_categories?.name||'Other'))].sort((a,b)=>{
+    const aa=menus.find(x=>(x.menu_categories?.name||'Other')===a)?.menu_categories?.sort_order??999;
+    const bb=menus.find(x=>(x.menu_categories?.name||'Other')===b)?.menu_categories?.sort_order??999;
+    return Number(aa)-Number(bb)||a.localeCompare(b);
+  });
+  categoryNav.innerHTML=['All',...categories].map(name=>'<button type="button" class="booking-menu-category '+(activeMenuCategory===name?'active':'')+'" data-booking-category="'+esc(name)+'" aria-pressed="'+(activeMenuCategory===name?'true':'false')+'">'+esc(name)+'</button>').join('');
+  menuItems.innerHTML=menus.map(x=>{
+    const por=x.price_on_request||Number(x.price)===0,cat=x.menu_categories?.name||'Other';
+    return '<div class="food-item" data-booking-menu-card data-category="'+esc(cat)+'" data-search="'+esc([x.name,x.description,cat].join(' ')).toLowerCase()+'"><label><input type="checkbox" data-id="'+x.id+'" '+(por?'disabled':'')+'><span><strong>'+esc(x.name)+'</strong><br><small>'+esc(x.description||'')+' · '+(por?'Price on request':money(x.price))+'</small></span></label><input class="quantity" data-q="'+x.id+'" type="number" min="1" value="1" '+(por?'disabled':'')+' aria-label="Quantity for '+esc(x.name)+'"></div>';
+  }).join('')||'<p class="muted">No menu items are currently available.</p>';
+  menuItems.querySelectorAll('[data-id]').forEach(x=>x.onchange=update);
+  menuItems.querySelectorAll('[data-q]').forEach(x=>x.oninput=update);
+  categoryNav.querySelectorAll('[data-booking-category]').forEach(button=>button.addEventListener('click',()=>{
+    activeMenuCategory=button.dataset.bookingCategory;
+    categoryNav.querySelectorAll('[data-booking-category]').forEach(b=>{const active=b.dataset.bookingCategory===activeMenuCategory;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});
+    filterBookingMenu();
+  }));
+  search?.addEventListener('input',filterBookingMenu);
+  filterBookingMenu();
+}
+function filterBookingMenu(){
+  const q=String($('#bookingMenuSearch')?.value||'').trim().toLowerCase();
+  let visible=0;
+  menuItems.querySelectorAll('[data-booking-menu-card]').forEach(card=>{
+    const show=(activeMenuCategory==='All'||card.dataset.category===activeMenuCategory)&&(!q||card.dataset.search.includes(q));
+    card.classList.toggle('hidden',!show);
+    if(show)visible++;
+  });
+  $('#bookingMenuCount').textContent=visible+' item'+(visible===1?'':'s')+' found';
+}
 function bundleFor(id){return buffets.find(x=>x.id===id)}
 function bundleItemsFor(id){return buffetItems.filter(x=>x.bundle_id===id)}
 function renderBuffet(){const b=bundleFor(buffet.value);if(!b){buffetBox.querySelector('[data-buffet-components]')?.remove();return}const items=bundleItemsFor(b.id),areas=[];items.forEach(x=>{if(!areas.includes(x.component_area))areas.push(x.component_area)});let html='<div data-buffet-components class="field" style="margin-top:14px"><strong>Buffet components</strong><p class="muted">Choose the required options. Included items are shown automatically.</p>';for(const area of areas){const group=items.filter(x=>x.component_area===area),choose=group.filter(x=>x.selection_mode==='choose'),fixed=group.filter(x=>x.selection_mode==='fixed');const min=choose[0]?.min_select||0,max=choose[0]?.max_select||0;html+='<div class="section-box" style="margin-top:12px"><h4>'+esc(area)+(choose.length?' — Choose '+min+(max!==min?'–'+max:''):'')+'</h4>';if(fixed.length)html+='<p><strong>Included:</strong> '+fixed.map(x=>esc(x.name)+(x.item_quantity>1?' × '+x.item_quantity:'')).join(', ')+'</p>';if(choose.length)html+=choose.map(x=>{const type=max===1?'radio':'checkbox';const checked=(buffetSelections[b.id]||[]).includes(x.id);return '<label style="display:block;margin:7px 0"><input type="'+type+'" name="buffet_'+b.id+'_'+area.replace(/[^a-z0-9]/gi,'_')+'" data-buffet-option="'+x.id+'" '+(checked?'checked':'')+'> '+esc(x.name)+'</label>'}).join('');html+='</div>'}html+='</div>';buffetBox.insertAdjacentHTML('beforeend',html);buffetBox.querySelectorAll('[data-buffet-option]').forEach(x=>x.onchange=()=>{const ids=[...buffetBox.querySelectorAll('[data-buffet-option]:checked')].map(y=>y.dataset.buffetOption);buffetSelections[b.id]=ids;update()})}
