@@ -23,4 +23,4 @@ form.addEventListener('submit',async e=>{e.preventDefault();try{await track();}c
 document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{type=b.dataset.mode;history.replaceState(null,'','#tracking?type='+type);applyMode();if(phone.value.trim())track().catch(()=>{});});
 const saved=localStorage.getItem(PHONE_KEY);if(saved)phone.value=saved;applyMode();if(saved)track().catch(()=>{});
 })();
-</script><script src="site.js?v=20261031-page-load-optimization-v3"></script></body></html>
+</script><script src="site.js?v=20261031-hide-contact-emails-v4"></script></body></html>
