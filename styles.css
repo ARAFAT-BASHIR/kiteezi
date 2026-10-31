@@ -1023,6 +1023,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{
   padding:12px 8px 12px 14px;
 }
 .menu-category-visuals-count-1{grid-template-columns:minmax(0,1fr)}
+.menu-category-visuals-count-1 .menu-category-visual{height:220px}
 .menu-category-visuals-count-3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .menu-category-visual{
   display:flex;
@@ -1066,6 +1067,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{
     padding:9px 9px 0;
   }
   .menu-category-visuals-count-1{grid-template-columns:minmax(0,1fr)}
+  .menu-category-visuals-count-1 .menu-category-visual{height:170px}
   .menu-category-visuals-count-3{grid-template-columns:repeat(3,minmax(0,1fr))}
   .menu-category-visual{
     height:132px;
