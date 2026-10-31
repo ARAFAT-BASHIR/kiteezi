@@ -319,20 +319,90 @@
 
   // Category-level photography keeps the menu visually clear while all live
   // product records, prices, stock data and cart identifiers remain unchanged.
+  // Explicit category photography selected after checking the live products
+  // in each category. Bottle images use contain-fit so labels and full bottles stay visible.
   const MENU_CATEGORY_IMAGE_MAP = [
-    { test: /chicken/, url: MENU_IMAGE_MAP.grilled_chicken, alt: 'Chicken dishes' },
-    { test: /fish|tilapia/, url: MENU_IMAGE_MAP.fish, alt: 'Fish dishes' },
-    { test: /goat/, url: 'https://tkpe6wrwxmgsladx.public.blob.vercel-storage.com/recipes/ugandan-goat-curry.jpg', alt: 'Ugandan goat curry' },
-    { test: /liver/, url: 'https://www.arise-app.com/images/dishes/en/stewed-liver-with-ugali-and-greens-160yx2.webp', alt: 'Stewed liver with greens' },
-    { test: /champagne|sparkling wine/, url: 'https://emeraldcork.com/cdn/shop/files/Mk3xgnM_-_Imgur_c23ea6ad-c30b-4874-900b-62ed70710b9b.jpg?v=1765320339&width=840', alt: 'Moet and Veuve Clicquot champagne bottles' },
-    { test: /wine/, url: 'https://haywirewinery.com/wp-content/uploads/2023/01/Shop-Online.jpg', alt: 'Red and white wine bottles' },
-    { test: /whisk(e|y)/, url: 'https://d1uzk9o9cg136f.cloudfront.net/f/16783302/rc/2018/11/05/49c3240d5180258662268cd5f21ec19518a08933_xlarge.jpg', alt: 'Two Glenmorangie whisky bottles' },
-    { test: /beer|lager|stout|cider/, url: 'https://afrovibesltd.com/cdn/shop/collections/Afro_Vibes_21_-_Composition.jpg?v=1619040863', alt: 'Club Pilsener and Nile Special beer bottles' },
-    { test: /hot\\s*pot|hotpot/, url: 'https://rimage.gnst.jp/rest/img/hcb9ruk70000/s_0qyz.jpg?t=1741704470', alt: 'Hot pot serving dish' },
-    { test: /milkshake|milk shake/, url: MENU_IMAGE_MAP.milkshake, alt: 'Milkshakes served in glasses' },
-    { test: /juice|soft drink|soda|beverage|drink/, url: MENU_IMAGE_MAP.juice, alt: 'Cold drinks and juices' },
-    { test: /breakfast/, url: 'https://static.wixstatic.com/media/4cd2c7_18c82179f2024d1589a747764f69c88e~mv2_d_2000_1333_s_2.jpg', alt: 'Breakfast spread' },
-    { test: /coffee|tea/, url: MENU_IMAGE_MAP.coffee, alt: 'Coffee and hot drinks' }
+    { test: /^breakfast$/, images: [
+      { url: 'https://i0.wp.com/www.gorillasafariexperts.com/wp-content/uploads/2022/04/Most-popular-food-in-Uganda-dishes-rolex.jpg?fit=1076%2C654&ssl=1', alt: 'Ugandan rolex and egg breakfast' },
+      { url: 'https://uganda-evisa.com/images/traditional-ugandan-dish-katogo.jpg', alt: 'Ugandan katogo breakfast' }
+    ] },
+    { test: /snacks|bites/, images: [
+      { url: 'https://snapcalorie-webflow-website.s3.us-east-2.amazonaws.com/media/food_pics_v2/beef_samosa.jpg', alt: 'Beef samosas' },
+      { url: 'https://dtwaeonhht2im.cloudfront.net/Masala-Chips-1.jpg', alt: 'Masala chips' }
+    ] },
+    { test: /^goat$/, images: [
+      { url: 'https://www.monitor.co.ug/resource/image/1602160/landscape_ratio3x2/1200/800/2202b0682f8f8eef5282eb622cd52db4/MB/life01-pic.jpg', alt: 'Ugandan roasted goat muchomo platter' }
+    ] },
+    { test: /^fish$/, images: [
+      { url: 'https://shukranifoods.shop/media/Images/Food/2025/09/30/fryed-tilapia.jpg', alt: 'Whole fried tilapia with lime and tomato' }
+    ] },
+    { test: /^chicken$/, images: [
+      { url: 'https://figtree.embiro.tech/assets/roasted-chicken-r8aS-fPV.jpg', alt: 'Whole roasted chicken platter' }
+    ] },
+    { test: /^liver$/, images: [
+      { url: 'https://res.cloudinary.com/solin-fitness/image/upload/c_scale%2Cw_800%2Cq_auto%2Cf_auto/single-meal-images/veupqwfkjfwuy7wwzhvs', alt: 'Pan-fried liver with caramelised onions' }
+    ] },
+    { test: /burgers|pizzas/, images: [
+      { url: 'https://images.unsplash.com/photo-1767065703793-7012f5fced19?auto=format&fit=crop&w=900&q=80', alt: 'Restaurant burger' },
+      { url: 'https://www.timeoutdubai.com/cloud/timeoutdubai/2021/12/16/Gordon-Ramsays-Street-Pizza_1.jpg', alt: 'Freshly baked pizza' }
+    ] },
+    { test: /salads|desserts/, images: [
+      { url: 'https://images.unsplash.com/photo-1568106690134-f2ee2257a9ef?auto=format&fit=crop&w=900&q=80', alt: 'Fresh salad' },
+      { url: 'https://loremflickr.com/900/900/ice,cream,scoop?lock=dbabdb91af5949f6a1b1a3b75ecfc421', alt: 'Ice cream dessert' }
+    ] },
+    { test: /^juices$/, images: [
+      { url: 'https://glovo.dhmedia.io/image/stores-glovo/stores/afbb152d1b6b5961dba7bfdc1c0cadec149206ff51f067d353beba5d5b360502?t=W3siYXV0byI6eyJxIjoibG93In19LHsicmVzaXplIjp7Im1vZGUiOiJmaXQiLCJ3aWR0aCI6MTI4MCwiaGVpZ2h0IjoxMjB9fV0=', alt: 'Fresh mango, passion and watermelon juices in glasses' }
+    ] },
+    { test: /soft drinks/, images: [
+      { url: 'https://pbs.twimg.com/media/EnBhk1dW8AANmRD.jpg', alt: 'Minute Maid and Fanta soft drink bottles' },
+      { url: 'https://www.torbjorns-catering.no/wp-content/uploads/2019/01/Brus_assortert.jpg', alt: 'Cola, Fanta and Sprite soda bottles' }
+    ] },
+    { test: /milk shakes/, images: [
+      { url: 'https://images.unsplash.com/photo-1553787499-6f9133860278?auto=format&fit=crop&w=900&q=80', alt: 'Chocolate and vanilla milkshakes in glasses' }
+    ] },
+    { test: /health drinks/, images: [
+      { url: 'https://glovo.dhmedia.io/image/stores-glovo/stores/afbb152d1b6b5961dba7bfdc1c0cadec149206ff51f067d353beba5d5b360502?t=W3siYXV0byI6eyJxIjoibG93In19LHsicmVzaXplIjp7Im1vZGUiOiJmaXQiLCJ3aWR0aCI6MTI4MCwiaGVpZ2h0IjoxMjB9fV0=', alt: 'Fresh blended fruit drinks' }
+    ] },
+    { test: /hot pot/, images: [
+      { url: 'https://img1.daumcdn.net/thumb/R1280x0.fjpg/?fname=http%3A%2F%2Ft1.daumcdn.net%2Fbrunch%2Fservice%2Fuser%2F5kO%2Fimage%2FEB7o6bTxHGTVmK-JlrLLQ5a6ID8.jpg', alt: 'Tea service with glass teapot and metal serving pot' }
+    ] },
+    { test: /^spirits$/, images: [
+      { url: 'https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/0c6255106182577.5f89cf8d504a9.jpg', alt: 'Uganda Waragi original and flavoured bottles' },
+      { url: 'https://grainvine.com/cdn/shop/files/captain-morgan-original-spiced-rum-1.jpg?v=1750789170&width=1080', alt: 'Captain Morgan Spiced Rum bottle' },
+      { url: 'https://m2.dantty.com/images/products/Dantty-6786d505ca29e.jpg', alt: 'V and A liqueur bottle' }
+    ] },
+    { test: /^gins$/, images: [
+      { url: 'https://m2.dantty.com/images/products/Dantty-67d732065e4d5.jpg', alt: 'Gilbeys Special Dry Gin bottle' }
+    ] },
+    { test: /whiskeys|whiskies|whisky/, images: [
+      { url: 'https://m2.dantty.com/images/products/Dantty-67d72b27c2af8.jpg', alt: 'Bond 7 blended whisky bottle' },
+      { url: 'https://assets.superliquor.co.nz/thumbs/0016241.png', alt: 'Johnnie Walker Black Label bottle' },
+      { url: 'https://www.pernod-ricard.com/sites/default/files/styles/article_image_text_desktop_1440x1080_/public/2025-12/jameson_min_1.jpg.jpg?h=49e6830d&itok=kpuDff3e', alt: 'Jameson Irish whiskey bottles' }
+    ] },
+    { test: /^champagnes$/, images: [
+      { url: 'https://www.iweiyi.com/2106-large_default/importierte-flasche-champagner-franzosischer-sekt-750ml.jpg', alt: 'Moet and Chandon champagne bottle' },
+      { url: 'https://mothercityliquor.co.za/cdn/shop/files/Untitleddesign_92_341454d2-f245-4875-8d27-65bea16e3c86_1200x1200.jpg?v=1709375774', alt: 'Sparkling Cuvee Brut bottle' }
+    ] },
+    { test: /^beers$/, images: [
+      { url: 'https://cdn.shopify.com/s/files/1/0563/2042/6168/files/Afro_Vibes_21_-_Composition_480x480%402x.jpg?v=1619041939', alt: 'Club, Nile Special, Bell and Tusker beer bottles' }
+    ] },
+    { test: /^wines$/, images: [
+      { url: 'https://i5-images.massmart.co.za/asr/3de43ccf-5788-44db-9d89-5a8749d3ce23.8f0ff7a30a4cdfdc5e97e523bfd876a0.jpeg?odnBg=FFFFFF&odnHeight=636&odnWidth=694', alt: 'Four Cousins red wine bottle' },
+      { url: 'https://cdn-prd-02.pnp.co.za/sys-master/images/h2b/hf3/10899774701598/silo-product-image-v2-13Jul2022-180123-6001452258005-Angle_A-49271-7056_400Wx400H', alt: 'Nederburg Sauvignon Blanc bottle' }
+    ] },
+    { test: /^creams$/, images: [
+      { url: 'https://http2.mlstatic.com/D_Q_NP_2X_886690-MLA93034366567_092025-E.webp', alt: 'Amarula and Baileys cream liqueur bottles' }
+    ] },
+    { test: /^vodka$/, images: [
+      { url: 'https://lamarinamx.vtexassets.com/arquivos/ids/227172-800-auto?aspect=true&height=auto&v=637490138674000000&width=800', alt: 'Smirnoff vodka bottle' }
+    ] },
+    { test: /accompaniments/, images: [
+      { url: 'https://uganda-evisa.com/images/posho-served-in-a-bowl.jpg', alt: 'Ugandan posho accompaniment' },
+      { url: 'https://loremflickr.com/900/900/roasted,potatoes?lock=d0bde5e465c44018b26b145f0e19e6be', alt: 'Roasted potatoes' }
+    ] },
+    { test: /^buffet$/, images: [
+      { url: 'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1200&q=85', alt: 'Restaurant buffet spread' }
+    ] }
   ];
 
   function menuCategoryId(name) {
@@ -342,14 +412,13 @@
     return 'menu-category-' + slug;
   }
 
-  function menuCategoryImageFor(categoryName, rows) {
-    const haystack = [categoryName, ...(rows || []).map(item => item.name || '')]
-      .join(' ').toLowerCase();
-    const match = MENU_CATEGORY_IMAGE_MAP.find(entry => entry.test.test(haystack));
-    return match || {
+  function menuCategoryImagesFor(categoryName) {
+    const normalized = String(categoryName || '').trim().toLowerCase();
+    const match = MENU_CATEGORY_IMAGE_MAP.find(entry => entry.test.test(normalized));
+    return match?.images || [{
       url: MENU_IMAGE_MAP.default,
       alt: String(categoryName || 'Kiteezi menu category') + ' selection'
-    };
+    }];
   }
 
   const stableLock = value => {
@@ -470,7 +539,10 @@ async function renderMenuCatalog() {
         }
 
         target.innerHTML = orderedGroups.map(([catName, rows]) => {
-          const categoryImage = menuCategoryImageFor(catName, rows);
+          const categoryImages = menuCategoryImagesFor(catName);
+          const categoryVisuals = categoryImages.map(image =>
+            '<div class="menu-category-visual"><img src="' + escapeHtml(image.url) + '" alt="' + escapeHtml(image.alt) + '" loading="lazy" data-menu-category-image></div>'
+          ).join('');
           const productCards = rows.map(item => {
             const unavailable = item.in_stock === false;
             const onRequest = item.price_on_request === true || Number(item.price || 0) === 0;
@@ -488,7 +560,7 @@ async function renderMenuCatalog() {
 
           return '<section class="menu-category-section" id="' + menuCategoryId(catName) + '">' +
             '<div class="menu-category-cover">' +
-            '<img src="' + escapeHtml(categoryImage.url) + '" alt="' + escapeHtml(categoryImage.alt) + '" loading="lazy" data-menu-category-image>' +
+            '<div class="menu-category-visuals menu-category-visuals-count-' + Math.min(categoryImages.length, 3) + '">' + categoryVisuals + '</div>' +
             '<div class="menu-category-cover-copy"><span class="menu-category-kicker">Kiteezi menu</span>' +
             '<h3>' + escapeHtml(catName) + '</h3><p>' + rows.length + ' option' + (rows.length === 1 ? '' : 's') + ' to choose from</p></div>' +
             '</div><div class="menu-product-grid">' + productCards + '</div></section>';
@@ -498,7 +570,7 @@ async function renderMenuCatalog() {
           img.addEventListener('error', () => {
             if (img.dataset.fallbackApplied === 'true') return;
             img.dataset.fallbackApplied = 'true';
-            img.src = MENU_IMAGE_MAP.default;
+            img.closest('.menu-category-visual')?.classList.add('menu-category-visual-failed');
           }, { once: true });
         });
         bindMenuButtons();
