@@ -1001,3 +1001,84 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{
 @media(prefers-reduced-motion:reduce){
   .menu-category-link,.menu-product-card{transition:none}
 }
+
+
+/* CATEGORY PHOTOGRAPHY REFINEMENT — SHOW COMPLETE DISHES AND FULL BOTTLES */
+.menu-category-cover{
+  display:grid;
+  grid-template-columns:minmax(0,1.55fr) minmax(190px,.8fr);
+  align-items:center;
+  min-height:205px;
+  background:#f3f6f2;
+  border:1px solid #e1e9e3;
+  box-shadow:0 8px 22px rgba(7,56,77,.07);
+}
+.menu-category-cover:after{display:none}
+.menu-category-visuals{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:center;
+  gap:8px;
+  min-width:0;
+  padding:12px 8px 12px 14px;
+}
+.menu-category-visuals-count-1{grid-template-columns:minmax(0,1fr)}
+.menu-category-visuals-count-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.menu-category-visual{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-width:0;
+  height:178px;
+  overflow:hidden;
+  border-radius:11px;
+  background:#fff;
+}
+.menu-category-visual img{
+  display:block;
+  width:100%;
+  height:100%;
+  max-width:100%;
+  max-height:100%;
+  padding:7px;
+  object-fit:contain;
+  object-position:center;
+}
+.menu-category-visual-failed{display:none}
+.menu-category-cover-copy{
+  width:auto;
+  padding:24px clamp(17px,3vw,30px);
+  color:#153d30;
+}
+.menu-category-kicker{color:#5b8b37}
+.menu-category-cover-copy h3{color:#174c3a}
+.menu-category-cover-copy p{color:#5e6d64}
+@media(max-width:620px){
+  .menu-category-cover{
+    grid-template-columns:minmax(0,1fr);
+    min-height:0;
+    margin-bottom:12px;
+    border-radius:14px;
+  }
+  .menu-category-visuals{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:6px;
+    padding:9px 9px 0;
+  }
+  .menu-category-visuals-count-1{grid-template-columns:minmax(0,1fr)}
+  .menu-category-visuals-count-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .menu-category-visual{
+    height:132px;
+    border-radius:9px;
+  }
+  .menu-category-visual img{padding:5px}
+  .menu-category-cover-copy{
+    padding:11px 15px 15px;
+  }
+  .menu-category-cover-copy h3{font-size:25px}
+  .menu-category-cover-copy p{font-size:11px}
+}
+@media(max-width:360px){
+  .menu-category-visual{height:115px}
+  .menu-category-cover-copy{padding:9px 12px 13px}
+}
