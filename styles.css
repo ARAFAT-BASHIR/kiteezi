@@ -547,3 +547,130 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{
     animation-iteration-count:1!important;
   }
 }
+
+
+/* ============================================================
+   CARD LAYOUT REFINEMENT — IMAGE-READY, CLEAN AND UNCLUTTERED
+   CSS-only: retains all existing card content and interactions.
+   ============================================================ */
+
+/* Consistent card proportions and a calmer visual hierarchy */
+.card{
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  border:1px solid #e3ebee;
+  border-radius:16px;
+  overflow:hidden;
+  background:#fff;
+  box-shadow:0 5px 18px rgba(23,55,68,.055);
+}
+.card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 12px 28px rgba(23,55,68,.095);
+}
+
+/* Images become a deliberate, restrained landscape header */
+.card > img.photo{
+  display:block;
+  width:100%;
+  height:auto;
+  aspect-ratio:16 / 9;
+  max-height:190px;
+  object-fit:cover;
+  margin:0;
+  border:0;
+  border-radius:0;
+  background:#edf4f6;
+}
+
+/* Content gets breathing room; actions align at the bottom */
+.card > .card-body{
+  display:flex;
+  flex:1 1 auto;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:0;
+  padding:21px 22px 22px;
+}
+.card > .card-body > .badge{
+  margin:0 0 11px;
+  padding:5px 10px;
+  font-size:10px;
+  line-height:1.35;
+  font-weight:750;
+  text-transform:uppercase;
+  letter-spacing:.075em;
+}
+.card > .card-body h3{
+  margin:0 0 9px;
+  font-size:20px;
+  line-height:1.28;
+  font-weight:750;
+  color:#075c7a;
+}
+.card > .card-body p{
+  margin:0;
+  color:#687982;
+  font-size:14px;
+  line-height:1.65;
+}
+.card > .card-body .list{
+  width:100%;
+  margin:15px 0 18px;
+  padding:0;
+}
+.card > .card-body .list li{
+  padding:8px 0;
+  font-size:13px;
+  line-height:1.45;
+  color:#52636b;
+}
+.card > .card-body > .btn{
+  width:100%;
+  min-height:44px;
+  margin-top:auto;
+  padding:11px 15px;
+  border-radius:10px;
+  font-size:13px;
+  box-shadow:none;
+}
+
+/* Text-only feature cards remain compact rather than looking empty */
+.card:not(:has(> img.photo)) > .card-body{
+  padding:22px;
+}
+.card .iconbox{
+  width:44px;
+  height:44px;
+  margin:0 0 14px;
+  border-radius:12px;
+  font-size:19px;
+}
+.card .price{font-size:21px;line-height:1.3}
+
+/* Review and team cards keep their own image/content proportions */
+.review{overflow-wrap:anywhere}
+.team-profile-card{border-radius:16px}
+.team-card-photo,.team-card-placeholder{
+  aspect-ratio:4 / 3;
+  border-radius:12px;
+}
+
+/* Responsive image and content sizing */
+@media(max-width:900px){
+  .card > img.photo{max-height:180px}
+  .card > .card-body{padding:19px}
+}
+@media(max-width:620px){
+  .card{border-radius:14px}
+  .card > img.photo{
+    aspect-ratio:16 / 9;
+    max-height:175px;
+  }
+  .card > .card-body{padding:18px}
+  .card > .card-body h3{font-size:19px}
+  .card > .card-body p{font-size:14px}
+  .card > .card-body .list{margin:12px 0 15px}
+  .card:hover{transform:none}
+}
