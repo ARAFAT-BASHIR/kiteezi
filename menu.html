@@ -53,8 +53,9 @@
   .menu-cart-float,
   .menu-track-float{
     position:fixed;
-    right:18px;
-    z-index:900;
+    left:18px;
+    right:auto;
+    z-index:1200;
     display:inline-flex;
     align-items:center;
     justify-content:center;
@@ -89,7 +90,8 @@
   }
   @media(max-width:620px){
     .menu-cart-float,.menu-track-float{
-      right:12px;
+      left:12px;
+      right:auto;
       min-height:42px;
       padding:10px 14px;
       font-size:12px;
@@ -99,7 +101,8 @@
   }
   @media(max-width:360px){
     .menu-cart-float,.menu-track-float{
-      right:9px;
+      left:9px;
+      right:auto;
       min-height:39px;
       padding:9px 12px;
       font-size:11px;
