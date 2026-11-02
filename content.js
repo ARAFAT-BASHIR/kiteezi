@@ -481,7 +481,8 @@
 
     title.textContent = name;
     position.textContent = [department, role].filter(Boolean).join(' • ');
-    description.textContent = String(row.public_description || '').trim() || 'Profile description coming soon.';
+    description.textContent = String(row.public_description || '').trim();
+    description.hidden = !description.textContent;
     photo.src = image || '';
     photo.alt = name;
     photo.hidden = !image;
