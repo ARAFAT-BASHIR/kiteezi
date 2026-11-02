@@ -157,8 +157,8 @@ jobs:
                   raise SystemExit(f"Font resource hints are missing: {html}")
               if "styles.css?v=20261102-perf1" not in source:
                   raise SystemExit(f"Versioned stylesheet cache-bust is missing: {html}")
-              for image in re.findall(r"<img\\b[^>]*>", source, re.I):
-                  if not re.search(r"\\bdecoding\\s*=\\s*[\"']async[\"']", image, re.I):
+              for image in re.findall(r"<img\b[^>]*>", source, re.I):
+                  if not re.search(r"\bdecoding\s*=\s*[\"']async[\"']", image, re.I):
                       raise SystemExit(f"An HTML image is missing decoding=async: {html}")
 
           content = Path("content.js").read_text(encoding="utf-8")
