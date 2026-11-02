@@ -305,18 +305,6 @@
     return 'category-' + (slug || 'other');
   }
 
-  function menuCategoryImagesFor(rows) {
-    const seen = new Set();
-    return (Array.isArray(rows) ? rows : []).map(item => ({
-      url: safeMenuImageUrl(item?.img_url),
-      alt: String(item?.alt_text || 'Menu category')
-    })).filter(image => {
-      if (!image.url || /loremflickr/i.test(image.url) || seen.has(image.url)) return false;
-      seen.add(image.url);
-      return true;
-    }).slice(0, 1);
-  }
-
   function menuImageFor(item) {
     return safeMenuImageUrl(item?.img_url);
   }
@@ -334,7 +322,7 @@
           '/rest/v1/media?select=slot_key,url,alt_text,active&page_slug=eq.menu&area=eq.menu-category&active=eq.true&is_gallery=eq.false&order=sort_order.asc'
         );
       } catch (mediaError) {
-        console.warn('Menu category cover media unavailable; using approved legacy category images:', mediaError);
+        console.warn('Menu category cover media unavailable; category sections will render without an unapproved image:', mediaError);
       }
       let pages = [];
       try {
@@ -407,9 +395,9 @@
           const managedCover = (Array.isArray(categoryMediaRows) ? categoryMediaRows : [])
             .find(image => image.slot_key === menuCategorySlot(catName));
           const managedCoverUrl = safeMenuImageUrl(managedCover?.url);
-          const categoryImages = managedCoverUrl
+          const categoryImages = managedCoverUrl && !/loremflickr/i.test(managedCoverUrl)
             ? [{url: managedCoverUrl, alt: String(managedCover.alt_text || (catName + ' menu category'))}]
-            : menuCategoryImagesFor(rows);
+            : [];
           const categoryVisuals = categoryImages.map(image =>
             '<div class="menu-category-visual"><img src="' + escapeHtml(image.url) +
             '" alt="' + escapeHtml(image.alt) + '" loading="lazy" decoding="async" data-menu-category-image></div>'
