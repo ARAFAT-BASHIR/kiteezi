@@ -1,6 +1,10 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Gallery | Kiteezi Recreational Center</title><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+<title>Gallery | Kiteezi Recreational Center</title><link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap">
+<link rel="stylesheet" href="styles.css?v=20261102-perf1"><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
 <style>
 .gallery-image-button{display:block;width:100%;padding:0;border:0;background:transparent;line-height:0;cursor:zoom-in}.gallery-image-button:focus-visible{outline:3px solid var(--gold);outline-offset:-3px}.gallery-clickable{cursor:zoom-in}
 .gallery-lightbox{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:5vh 5vw;background:rgba(7,16,12,.94);overscroll-behavior:contain}
@@ -53,14 +57,14 @@
   <button id="galleryLightboxClose" class="gallery-lightbox-close" type="button" aria-label="Close image viewer"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
   <button id="galleryLightboxPrev" class="gallery-lightbox-prev" type="button" aria-label="Previous image"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
   <div class="gallery-lightbox-stage">
-    <img id="galleryLightboxImage" class="gallery-lightbox-image" alt="">
+    <img id="galleryLightboxImage" class="gallery-lightbox-image" alt="" decoding="async">
   </div>
   <button id="galleryLightboxNext" class="gallery-lightbox-next" type="button" aria-label="Next image"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
   <div id="galleryLightboxCaption" class="gallery-lightbox-caption"></div>
   <div id="galleryLightboxCounter" class="gallery-lightbox-counter" aria-live="polite"></div>
 </div>
 
-<script src="config.js"></script><script src="content.js"></script><script src="site.js?v=20261031-hide-contact-emails-v4"></script>
+<script src="config.js"></script><script src="content.js?v=20261102-perf1"></script><script src="site.js?v=20261102-perf1"></script>
 <script>
 (function(){
 const C=window.KITEEZI_CONFIG||{},u=String(C.SUPABASE_URL||'').replace(/\/+$/,''),k=C.SUPABASE_ANON_KEY,MAX=50*1024*1024;
@@ -135,7 +139,7 @@ async function load(){
       const isVideo=x.media_type==='video';
       const media=isVideo
         ?'<video class="photo" src="'+esc(url)+'" controls preload="metadata" playsinline></video>'
-        :'<button class="gallery-image-button" type="button" data-gallery-image-index="'+imageIndex+'" aria-label="Open '+esc(x.title||'Kiteezi gallery image')+'"><img class="photo gallery-clickable" src="'+esc(url)+'" alt="'+esc(x.title||'Kiteezi gallery')+'" loading="lazy"></button>';
+        :'<button class="gallery-image-button" type="button" data-gallery-image-index="'+imageIndex+'" aria-label="Open '+esc(x.title||'Kiteezi gallery image')+'"><img class="photo gallery-clickable" src="'+esc(url)+'" alt="'+esc(x.title||'Kiteezi gallery')+'" loading="lazy" decoding="async"></button>';
       if(!isVideo)imageIndex++;
       return '<article class="card">'+media+'<div class="card-body"><span class="badge">'+esc(x.category)+'</span><h3>'+esc(x.title||'Kiteezi')+'</h3>'+(x.caption?'<p>'+esc(x.caption)+'</p>':'')+'</div></article>';
     }).join(''):'<p class="muted">No gallery media has been published yet.</p>';

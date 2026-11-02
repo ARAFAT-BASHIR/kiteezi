@@ -424,6 +424,18 @@
     if (hero && heroRow) {
       const heroUrl = safeUrl(heroRow.url);
       if (heroUrl) {
+        // The CMS chooses the hero asset at runtime. Prioritize it as soon
+        // as its URL is known, before applying the CSS background.
+        const existingPreload = Array.from(document.head.querySelectorAll('link[rel="preload"][as="image"]'))
+          .some(link => link.href === heroUrl);
+        if (!existingPreload) {
+          const preload = document.createElement('link');
+          preload.rel = 'preload';
+          preload.as = 'image';
+          preload.href = heroUrl;
+          preload.fetchPriority = 'high';
+          document.head.appendChild(preload);
+        }
         hero.style.backgroundImage =
           'linear-gradient(rgba(20,35,27,.64),rgba(20,35,27,.64)),url(' +
           JSON.stringify(heroUrl) +
@@ -451,7 +463,7 @@
       <div class="team-profile-backdrop" data-team-modal-close></div>
       <div class="team-profile-dialog" role="dialog" aria-modal="true" aria-labelledby="team-profile-title">
         <button type="button" class="team-profile-close" data-team-modal-close aria-label="Close profile">×</button>
-        <div class="team-profile-photo-wrap"><img class="team-profile-photo" id="team-profile-photo" alt=""></div>
+        <div class="team-profile-photo-wrap"><img class="team-profile-photo" id="team-profile-photo" alt="" decoding="async"></div>
         <div class="eyebrow" id="team-profile-position"></div>
         <h2 id="team-profile-title"></h2>
         <p class="team-profile-description" id="team-profile-description"></p>
@@ -504,7 +516,7 @@
         const role = escapeHtml(row.position || '');
         const image = safeUrl(row.public_avatar_url) || '';
         const photo = image
-          ? '<img class="team-card-photo" src="' + escapeHtml(image) + '" alt="' + name + '" loading="lazy">'
+          ? '<img class="team-card-photo" src="' + escapeHtml(image) + '" alt="' + name + '" loading="lazy" decoding="async">'
           : '<div class="team-card-placeholder">' + icons[i % icons.length] + '</div>';
         return '<article class="card team-profile-card" tabindex="0" role="button" aria-label="View profile of ' + name + '" data-team-profile-index="' + i + '">' +
           '<div class="card-body">' + photo +
