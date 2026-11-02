@@ -2062,7 +2062,7 @@ async function downloadAccountingCash(){
     const r=lastAccountingCashReport;
     if(!r)return alert('The cash report could not be generated.');
     const lines=[['Date','Source','Status','Flow','Description','Amount (UGX)'],...r.rows.map(x=>[x.date,x.source,x.status,x.direction,x.supplier||x.id,x.amount])];
-    const csv=lines.map(row=>row.map(csvCell).join(',')).join('\\r\\n');
+    const csv=lines.map(row=>row.map(csvCell).join(',')).join('\r\n');
     downloadTextFile('kiteezi-accounting-cash-'+r.from+'-to-'+r.to+'.csv',csv);
   }catch(error){msg(error)}
 }
