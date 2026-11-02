@@ -1680,7 +1680,7 @@ async function loadContent(){
   const gmReadOnly=profile?.role==='general_manager';
   const [p,m,a]=await Promise.all([api('/rest/v1/cms_pages?select=*&order=slug.asc'),api('/rest/v1/media?select=*&order=page_slug.asc,sort_order.asc'),api('/rest/v1/announcements?select=*&order=starts_at.desc')]);
   $('#pagesTable').innerHTML='<table><tr><th>Slug</th><th>Title</th><th>Published</th><th></th></tr>'+p.map(x=>'<tr><td>'+esc(x.slug)+'</td><td>'+esc(x.title||'')+'</td><td>'+x.published+'</td><td>'+(gmReadOnly?'View only':'<button class="btn" data-page="'+x.id+'">Edit</button>')+'</td></tr>').join('')+'</table>';
-  $('#mediaTable').innerHTML='<table><tr><th>Page</th><th>Area</th><th>Image position</th><th>Title</th><th>Active</th><th></th></tr>'+m.map(x=>'<tr><td>'+esc(x.page_slug||'')+'</td><td>'+esc(x.area||'')+'</td><td>'+esc(x.slot_key||'—')+'</td><td>'+esc(x.title||'')+'</td><td>'+x.active+'</td><td>'+(gmReadOnly?'View only':'<button class="btn" data-media="'+x.id+'">Edit</button> '+((profile?.role==='owner'||hasPermission('content.delete'))?'<button class="btn danger" data-delete-media="'+x.id+'">Delete</button>':''))+'</td></tr>').join('')+'</table>';
+  $('#mediaTable').innerHTML='<div class="table-scroll"><table><tr><th>Preview</th><th>Page</th><th>Area</th><th>Placement</th><th>Title / alt text</th><th>Active</th><th></th></tr>'+m.map(x=>'<tr><td><img src="'+esc(x.url)+'" alt="'+esc(x.alt_text||'')+'" loading="lazy" style="width:76px;height:52px;object-fit:cover;border-radius:8px"></td><td>'+esc(x.page_slug||'')+'</td><td>'+esc(x.area||'')+'</td><td>'+esc(x.slot_key||'—')+'</td><td><strong>'+esc(x.title||'Untitled')+'</strong><br><small class="muted">'+esc(x.alt_text||'Alt text missing')+'</small></td><td>'+x.active+'</td><td>'+(gmReadOnly?'View only':'<button class="btn" data-media="'+x.id+'">Replace / edit</button> '+((profile?.role==='owner'||hasPermission('content.delete'))?'<button class="btn danger" data-delete-media="'+x.id+'">Delete</button>':''))+'</td></tr>').join('')+'</table></div>';
   $('#announcementsTable').innerHTML='<table><tr><th>Title</th><th>Published</th><th>Body</th><th></th></tr>'+a.map(x=>'<tr><td>'+esc(x.title)+'</td><td>'+x.published+'</td><td>'+esc(x.body||'')+'</td><td>'+(gmReadOnly?'View only':'<button class="btn" data-ann="'+x.id+'">Edit</button> '+((profile?.role==='owner'||hasPermission('content.delete'))?'<button class="btn danger" data-delete-ann="'+x.id+'">Delete</button>':''))+'</td></tr>').join('')+'</table>';
   document.querySelectorAll('[data-page]').forEach(x=>x.onclick=()=>editPage(x.dataset.page));
   document.querySelectorAll('[data-media]').forEach(x=>x.onclick=()=>editMedia(x.dataset.media));
@@ -1691,52 +1691,157 @@ async function loadContent(){
 async function loadCustomers(){const rows=await api('/rest/v1/customers?select=id,name,phone,email,notes,created_at&order=created_at.desc');const box=$('#customersTable');if(!box)return;box.innerHTML=rows.length?'<table><tr><th>Customer</th><th>Phone</th><th>Email</th><th>Added</th><th></th></tr>'+rows.map(x=>'<tr><td>'+esc(x.name||'')+'</td><td>'+esc(x.phone||'')+'</td><td>'+esc(x.email||'')+'</td><td>'+esc(new Date(x.created_at).toLocaleDateString())+'</td><td>'+(profile?.role==='owner'?'<button class="btn danger" data-delete-customer="'+x.id+'">Delete</button>':'')+'</td></tr>').join('')+'</table>':'<div class="state">No customer profiles found.</div>';$$('[data-delete-customer]').forEach(b=>b.onclick=()=>deleteBusinessRecord('customer',b.dataset.deleteCustomer,loadCustomers))}
 function table(h,rows,fn){return '<table><tr>'+h.map(x=>'<th>'+x+'</th>').join('')+'</tr>'+rows.map(x=>'<tr>'+fn(x).map(v=>'<td>'+((typeof v==='string'&&v.trim().startsWith('<button'))?v:esc(v))+'</td>').join('')+'</tr>').join('')+'</table>'}
 async function editPage(id){const x=(await api('/rest/v1/cms_pages?id=eq.'+id))[0];modal('CMS page','<form id="ed" class="form"><input name="title" value="'+esc(x.title||'')+'"><textarea name="content">'+esc(JSON.stringify(x.content||{},null,2))+'</textarea><label>Published <input name="published" type="checkbox" '+(x.published?'checked':'')+'></label><button class="btn btn-dark">Save</button></form>');$('#ed').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);let content={};try{content=JSON.parse(f.get('content')||'{}')}catch{alert('Content must be valid JSON');return}await api('/rest/v1/cms_pages?id=eq.'+id,{method:'PATCH',body:JSON.stringify({title:f.get('title'),content,published:f.get('published')==='on',updated_at:new Date().toISOString()})});closeModal();loadContent()}}
+function mediaSlug(value){return String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'other'}
+async function mediaPlacementData(){
+  const [categories,people]=await Promise.all([
+    api('/rest/v1/menu_categories?select=id,name&active=eq.true&order=sort_order.asc'),
+    api('/rest/v1/team_positions?select=id,person_name,position&active=eq.true&order=sort_order.asc')
+  ]);
+  return {categories:categories||[],people:people||[]};
+}
+function mediaPresetOptions(categories,people,current){
+  const opts=['<option value="custom" '+(current==='custom'?'selected':'')+'>Page image / hero background</option>'];
+  opts.push('<option value="brand-logo" '+(current==='brand-logo'?'selected':'')+'>Business logo</option>');
+  opts.push('<optgroup label="Menu category covers">');
+  categories.forEach(x=>{const value='category|'+x.id;opts.push('<option value="'+value+'" '+(current===value?'selected':'')+'>'+esc(x.name)+'</option>')});
+  opts.push('</optgroup><optgroup label="Personnel portraits">');
+  people.forEach(x=>{const value='personnel|'+x.id;opts.push('<option value="'+value+'" '+(current===value?'selected':'')+'>'+esc(x.person_name||x.position||'Team member')+'</option>')});
+  opts.push('</optgroup>');
+  return opts.join('');
+}
+function mediaPresetForRow(row,categories,people){
+  if(row.page_slug==='global'&&row.slot_key==='brand-logo')return 'brand-logo';
+  if(row.page_slug==='global'&&String(row.slot_key||'').startsWith('personnel-')){
+    const id=String(row.slot_key).slice('personnel-'.length);
+    if(people.some(x=>x.id===id))return 'personnel|'+id;
+  }
+  if(row.page_slug==='menu'&&row.area==='menu-category'){
+    const slug=String(row.slot_key||'').replace(/^category-/,'');
+    const category=categories.find(x=>mediaSlug(x.name)===slug);
+    if(category)return 'category|'+category.id;
+  }
+  return 'custom';
+}
+function bindMediaPreset(form,categories,people){
+  const preset=form.querySelector('[name="preset"]');
+  const custom=form.querySelector('[data-media-custom-fields]');
+  const page=form.querySelector('[name="page"]'),area=form.querySelector('[name="area"]'),slot=form.querySelector('[name="slot"]');
+  const apply=()=>{
+    const value=preset.value;
+    if(value==='brand-logo'){page.value='global';area.value='branding';slot.value='brand-logo'}
+    else if(value.startsWith('category|')){
+      const item=categories.find(x=>x.id===value.split('|')[1]);
+      if(item){page.value='menu';area.value='menu-category';slot.value='category-'+mediaSlug(item.name)}
+    }else if(value.startsWith('personnel|')){
+      const item=people.find(x=>x.id===value.split('|')[1]);
+      if(item){page.value='global';area.value='personnel';slot.value='personnel-'+item.id}
+    }
+    const isCustom=value==='custom';
+    custom.hidden=!isCustom;
+    [page,area,slot].forEach(el=>el.required=isCustom);
+  };
+  preset.addEventListener('change',apply);
+  apply();
+}
 async function editMedia(id){
-  const x=(await api('/rest/v1/media?id=eq.'+id))[0];
-  modal('Website image','<form id="ed" class="form"><input name="title" value="'+esc(x.title||'')+'" placeholder="Image title"><label>Upload replacement from device<input name="file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif"><small class="muted">Optional. Maximum 50 MB.</small></label><input name="url" value="'+esc(x.url||'')+'" placeholder="Existing or external public URL"><input name="alt" value="'+esc(x.alt_text||'')+'" placeholder="Alt text"><input name="page" value="'+esc(x.page_slug||'')+'" placeholder="Page slug (e.g. index, swimming)" required><input name="area" value="'+esc(x.area||'')+'" placeholder="Website area (e.g. homepage, swimming, hero)" required><input name="slot" value="'+esc(x.slot_key||'')+'" placeholder="Image position (e.g. hero, image-1)" required><input name="sort" type="number" value="'+x.sort_order+'"><label>Active <input name="active" type="checkbox" '+(x.active?'checked':'')+'></label><button class="btn btn-dark">Save</button></form>');
-  $('#ed').onsubmit=async e=>{
+  const x=(await api('/rest/v1/media?id=eq.'+encodeURIComponent(id)))[0];
+  if(!x)throw Error('Website image not found.');
+  const {categories,people}=await mediaPlacementData();
+  const preset=mediaPresetForRow(x,categories,people);
+  modal('Website image','<form id="ed" class="form"><input name="title" value="'+esc(x.title||'')+'" placeholder="Image title" required><label>Replace image from device<input name="file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif"><small class="muted">Upload a real image file. Maximum 50 MB. Existing image remains if no replacement is selected.</small></label><input name="alt" value="'+esc(x.alt_text||'')+'" placeholder="Descriptive alt text" required><label>Image placement<select name="preset">'+mediaPresetOptions(categories,people,preset)+'</select></label><div data-media-custom-fields><input name="page" value="'+esc(x.page_slug||'')+'" placeholder="Page slug (e.g. index, swimming)"><input name="area" value="'+esc(x.area||'')+'" placeholder="Website area"><input name="slot" value="'+esc(x.slot_key||'')+'" placeholder="Image position"></div><input name="page" type="hidden" value="'+esc(x.page_slug||'')+'" disabled><input name="area" type="hidden" value="'+esc(x.area||'')+'" disabled><input name="slot" type="hidden" value="'+esc(x.slot_key||'')+'" disabled><input name="sort" type="number" value="'+Number(x.sort_order||0)+'"><label>Active <input name="active" type="checkbox" '+(x.active?'checked':'')+'></label><button class="btn btn-dark" type="submit">Save image</button></form>');
+  const form=$('#ed');
+  const pageVisible=form.querySelector('[data-media-custom-fields] [name="page"]');
+  const areaVisible=form.querySelector('[data-media-custom-fields] [name="area"]');
+  const slotVisible=form.querySelector('[data-media-custom-fields] [name="slot"]');
+  const hiddenPage=form.querySelector('input[type="hidden"][name="page"]');
+  const hiddenArea=form.querySelector('input[type="hidden"][name="area"]');
+  const hiddenSlot=form.querySelector('input[type="hidden"][name="slot"]');
+  // The preset controls fixed slots; custom placements use the visible fields.
+  const presetSelect=form.querySelector('[name="preset"]');
+  const syncPlacement=()=>{
+    const custom=presetSelect.value==='custom';
+    form.querySelector('[data-media-custom-fields]').hidden=!custom;
+    [pageVisible,areaVisible,slotVisible].forEach(el=>el.required=custom);
+    if(!custom){
+      const value=presetSelect.value;
+      if(value==='brand-logo'){hiddenPage.value='global';hiddenArea.value='branding';hiddenSlot.value='brand-logo'}
+      else if(value.startsWith('category|')){const item=categories.find(q=>q.id===value.split('|')[1]);if(item){hiddenPage.value='menu';hiddenArea.value='menu-category';hiddenSlot.value='category-'+mediaSlug(item.name)}}
+      else if(value.startsWith('personnel|')){const item=people.find(q=>q.id===value.split('|')[1]);if(item){hiddenPage.value='global';hiddenArea.value='personnel';hiddenSlot.value='personnel-'+item.id}}
+    }
+  };
+  presetSelect.addEventListener('change',syncPlacement);syncPlacement();
+  form.onsubmit=async e=>{
     e.preventDefault();
-    const form=new FormData(e.currentTarget),file=form.get('file');
-    let url=String(form.get('url')||'').trim();
+    const f=new FormData(form),file=f.get('file');
+    let imageUrl=x.url;
     try{
       if(file instanceof File&&file.size){
         if(file.size>52428800)throw Error('File exceeds the 50 MB limit.');
+        if(!['image/jpeg','image/png','image/webp','image/gif','image/avif'].includes(file.type))throw Error('Choose a supported image file.');
         const path='site/'+crypto.randomUUID()+'.'+(file.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'');
         await storageUpload('site-media',path,file);
-        url=URL+'/storage/v1/object/public/site-media/'+path.split('/').map(encodeURIComponent).join('/');
+        imageUrl=URL+'/storage/v1/object/public/site-media/'+path.split('/').map(encodeURIComponent).join('/');
       }
-      if(!url)throw Error('Choose a local file or provide a public URL.');
-      await api('/rest/v1/media?id=eq.'+id,{method:'PATCH',body:JSON.stringify({
-        title:form.get('title'),url,alt_text:form.get('alt'),page_slug:form.get('page'),
-        area:form.get('area'),slot_key:form.get('slot'),sort_order:Number(form.get('sort')||0),
-        active:form.get('active')==='on'
+      const custom=presetSelect.value==='custom';
+      const page=custom?String(f.get('page')||'').trim():hiddenPage.value;
+      const area=custom?String(f.get('area')||'').trim():hiddenArea.value;
+      const slot=custom?String(f.get('slot')||'').trim():hiddenSlot.value;
+      const alt=String(f.get('alt')||'').trim();
+      if(!imageUrl)throw Error('Upload an image before saving.');
+      if(!alt)throw Error('Alt text is required.');
+      if(!page||!area||!slot)throw Error('Choose a valid image placement.');
+      await api('/rest/v1/media?id=eq.'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({
+        title:String(f.get('title')||'').trim(),url:imageUrl,alt_text:alt,page_slug:page,area,slot_key:slot,
+        sort_order:Number(f.get('sort')||0),active:f.get('active')==='on'
       })});
-      closeModal();loadContent();
+      closeModal();await loadContent();
     }catch(err){msg(err)}
   };
 }
 async function editAnnouncement(id){const x=(await api('/rest/v1/announcements?id=eq.'+id))[0];modal('Announcement','<form id="ed" class="form"><input name="title" value="'+esc(x.title)+'" required><textarea name="body">'+esc(x.body||'')+'</textarea><label>Published <input name="published" type="checkbox" '+(x.published?'checked':'')+'></label><button class="btn btn-dark">Save</button></form>');$('#ed').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);await api('/rest/v1/announcements?id=eq.'+id,{method:'PATCH',body:JSON.stringify({title:f.get('title'),body:f.get('body'),published:f.get('published')==='on'})});closeModal();loadContent()}}
 async function addMedia(){
-  modal('Add website image','<form id="mediaForm" class="form"><input name="title" placeholder="Image title"><label>Upload from device<input name="file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif"><small class="muted">Maximum 50 MB.</small></label><input name="url" placeholder="Or paste an existing public URL"><input name="alt" placeholder="Alt text"><input name="page" placeholder="Page slug (e.g. index, swimming, booking)" required><input name="area" placeholder="Website area (e.g. homepage, swimming, hero)" required><input name="slot" placeholder="Image position (e.g. hero, image-1, image-2)" required><input name="sort" type="number" value="0"><small class="muted">Menu item photos are managed under Menu; staff photos under Personnel; public gallery uploads under Gallery.</small><label>Active <input name="active" type="checkbox" checked></label><button class="btn btn-dark">Save</button></form>');
-  $('#mediaForm').onsubmit=async e=>{
+  const {categories,people}=await mediaPlacementData();
+  modal('Add website image','<form id="mediaForm" class="form"><input name="title" placeholder="Image title" required><label>Upload image<input name="file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" required><small class="muted">Images are stored in Supabase Storage. Maximum 50 MB.</small></label><input name="alt" placeholder="Descriptive alt text" required><label>Image placement<select name="preset">'+mediaPresetOptions(categories,people,'custom')+'</select></label><div data-media-custom-fields><input name="page" placeholder="Page slug (e.g. index, swimming)" required><input name="area" placeholder="Website area (e.g. homepage, hero)" required><input name="slot" placeholder="Image position (e.g. hero, image-1)" required></div><input name="sort" type="number" value="0"><p class="muted">Choose a menu category cover, business logo, personnel portrait, or a specific page image. Gallery submissions remain in Gallery moderation.</p><label>Active <input name="active" type="checkbox" checked></label><button class="btn btn-dark" type="submit">Upload and save</button></form>');
+  const form=$('#mediaForm');
+  const preset=form.querySelector('[name="preset"]');
+  const page=form.querySelector('[name="page"]'),area=form.querySelector('[name="area"]'),slot=form.querySelector('[name="slot"]');
+  const custom=form.querySelector('[data-media-custom-fields]');
+  const sync=()=>{
+    const value=preset.value;
+    const isCustom=value==='custom';
+    custom.hidden=!isCustom;
+    [page,area,slot].forEach(el=>el.required=isCustom);
+    if(value==='brand-logo'){page.value='global';area.value='branding';slot.value='brand-logo'}
+    else if(value.startsWith('category|')){const item=categories.find(q=>q.id===value.split('|')[1]);if(item){page.value='menu';area.value='menu-category';slot.value='category-'+mediaSlug(item.name)}}
+    else if(value.startsWith('personnel|')){const item=people.find(q=>q.id===value.split('|')[1]);if(item){page.value='global';area.value='personnel';slot.value='personnel-'+item.id}}
+  };
+  preset.addEventListener('change',sync);sync();
+  form.onsubmit=async e=>{
     e.preventDefault();
-    const f=new FormData(e.currentTarget),file=f.get('file');
-    let url=String(f.get('url')||'').trim();
+    const f=new FormData(form),file=f.get('file');
+    const button=form.querySelector('button[type="submit"]');
     try{
-      if(file&&file.size){
-        if(file.size>52428800)throw Error('File exceeds the 50 MB limit.');
-        const path='site/'+crypto.randomUUID()+'.'+(file.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'');
-        await storageUpload('site-media',path,file);
-        url=URL+'/storage/v1/object/public/site-media/'+path.split('/').map(encodeURIComponent).join('/');
-      }
-      if(!url)throw Error('Choose a local file or provide a public URL.');
+      if(!(file instanceof File)||!file.size)throw Error('Choose an image file.');
+      if(file.size>52428800)throw Error('File exceeds the 50 MB limit.');
+      if(!['image/jpeg','image/png','image/webp','image/gif','image/avif'].includes(file.type))throw Error('Choose a supported image file.');
+      const path='site/'+crypto.randomUUID()+'.'+(file.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'');
+      if(button){button.disabled=true;button.textContent='Uploading…'}
+      await storageUpload('site-media',path,file);
+      const imageUrl=URL+'/storage/v1/object/public/site-media/'+path.split('/').map(encodeURIComponent).join('/');
+      const alt=String(f.get('alt')||'').trim();
+      if(!alt)throw Error('Alt text is required.');
+      const customPlacement=preset.value==='custom';
+      const page=customPlacement?String(f.get('page')||'').trim():page.value;
+      const area=customPlacement?String(f.get('area')||'').trim():area.value;
+      const slot=customPlacement?String(f.get('slot')||'').trim():slot.value;
+      if(!page||!area||!slot)throw Error('Choose a valid image placement.');
       await api('/rest/v1/media',{method:'POST',body:JSON.stringify({
-        title:f.get('title')||null,url,alt_text:f.get('alt')||null,page_slug:f.get('page'),
-        area:f.get('area'),slot_key:f.get('slot'),type:'image',sort_order:Number(f.get('sort')||0),
-        is_gallery:false,active:f.get('active')==='on'
+        title:String(f.get('title')||'').trim(),url:imageUrl,alt_text:alt,page_slug:page,area,slot_key:slot,
+        type:'image',sort_order:Number(f.get('sort')||0),is_gallery:false,active:f.get('active')==='on'
       })});
-      closeModal();loadContent();
+      closeModal();await loadContent();
     }catch(err){msg(err)}
+    finally{if(button){button.disabled=false;button.textContent='Upload and save'}}
   };
 }
 async function addAnnouncement(){modal('Add announcement','<form id="annForm" class="form"><input name="title" placeholder="Title" required><textarea name="body" placeholder="Message"></textarea><input name="starts" type="datetime-local"><input name="ends" type="datetime-local"><label>Published <input name="published" type="checkbox"></label><button class="btn btn-dark">Save</button></form>');$('#annForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);await api('/rest/v1/announcements',{method:'POST',body:JSON.stringify({title:f.get('title'),body:f.get('body')||null,starts_at:f.get('starts')?new Date(f.get('starts')).toISOString():null,ends_at:f.get('ends')?new Date(f.get('ends')).toISOString():null,published:f.get('published')==='on'})});closeModal();loadContent()}}
