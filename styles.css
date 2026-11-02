@@ -1083,3 +1083,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{
   .menu-category-visual{height:115px}
   .menu-category-cover-copy{padding:9px 12px 13px}
 }
+
+
+/* Unified official logo rendering on every public page */
+.brand-mark{display:inline-flex;align-items:center;justify-content:center;overflow:hidden;flex:0 0 46px;width:46px;height:46px;border-radius:12px;background:#fff!important;box-shadow:0 4px 14px rgba(7,56,77,.10)}
+.brand-mark img{display:block;width:100%;height:100%;max-width:none;object-fit:contain;object-position:center;background:#fff;border-radius:inherit}
+.footer .brand-mark{background:#fff!important;box-shadow:none}

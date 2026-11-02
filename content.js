@@ -334,22 +334,13 @@
       without editing the public pages. Relative paths are resolved from
       the public site root.
     */
-    if (settings.logo_url) {
-      document
-        .querySelectorAll('.brand-mark')
-        .forEach(element => {
-          const img = document.createElement('img');
-          const logoUrl = safeUrl(settings.logo_url);
-          if (!logoUrl) return;
-          img.src = logoUrl;
-          img.alt = settings.business_name || 'Kiteezi Recreational Center';
-          img.loading = 'eager';
-          img.decoding = 'async';
-          element.textContent = '';
-          element.appendChild(img);
-          element.setAttribute('aria-hidden', 'true');
-        });
-    }
+    const configuredLogoUrl = settings.logo_url ? safeUrl(settings.logo_url) : '';
+    document.querySelectorAll('.brand-mark img').forEach(img => {
+      if (configuredLogoUrl) img.src = configuredLogoUrl;
+      img.alt = (settings.business_name || 'Kiteezi Recreational Center') + ' logo';
+      img.loading = 'eager';
+      img.decoding = 'async';
+    });
 
     /*
       COPYRIGHT

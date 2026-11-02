@@ -1316,3 +1316,8 @@ body.admin .pos-menu-catalog .menu-product-footer .menu-add:disabled{opacity:.58
 
 body.admin .pos-menu-catalog .menu-category-cover.no-menu-images .menu-category-visuals{display:none}
 body.admin .pos-menu-catalog .menu-category-cover.no-menu-images .menu-category-cover-copy{width:100%}
+
+
+/* Use the same official logo image treatment in the admin workspace */
+.admin .brand-mark{display:inline-flex;align-items:center;justify-content:center;overflow:hidden;background:#fff!important}
+.admin .brand-mark img{display:block;width:100%;height:100%;max-width:none;object-fit:contain;object-position:center;background:#fff;border-radius:inherit}
