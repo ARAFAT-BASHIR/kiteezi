@@ -1313,3 +1313,6 @@ body.admin .pos-menu-catalog .menu-product-footer .menu-add:disabled{opacity:.58
  body.admin .pos-menu-catalog .menu-product-footer .menu-add{width:100%;min-height:31px;padding:6px 4px;font-size:9px;white-space:normal}
 }
 @media(max-width:360px){body.admin .pos-menu-catalog .menu-category-visual{height:115px}}
+
+body.admin .pos-menu-catalog .menu-category-cover.no-menu-images .menu-category-visuals{display:none}
+body.admin .pos-menu-catalog .menu-category-cover.no-menu-images .menu-category-cover-copy{width:100%}
