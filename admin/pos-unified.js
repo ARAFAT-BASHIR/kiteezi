@@ -14,7 +14,16 @@
       .map(x=>({...x,price:Number(x.unit_price)||0,category:categoryNames.get(String(x.category_id))||x.pos_categories?.name||'Other'}));
     posMenuLoaded=true;
     if(posActiveCategory&&!posCategories.some(c=>String(c.id)===String(posActiveCategory)))posActiveCategory='';
-    posRenderCategories();posRenderProducts();posRenderCart();
+    // posRenderProducts builds the [categoryName, items] groups and passes them
+    // to posRenderCategories(groups). Calling posRenderCategories() directly
+    // leaves its required groups argument undefined and causes groups.map().
+    const categoryFilter=$('#posCategoryFilter');
+    if(categoryFilter){
+      const current=categoryFilter.value;
+      categoryFilter.innerHTML='<option value="">All categories</option>'+posCategories.map(c=>'<option value="'+esc(c.name)+'">'+esc(c.name)+'</option>').join('');
+      categoryFilter.value=posCategories.some(c=>c.name===current)?current:'';
+    }
+    posRenderProducts();posRenderCart();
     const status=$('#posMenuStatus');
     if(status)status.textContent=posMenuItems.length+' POS items and services available';
   };
