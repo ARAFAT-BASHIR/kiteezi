@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin/
+Disallow: /checkout.html
+Disallow: /tracking.html
+
+Sitemap: https://kiteezirecreationalcenter.com/sitemap.xml
