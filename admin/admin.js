@@ -1236,6 +1236,13 @@ function setupOrderViews(){
 function setupPos(){
   if(window.__KITEEZI_POS_BOUND__)return;window.__KITEEZI_POS_BOUND__=true;
   $('#posSearch')?.addEventListener('input',posRenderProducts);
+  $('#posCategoryFilter')?.addEventListener('change',posRenderProducts);
+  $('#posClearMenuFilters')?.addEventListener('click',()=>{
+    const search=$('#posSearch'),category=$('#posCategoryFilter');
+    if(search)search.value='';
+    if(category)category.value='';
+    posRenderProducts();
+  });
   $('#posRefreshMenu')?.addEventListener('click',()=>loadPosMenu(true).catch(msg));
   $('#posClear')?.addEventListener('click',posClear);
   $('#posPay')?.addEventListener('click',posCreateUnpaidOrder);
