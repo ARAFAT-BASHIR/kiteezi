@@ -947,7 +947,7 @@ async function loadReceptionOrders(){
 }
 
 /* === Integrated Orders / POS === */
-let posMenuItems=[],posCategories=[],posActiveCategory='',posCartItems=[],posMenuLoaded=false;
+let posMenuItems=[],posCategories=[],posMenuCoverRows=[],posActiveCategory='',posCartItems=[],posMenuLoaded=false;
 function posMoney(v){return 'UGX '+new Intl.NumberFormat('en-UG').format(Number(v)||0)}
 function posImageFor(item){
   const raw=String(item?.img_url||'').trim();
@@ -995,11 +995,10 @@ function posRenderProducts(){
   if(!groups.length){box.innerHTML='<p class="muted">No menu items match your search or category. Try another search or choose All categories.</p>';return;}
   box.classList.remove('menu-product-grid');
   box.innerHTML=groups.map(([catName,rows])=>{
-    const seen=new Set();
-    const images=rows.map(item=>({url:posImageFor(item),alt:String(item.alt_text||item.name||'Kiteezi menu item')})).filter(img=>{
-      if(!img.url||seen.has(img.url))return false;
-      seen.add(img.url);return true;
-    }).slice(0,3);
+    const categorySlug=String(catName||'other').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'other';
+    const managedCover=posMenuCoverRows.find(row=>row.slot_key==='category-'+categorySlug&&row.active);
+    const managedUrl=posImageFor({img_url:managedCover?.url});
+    const images=managedUrl&&!/loremflickr/i.test(managedUrl)?[{url:managedUrl,alt:String(managedCover.alt_text||catName+' menu category')}]:[];
     const visuals=images.map(img=>'<div class="menu-category-visual"><img src="'+esc(img.url)+'" alt="'+esc(img.alt)+'" loading="lazy" decoding="async" data-pos-category-image></div>').join('');
     const cards=rows.map(item=>{
       const unavailable=item.in_stock===false;
@@ -1071,6 +1070,7 @@ async function loadPosMenu(force=false){
   try{
     const items=await api('/rest/v1/menu_items?select=id,name,description,price,price_on_request,in_stock,img_url,alt_text,category_id,serving_unit,menu_categories(name,sort_order)&in_stock=eq.true&order=name.asc');
     posMenuItems=Array.isArray(items)?items:[];
+    try{posMenuCoverRows=await api('/rest/v1/media?select=slot_key,url,alt_text,active&page_slug=eq.menu&area=eq.menu-category&active=eq.true&is_gallery=eq.false&order=sort_order.asc')}catch(mediaError){posMenuCoverRows=[];console.warn('Managed menu category covers unavailable in POS:',mediaError)}
     posCategories=Array.from(new Map(posMenuItems.map(x=>[x.menu_categories?.name||'Other',x.menu_categories||{name:'Other',sort_order:999}])).values())
       .sort((a,b)=>(Number(a.sort_order??999)-Number(b.sort_order??999))||String(a.name).localeCompare(String(b.name)));
     const categoryFilter=$('#posCategoryFilter');
