@@ -962,15 +962,11 @@ function posCartTotal(){return posCartItems.reduce((s,x)=>s+(Number(x.price)||0)
 function posRenderCategories(){
   const box=$('#posCategoryTabs');if(!box)return;
   const all=[{id:'',name:'All categories'}].concat(posCategories);
-  box.classList.add('pos-category-cards');
+  box.classList.remove('pos-category-cards');
+  box.classList.add('menu-category-nav');
   box.innerHTML=all.map(c=>{
-    const items=c.id?posMenuItems.filter(x=>String(x.category_id)===String(c.id)):posMenuItems;
-    const imageItem=items.find(x=>x.img_url)||items[0];
-    const image=imageItem?posImageFor(imageItem):'';
     const selected=String(c.id)===String(posActiveCategory);
-    return '<button type="button" role="tab" aria-selected="'+(selected?'true':'false')+'" aria-pressed="'+(selected?'true':'false')+'" class="pos-category-card '+(selected?'active':'')+'" data-pos-category="'+esc(c.id)+'">'+
-      '<span class="pos-category-image"><img src="'+esc(image)+'" alt="" loading="lazy"></span>'+
-      '<span class="pos-category-card-name">'+esc(c.name)+'</span><span class="pos-category-card-count">'+items.length+' item'+(items.length===1?'':'s')+'</span></button>';
+    return '<button type="button" role="tab" aria-selected="'+(selected?'true':'false')+'" aria-pressed="'+(selected?'true':'false')+'" class="menu-category-link '+(selected?'active':'')+'" data-pos-category="'+esc(c.id)+'">'+esc(c.name)+'</button>';
   }).join('');
   box.querySelectorAll('[data-pos-category]').forEach(b=>b.onclick=()=>{posActiveCategory=b.dataset.posCategory||'';posRenderCategories();posRenderProducts()});
 }
@@ -982,9 +978,13 @@ function posRenderProducts(){
     return (!q||hay.includes(q))&&(!posActiveCategory||String(x.category_id)===String(posActiveCategory));
   });
   status.textContent=rows.length?rows.length+' menu item'+(rows.length===1?'':'s')+' available':'No menu items match your search.';
+  box.classList.add('menu-product-grid');
   box.innerHTML=rows.map(x=>{
-    const image=posImageFor(x),qty=posCartItems.find(i=>i.id===x.id)?.quantity||0;
-    return '<article class="pos-product"><div class="pos-product-media"><img src="'+esc(image)+'" alt="'+esc(x.alt_text||x.name)+'" loading="lazy" onerror="this.remove()"></div><div class="pos-product-body"><div class="pos-product-name">'+esc(x.name)+'</div><div class="pos-product-meta">'+esc(x.description||x.serving_unit||x.category||'')+'</div><div class="pos-product-foot"><span class="pos-product-price">'+posMoney(x.price)+'</span><button type="button" class="btn btn-dark pos-add" data-pos-add="'+esc(x.id)+'">'+(qty?'+'+qty:'Add')+'</button></div></div></article>';
+    const qty=posCartItems.find(i=>i.id===x.id)?.quantity||0;
+    return '<article class="menu-product-card"><div class="menu-product-copy"><h4>'+esc(x.name)+'</h4>'+
+      (x.description?'<p>'+esc(x.description)+'</p>':'')+'</div>'+
+      '<div class="menu-product-footer"><span class="menu-product-price">'+posMoney(x.price)+(x.serving_unit?' / '+esc(x.serving_unit):'')+'</span>'+
+      '<button type="button" class="btn btn-dark menu-add pos-add" data-pos-add="'+esc(x.id)+'">'+(qty?'Add another ('+qty+')':'Add to Order')+'</button></div></article>';
   }).join('');
   box.querySelectorAll('[data-pos-add]').forEach(b=>b.onclick=()=>posAddItem(b.dataset.posAdd));
 }
@@ -996,11 +996,11 @@ function posRenderCart(){
   if(total)total.textContent=posMoney(sum);
   if(!box)return;
   box.innerHTML=posCartItems.length?posCartItems.map(x=>{
-    const image=posImageFor(x);
-    return '<div class="pos-cart-line"><div class="pos-cart-thumb"><img src="'+esc(image)+'" alt="" loading="lazy"></div><div><div class="pos-cart-line-name">'+esc(x.name)+'</div><div class="pos-cart-line-price">'+posMoney(x.price)+' each</div><div class="pos-qty"><button type="button" data-pos-dec="'+x.id+'">−</button><span>'+x.quantity+'</span><button type="button" data-pos-inc="'+x.id+'">+</button></div></div><div><strong>'+posMoney((Number(x.price)||0)*x.quantity)+'</strong><button type="button" class="pos-remove" aria-label="Remove '+esc(x.name)+'" data-pos-remove="'+x.id+'">×</button></div></div>';
+    return '<div class="pos-cart-line"><div class="pos-cart-line-details"><div class="pos-cart-line-name">'+esc(x.name)+'</div><div class="pos-cart-line-price">'+posMoney(x.price)+' each</div><div class="pos-qty"><button type="button" data-pos-dec="'+x.id+'" aria-label="Reduce '+esc(x.name)+'">−</button><input type="number" inputmode="numeric" min="0" max="99999" step="1" value="'+Number(x.quantity||0)+'" aria-label="Quantity for '+esc(x.name)+'" data-pos-quantity="'+x.id+'"><button type="button" data-pos-inc="'+x.id+'" aria-label="Increase '+esc(x.name)+'">+</button></div></div><div class="pos-cart-line-actions"><strong>'+posMoney((Number(x.price)||0)*x.quantity)+'</strong><button type="button" class="pos-remove" aria-label="Remove '+esc(x.name)+'" data-pos-remove="'+x.id+'">×</button></div></div>';
   }).join(''):'<div class="state">No items yet.</div>';
   box.querySelectorAll('[data-pos-inc]').forEach(b=>b.onclick=()=>posChangeQty(b.dataset.posInc,1));
   box.querySelectorAll('[data-pos-dec]').forEach(b=>b.onclick=()=>posChangeQty(b.dataset.posDec,-1));
+  box.querySelectorAll('[data-pos-quantity]').forEach(input=>input.onchange=()=>posSetItemQty(input.dataset.posQuantity,input.value));
   box.querySelectorAll('[data-pos-remove]').forEach(b=>b.onclick=()=>posRemoveItem(b.dataset.posRemove));
   posRenderProducts();
 }
@@ -1014,6 +1014,13 @@ function posChangeQty(id,delta){
   const item=posCartItems.find(x=>x.id===id);if(!item)return;
   item.quantity=Math.max(0,item.quantity+delta);
   if(!item.quantity)posRemoveItem(id);else posRenderCart();
+}
+function posSetItemQty(id,value){
+  const item=posCartItems.find(x=>x.id===id);if(!item)return;
+  const raw=String(value??'').trim();
+  const quantity=raw===''?0:Math.max(0,Math.min(99999,Math.floor(Number(raw)||0)));
+  if(quantity===0)posRemoveItem(id);
+  else{item.quantity=quantity;posRenderCart();}
 }
 function posRemoveItem(id){posCartItems=posCartItems.filter(x=>x.id!==id);posRenderCart()}
 function posClear(){posCartItems=[];posRenderCart();posSetStatus('')}
