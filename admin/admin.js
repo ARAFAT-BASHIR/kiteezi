@@ -118,7 +118,7 @@ async function restore(){
   }catch{}
   await bootAdmin(saved);
 }
-async function loadAdminLogo(){try{const r=await api('/rest/v1/site_settings?select=value&key=eq.logo_url&limit=1');const v=r?.[0]?.value||'';document.querySelectorAll('.brand-mark').forEach(el=>{let img=el.querySelector('img');if(!img){img=document.createElement('img');img.alt='Kiteezi Recreational Center logo';el.replaceChildren(img);}if(v)img.src=v.startsWith('http')?v:'../'+v.replace(/^\\/+/, '');img.alt='Kiteezi Recreational Center logo';img.loading='eager';img.decoding='async';});const p=$('#logoPreview');if(p){p.src=v?(v.startsWith('http')?v:'../'+v.replace(/^\\/+/,'')):'';p.hidden=!v;}}catch{}}
+async function loadAdminLogo(){try{const r=await api('/rest/v1/site_settings?select=value&key=eq.logo_url&limit=1');const v=r?.[0]?.value||'';document.querySelectorAll('.brand-mark').forEach(el=>{let img=el.querySelector('img');if(!img){img=document.createElement('img');img.alt='Kiteezi Recreational Center logo';el.replaceChildren(img);}if(v)img.src=v.startsWith('http')?v:'../'+v.replace(/^\/+/, '');img.alt='Kiteezi Recreational Center logo';img.loading='eager';img.decoding='async';});const p=$('#logoPreview');if(p){p.src=v?(v.startsWith('http')?v:'../'+v.replace(/^\/+/,'')):'';p.hidden=!v;}}catch{}}
 function ensureAssetsTab(){
   if($('#assets'))return;
   const app=$('.main');if(!app)return;
