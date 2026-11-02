@@ -20,23 +20,23 @@
 </div></header>
 
 <main>
-<section class="page-hero"><div class="container"><div class="eyebrow">School swimming</div><h1>Check swimming availability</h1><p>School swimming sessions are one hour. See occupied periods first, then choose an available period for your request.</p></div></section>
+<section class="page-hero"><div class="container"><div class="eyebrow">School swimming</div><h1>Check swimming availability</h1><p>Choose a weekday and an available time, then continue to the booking form.</p></div></section>
 
 <section class="school-swim"><div class="container">
 <div class="availability-box">
 <h2>Choose your school swimming date</h2>
-<div class="school-note">School swimming runs Monday to Friday. Occupied periods are shown without displaying the school names.</div>
+<div class="school-note">Select a weekday to view available booking times.</div>
 <label for="schoolDay">Day of the week</label>
 <select id="schoolDay"><option value="">Choose a day</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option></select>
-<div id="dayAvailability" class="loading">Choose a weekday to see availability.</div>
-<label for="schoolSlot">Available one-hour session</label>
+<div id="dayAvailability" class="loading">Choose a weekday to view available times.</div>
+<label for="schoolSlot">Available one-hour booking time</label>
 <select id="schoolSlot" disabled><option value="">Choose an available time</option></select>
 <button id="continueSchoolBooking" class="btn btn-primary" type="button" disabled>Continue to booking</button>
 <a class="btn btn-dark ask-question" href="inquiry.html?type=swimming">Ask a question</a>
 </div>
 
 <h2>Weekly occupied timetable</h2>
-<p>Only occupied periods are shown. School names are private.</p>
+<p>Select an available time to continue.</p>
 <div id="timetable" class="availability-grid"><div class="loading">Loading current timetable…</div></div>
 </div></section>
 </main>
@@ -68,14 +68,14 @@ function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;',
 
 function renderWeekly(){
 const groups=days.slice(1).map((day,i)=>({day,items:rows.filter(r=>Number(r.day_of_week)===i+1)})).filter(g=>g.items.length);
-if(!groups.length){timetable.innerHTML='<div class="loading">No occupied school swimming periods are currently configured.</div>';return;}
+if(!groups.length){timetable.innerHTML='<div class="loading">Availability is currently unavailable. Please contact the centre for assistance.</div>';return;}
 timetable.innerHTML=groups.map(g=>'<article class="card"><div class="card-body"><span class="badge">'+g.day+'</span><h3>Occupied periods</h3>'+g.items.map(r=>'<div class="period"><span class="occupied">'+escapeHtml(String(r.start_time).slice(0,5))+' – '+escapeHtml(String(r.end_time).slice(0,5))+' — Occupied</span></div>').join('')+'</div></article>').join('');
 }
 
 function updateAvailability(){
 const d=Number(daySelect.value);
 if(!d){
-dayEl.innerHTML='Choose a weekday to see its occupied and available one-hour periods.';
+dayEl.innerHTML='Choose a weekday to view available times.';
 slotEl.innerHTML='<option value="">Choose an available time</option>';slotEl.disabled=true;go.disabled=true;return;
 }
 const occupied=rows.filter(r=>Number(r.day_of_week)===d).map(r=>({s:minutes(r.start_time),e:minutes(r.end_time)}));
@@ -101,7 +101,7 @@ renderWeekly();updateAvailability();
 }catch(error){
 console.error('School swimming timetable:',error);
 timetable.innerHTML='<div class="errorbox"><strong>We could not load the school swimming timetable.</strong><br>Please refresh the page. If the problem continues, contact Kiteezi.</div>';
-dayEl.innerHTML='<div class="errorbox">Availability could not be loaded right now.</div>';
+dayEl.innerHTML='<div class="errorbox">We cannot display available times right now. Please contact the centre.</div>';
 }
 }
 
