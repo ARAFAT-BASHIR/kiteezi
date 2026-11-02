@@ -284,8 +284,7 @@
         const price = onRequest ? 'Ask' : 'UGX ' + money(item.price); const serving = item.serving_unit ? ' / ' + escapeHtml(item.serving_unit) : '';
         return '<article class="card"><div class="card-body"><span class="badge">' +
           escapeHtml(item.menu_categories?.name || 'Menu') + '</span><h4>' +
-          escapeHtml(item.name) + '</h4><p>' + escapeHtml(item.description || '') +
-          '</p><div class="menu-price">' + price + serving + '</div></div></article>';
+          escapeHtml(item.name) + '</h4><div class="menu-price">' + price + serving + '</div></div></article>';
       }).join('');
     } catch (error) {
       console.error(error);
@@ -331,8 +330,8 @@
       }
       const content = pages?.[0]?.content || {};
       if ($('[data-menu-title]')) $('[data-menu-title]').textContent = content.hero_title || pages?.[0]?.title || 'Menu';
-      if ($('[data-menu-description]')) $('[data-menu-description]').textContent = content.intro || 'Browse the current Kiteezi menu.';
-      if ($('[data-menu-intro]')) $('[data-menu-intro]').textContent = content.intro || 'Select meals and drinks to add them to your cart.';
+      if ($('[data-menu-description]')) $('[data-menu-description]').textContent = content.intro || '';
+      if ($('[data-menu-intro]')) $('[data-menu-intro]').textContent = content.intro || 'Select menu items and add them to your cart.';
 
       const search = $('#publicMenuSearch');
       const category = $('#publicMenuCategory');
@@ -404,7 +403,7 @@
             const serving = item.serving_unit ? ' / ' + escapeHtml(item.serving_unit) : '';
             return '<article class="menu-product-card">' +
               '<div class="menu-product-copy"><h4>' + escapeHtml(item.name) + '</h4>' +
-              (item.description ? '<p>' + escapeHtml(item.description) + '</p>' : '') + '</div>' +
+              '' + '</div>' +
               '<div class="menu-product-footer"><span class="menu-product-price">' + price + serving + '</span>' +
               '<button type="button" class="btn btn-dark menu-add" data-add-to-cart data-menu-item-id="' + escapeHtml(item.id) + '"' +
               ((unavailable || onRequest) ? ' disabled' : '') + '>' +
@@ -416,7 +415,7 @@
             '<div class="menu-category-cover">' +
             '<div class="menu-category-visuals menu-category-visuals-count-' + Math.min(categoryImages.length, 3) + '">' + categoryVisuals + '</div>' +
             '<div class="menu-category-cover-copy"><span class="menu-category-kicker">Kiteezi menu</span>' +
-            '<h3>' + escapeHtml(catName) + '</h3><p>' + rows.length + ' option' + (rows.length === 1 ? '' : 's') + ' to choose from</p></div>' +
+            '<h3>' + escapeHtml(catName) + '</h3></div>' +
             '</div><div class="menu-product-grid">' + productCards + '</div></section>';
         }).join('');
 
