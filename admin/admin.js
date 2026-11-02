@@ -2055,14 +2055,16 @@ function printAccountingPanel(view){
   window.print();
   setTimeout(()=>panel.classList.remove('report-print-target'),500);
 }
-function downloadAccountingCash(){
-  if(!lastAccountingCashReport)return alert('Generate the cash report first.');
-  const r=lastAccountingCashReport;
-  const lines=[['Date','Source','Status','Flow','Description','Amount (UGX)'],...r.rows.map(x=>[x.date,x.source,x.status,x.direction,x.supplier||x.id,x.amount])];
-  const csv='\\uFEFF'+lines.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\\r\\n');
-  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
-  const a=document.createElement('a');a.href=url;a.download='kiteezi-accounting-cash-'+r.from+'-to-'+r.to+'.csv';document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
+async function downloadAccountingCash(){
+  try{
+    // Always build the export from the currently selected dates and source.
+    await loadAccountingCashReport();
+    const r=lastAccountingCashReport;
+    if(!r)return alert('The cash report could not be generated.');
+    const lines=[['Date','Source','Status','Flow','Description','Amount (UGX)'],...r.rows.map(x=>[x.date,x.source,x.status,x.direction,x.supplier||x.id,x.amount])];
+    const csv=lines.map(row=>row.map(csvCell).join(',')).join('\\r\\n');
+    downloadTextFile('kiteezi-accounting-cash-'+r.from+'-to-'+r.to+'.csv',csv);
+  }catch(error){msg(error)}
 }
 function printAccountingCash(){if(!lastAccountingCashReport)return alert('Generate the cash report first.');window.print()}
 const PUSH_FUNCTION_URL=URL+'/functions/v1/kiteezi-push';
