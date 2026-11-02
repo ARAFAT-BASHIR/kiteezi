@@ -1748,26 +1748,19 @@ async function editMedia(id){
   if(!x)throw Error('Website image not found.');
   const {categories,people}=await mediaPlacementData();
   const preset=mediaPresetForRow(x,categories,people);
-  modal('Website image','<form id="ed" class="form"><input name="title" value="'+esc(x.title||'')+'" placeholder="Image title" required><label>Replace image from device<input name="file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif"><small class="muted">Upload a real image file. Maximum 50 MB. Existing image remains if no replacement is selected.</small></label><input name="alt" value="'+esc(x.alt_text||'')+'" placeholder="Descriptive alt text" required><label>Image placement<select name="preset">'+mediaPresetOptions(categories,people,preset)+'</select></label><div data-media-custom-fields><input name="page" value="'+esc(x.page_slug||'')+'" placeholder="Page slug (e.g. index, swimming)"><input name="area" value="'+esc(x.area||'')+'" placeholder="Website area"><input name="slot" value="'+esc(x.slot_key||'')+'" placeholder="Image position"></div><input name="page" type="hidden" value="'+esc(x.page_slug||'')+'" disabled><input name="area" type="hidden" value="'+esc(x.area||'')+'" disabled><input name="slot" type="hidden" value="'+esc(x.slot_key||'')+'" disabled><input name="sort" type="number" value="'+Number(x.sort_order||0)+'"><label>Active <input name="active" type="checkbox" '+(x.active?'checked':'')+'></label><button class="btn btn-dark" type="submit">Save image</button></form>');
-  const form=$('#ed');
-  const pageVisible=form.querySelector('[data-media-custom-fields] [name="page"]');
-  const areaVisible=form.querySelector('[data-media-custom-fields] [name="area"]');
-  const slotVisible=form.querySelector('[data-media-custom-fields] [name="slot"]');
-  const hiddenPage=form.querySelector('input[type="hidden"][name="page"]');
-  const hiddenArea=form.querySelector('input[type="hidden"][name="area"]');
-  const hiddenSlot=form.querySelector('input[type="hidden"][name="slot"]');
-  // The preset controls fixed slots; custom placements use the visible fields.
-  const presetSelect=form.querySelector('[name="preset"]');
+  modal('Website image','<form id="ed" class="form"><input name="title" value="'+esc(x.title||'')+'" placeholder="Image title" required><label>Replace image from device<input name="file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif"><small class="muted">Upload a real image file. Maximum 50 MB. Existing image remains if no replacement is selected.</small></label><input name="alt" value="'+esc(x.alt_text||'')+'" placeholder="Descriptive alt text" required><label>Image placement<select name="preset">'+mediaPresetOptions(categories,people,preset)+'</select></label><div data-media-custom-fields><input name="pageCustom" value="'+esc(x.page_slug||'')+'" placeholder="Page slug"><input name="areaCustom" value="'+esc(x.area||'')+'" placeholder="Website area"><input name="slotCustom" value="'+esc(x.slot_key||'')+'" placeholder="Image position"></div><input name="page" type="hidden" value="'+esc(x.page_slug||'')+'"><input name="area" type="hidden" value="'+esc(x.area||'')+'"><input name="slot" type="hidden" value="'+esc(x.slot_key||'')+'"><input name="sort" type="number" value="'+Number(x.sort_order||0)+'"><label>Active <input name="active" type="checkbox" '+(x.active?'checked':'')+'></label><button class="btn btn-dark" type="submit">Save image</button></form>');
+  const form=$('#ed'),presetSelect=form.querySelector('[name="preset"]');
+  const page=form.querySelector('[name="page"]'),area=form.querySelector('[name="area"]'),slot=form.querySelector('[name="slot"]');
+  const pageCustom=form.querySelector('[name="pageCustom"]'),areaCustom=form.querySelector('[name="areaCustom"]'),slotCustom=form.querySelector('[name="slotCustom"]');
+  const customFields=form.querySelector('[data-media-custom-fields]');
   const syncPlacement=()=>{
-    const custom=presetSelect.value==='custom';
-    form.querySelector('[data-media-custom-fields]').hidden=!custom;
-    [pageVisible,areaVisible,slotVisible].forEach(el=>el.required=custom);
-    if(!custom){
-      const value=presetSelect.value;
-      if(value==='brand-logo'){hiddenPage.value='global';hiddenArea.value='branding';hiddenSlot.value='brand-logo'}
-      else if(value.startsWith('category|')){const item=categories.find(q=>q.id===value.split('|')[1]);if(item){hiddenPage.value='menu';hiddenArea.value='menu-category';hiddenSlot.value='category-'+mediaSlug(item.name)}}
-      else if(value.startsWith('personnel|')){const item=people.find(q=>q.id===value.split('|')[1]);if(item){hiddenPage.value='global';hiddenArea.value='personnel';hiddenSlot.value='personnel-'+item.id}}
-    }
+    const value=presetSelect.value,custom=value==='custom';
+    customFields.hidden=!custom;
+    [pageCustom,areaCustom,slotCustom].forEach(el=>el.required=custom);
+    if(value==='brand-logo'){page.value='global';area.value='branding';slot.value='brand-logo'}
+    else if(value.startsWith('category|')){const item=categories.find(q=>q.id===value.split('|')[1]);if(item){page.value='menu';area.value='menu-category';slot.value='category-'+mediaSlug(item.name)}}
+    else if(value.startsWith('personnel|')){const item=people.find(q=>q.id===value.split('|')[1]);if(item){page.value='global';area.value='personnel';slot.value='personnel-'+item.id}}
+    else {page.value=pageCustom.value;area.value=areaCustom.value;slot.value=slotCustom.value}
   };
   presetSelect.addEventListener('change',syncPlacement);syncPlacement();
   form.onsubmit=async e=>{
@@ -1782,16 +1775,17 @@ async function editMedia(id){
         await storageUpload('site-media',path,file);
         imageUrl=URL+'/storage/v1/object/public/site-media/'+path.split('/').map(encodeURIComponent).join('/');
       }
-      const custom=presetSelect.value==='custom';
-      const page=custom?String(f.get('page')||'').trim():hiddenPage.value;
-      const area=custom?String(f.get('area')||'').trim():hiddenArea.value;
-      const slot=custom?String(f.get('slot')||'').trim():hiddenSlot.value;
+      if(presetSelect.value==='custom'){
+        page.value=String(f.get('pageCustom')||'').trim();
+        area.value=String(f.get('areaCustom')||'').trim();
+        slot.value=String(f.get('slotCustom')||'').trim();
+      }
       const alt=String(f.get('alt')||'').trim();
       if(!imageUrl)throw Error('Upload an image before saving.');
       if(!alt)throw Error('Alt text is required.');
-      if(!page||!area||!slot)throw Error('Choose a valid image placement.');
+      if(!page.value||!area.value||!slot.value)throw Error('Choose a valid image placement.');
       await api('/rest/v1/media?id=eq.'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({
-        title:String(f.get('title')||'').trim(),url:imageUrl,alt_text:alt,page_slug:page,area,slot_key:slot,
+        title:String(f.get('title')||'').trim(),url:imageUrl,alt_text:alt,page_slug:page.value,area:area.value,slot_key:slot.value,
         sort_order:Number(f.get('sort')||0),active:f.get('active')==='on'
       })});
       closeModal();await loadContent();
