@@ -947,49 +947,12 @@ async function loadReceptionOrders(){
 }
 
 /* === Integrated Orders / POS === */
-const POS_IMAGE_MAP={
-  football:'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=1000&q=85',
-  basketball:'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=1000&q=85',
-  swimming:'https://images.unsplash.com/photo-1530549387789-4c1017266635?auto=format&fit=crop&w=1000&q=85',
-  katogo:'https://uganda-evisa.com/images/traditional-ugandan-dish-katogo.jpg',
-  rolex:'https://uganda-evisa.com/images/ugandan-rolex-rolls.jpg',
-  masala:'https://dtwaeonhht2im.cloudfront.net/Masala-Chips-1.jpg',
-  pilawo:'https://snapcalorie-webflow-website.s3.us-east-2.amazonaws.com/media/food_pics_v2/medium/chicken_pilau.jpg',
-  burger:'https://images.unsplash.com/photo-1767065703793-7012f5fced19?auto=format&fit=crop&w=900&q=80',
-  pizza:'https://images.unsplash.com/photo-1751368647711-2e2ee6d0b7c6?auto=format&fit=crop&w=900&q=80',
-  chicken:'https://images.unsplash.com/photo-1725728286008-6bdec0508a71?auto=format&fit=crop&w=900&q=80',
-  fish:'https://images.unsplash.com/photo-1519233991914-26a44330ccd7?auto=format&fit=crop&w=900&q=80',
-  salad:'https://images.unsplash.com/photo-1568106690134-f2ee2257a9ef?auto=format&fit=crop&w=900&q=80',
-  juice:'https://images.unsplash.com/photo-1617535394182-641e70651cd8?auto=format&fit=crop&w=900&q=80',
-  coffee:'https://images.unsplash.com/photo-1681477508108-6d3164936ac4?auto=format&fit=crop&w=900&q=80',
-  milkshake:'https://images.unsplash.com/photo-1553787499-6f9133860278?auto=format&fit=crop&w=900&q=80',
-  beer:'https://images.unsplash.com/photo-1597822738124-151fb72dcb79?auto=format&fit=crop&w=900&q=80',
-  wine:'https://images.unsplash.com/photo-1610458034932-dc165f29499e?auto=format&fit=crop&w=900&q=80',
-  whiskey:'https://images.unsplash.com/photo-1671713682265-991d47c88b85?auto=format&fit=crop&w=900&q=80',
-  breakfast:'https://images.unsplash.com/photo-1734770205674-d117e4ba7926?auto=format&fit=crop&w=900&q=80',
-  hotpot:'https://www.asiancookingmom.com/wp-content/uploads/2023/01/Hot-Pot-15-of-17-1.jpg',
-  samosa:'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80',
-  default:'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80'
-};
 let posMenuItems=[],posCategories=[],posActiveCategory='',posCartItems=[],posMenuLoaded=false;
 function posMoney(v){return 'UGX '+new Intl.NumberFormat('en-UG').format(Number(v)||0)}
 function posImageFor(item){
-  const savedUrl=String(item?.img_url||'').trim();
-  // The seeded LoremFlickr URLs are generated placeholders; use a curated item/category image instead.
-  if(savedUrl&&!/\/\/loremflickr\.com\//i.test(savedUrl))return savedUrl;
-  const hay=(String(item?.name||'')+' '+String(item?.category||'')).toLowerCase();
-  if(/football/.test(hay))return POS_IMAGE_MAP.football;
-  if(/basketball/.test(hay))return POS_IMAGE_MAP.basketball;
-  if(/swimming|membership/.test(hay))return POS_IMAGE_MAP.swimming;
-  for(const key of Object.keys(POS_IMAGE_MAP)){if(key!=='default'&&hay.includes(key))return POS_IMAGE_MAP[key]}
-  if(/goat|liver|beef|meat|steak|muchomo|sausage|kebab|chapati|rolex|chips|samosa|katogo|buffet|snack/.test(hay))return POS_IMAGE_MAP.chicken;
-  if(/whisk|spirit|gin|vodka|cream|champagne/.test(hay))return POS_IMAGE_MAP.whiskey;
-  if(/wine/.test(hay))return POS_IMAGE_MAP.wine;
-  if(/beer|lager|stout|cider/.test(hay))return POS_IMAGE_MAP.beer;
-  if(/juice|drink/.test(hay))return POS_IMAGE_MAP.juice;
-  if(/breakfast/.test(hay))return POS_IMAGE_MAP.breakfast;
-  if(/hot pot|hotpot/.test(hay))return POS_IMAGE_MAP.hotpot;
-  return POS_IMAGE_MAP.default;
+  const raw=String(item?.img_url||'').trim();
+  if(!raw)return '';
+  try{const parsed=new URL(raw,location.href);return ['https:','http:'].includes(parsed.protocol)?parsed.href:''}catch{return ''}
 }
 function posSetStatus(message,error=false){
   const el=$('#posStatus');if(!el)return;
@@ -1002,8 +965,8 @@ function posRenderCategories(){
   box.classList.add('pos-category-cards');
   box.innerHTML=all.map(c=>{
     const items=c.id?posMenuItems.filter(x=>String(x.category_id)===String(c.id)):posMenuItems;
-    const imageItem=items.find(x=>x.img_url&&String(x.img_url).indexOf('loremflickr.com')<0)||items[0];
-    const image=imageItem?posImageFor(imageItem):POS_IMAGE_MAP.default;
+    const imageItem=items.find(x=>x.img_url)||items[0];
+    const image=imageItem?posImageFor(imageItem):'';
     const selected=String(c.id)===String(posActiveCategory);
     return '<button type="button" role="tab" aria-selected="'+(selected?'true':'false')+'" aria-pressed="'+(selected?'true':'false')+'" class="pos-category-card '+(selected?'active':'')+'" data-pos-category="'+esc(c.id)+'">'+
       '<span class="pos-category-image"><img src="'+esc(image)+'" alt="" loading="lazy"></span>'+
@@ -1021,7 +984,7 @@ function posRenderProducts(){
   status.textContent=rows.length?rows.length+' menu item'+(rows.length===1?'':'s')+' available':'No menu items match your search.';
   box.innerHTML=rows.map(x=>{
     const image=posImageFor(x),qty=posCartItems.find(i=>i.id===x.id)?.quantity||0;
-    return '<article class="pos-product"><div class="pos-product-media"><img src="'+esc(image)+'" alt="'+esc(x.alt_text||x.name)+'" loading="lazy" onerror="this.src=\''+POS_IMAGE_MAP.default+'\'"></div><div class="pos-product-body"><div class="pos-product-name">'+esc(x.name)+'</div><div class="pos-product-meta">'+esc(x.description||x.serving_unit||x.category||'')+'</div><div class="pos-product-foot"><span class="pos-product-price">'+posMoney(x.price)+'</span><button type="button" class="btn btn-dark pos-add" data-pos-add="'+esc(x.id)+'">'+(qty?'+'+qty:'Add')+'</button></div></div></article>';
+    return '<article class="pos-product"><div class="pos-product-media"><img src="'+esc(image)+'" alt="'+esc(x.alt_text||x.name)+'" loading="lazy" onerror="this.remove()"></div><div class="pos-product-body"><div class="pos-product-name">'+esc(x.name)+'</div><div class="pos-product-meta">'+esc(x.description||x.serving_unit||x.category||'')+'</div><div class="pos-product-foot"><span class="pos-product-price">'+posMoney(x.price)+'</span><button type="button" class="btn btn-dark pos-add" data-pos-add="'+esc(x.id)+'">'+(qty?'+'+qty:'Add')+'</button></div></div></article>';
   }).join('');
   box.querySelectorAll('[data-pos-add]').forEach(b=>b.onclick=()=>posAddItem(b.dataset.posAdd));
 }

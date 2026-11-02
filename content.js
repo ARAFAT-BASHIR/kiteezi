@@ -394,7 +394,7 @@
 
   async function getMedia(pageSlug) {
     const response = await fetch(
-      url + '/rest/v1/media?select=page_slug,sort_order,url,alt_text,title,active&active=eq.true&page_slug=eq.' + encodeURIComponent(pageSlug) + '&order=sort_order.asc',
+      url + '/rest/v1/media?select=page_slug,slot_key,sort_order,url,alt_text,title,active&active=eq.true&is_gallery=eq.false&page_slug=eq.' + encodeURIComponent(pageSlug) + '&order=sort_order.asc',
       { headers }
     );
     if (!response.ok) throw new Error('Could not load media.');
@@ -404,17 +404,25 @@
   async function applyMedia() {
     const pageSlug = (location.pathname.split('/').pop() || 'index.html').replace(/\.html$/i, '') || 'index';
     const media = await getMedia(pageSlug);
+    const orderedImages = media
+      .filter(row => row.slot_key !== 'hero')
+      .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0));
+
     document.querySelectorAll('[data-media-index]').forEach(element => {
-      const row = media[Number(element.dataset.mediaIndex) - 1];
+      const imageNumber = Number(element.dataset.mediaIndex);
+      const row = media.find(item => item.slot_key === 'image-' + imageNumber) || orderedImages[imageNumber - 1];
       if (!row) return;
       const mediaUrl = safeUrl(row.url);
       if (!mediaUrl) return;
       element.src = mediaUrl;
       if (row.alt_text) element.alt = row.alt_text;
     });
-    const hero = document.querySelector('[data-media-hero]');
-    if (hero && media[0]) {
-      const heroUrl = safeUrl(media[0].url);
+
+    const hero = document.querySelector('.hero, .page-hero');
+    const heroRow = media.find(row => row.slot_key === 'hero') ||
+      media.find(row => row.slot_key === 'image-1') || orderedImages[0] || media[0];
+    if (hero && heroRow) {
+      const heroUrl = safeUrl(heroRow.url);
       if (heroUrl) {
         hero.style.backgroundImage =
           'linear-gradient(rgba(20,35,27,.64),rgba(20,35,27,.64)),url(' +
@@ -634,7 +642,7 @@
       */
       const needsTeam = !!document.querySelector('#public-team-positions');
       const needsServices = !!document.querySelector('[data-db-service-price]');
-      const needsMedia = !!document.querySelector('[data-media-index], [data-media-hero]');
+      const needsMedia = !!document.querySelector('[data-media-index], .hero, .page-hero');
       const needsCms = !!document.querySelector('.hero, [data-cms-field], meta[name="description"]');
       const needsSocial = !!document.querySelector('[data-social], [data-social-links]');
 
