@@ -338,6 +338,7 @@
       document
         .querySelectorAll('.brand-mark')
         .forEach(element => {
+          if (element.querySelector('img[data-media-managed="true"]')) return;
           const img = document.createElement('img');
           const logoUrl = safeUrl(settings.logo_url);
           if (!logoUrl) return;
@@ -403,7 +404,7 @@
 
   async function applyMedia() {
     const pageSlug = (location.pathname.split('/').pop() || 'index.html').replace(/\.html$/i, '') || 'index';
-    const media = await getMedia(pageSlug);
+    const [media, globalMedia] = await Promise.all([getMedia(pageSlug), getMedia('global')]);
     const orderedImages = media
       .filter(row => row.slot_key !== 'hero')
       .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0));
@@ -417,6 +418,24 @@
       element.src = mediaUrl;
       if (row.alt_text) element.alt = row.alt_text;
     });
+
+    const logo = globalMedia.find(row => row.slot_key === 'brand-logo');
+    const logoUrl = safeUrl(logo?.url);
+    if (logoUrl) {
+      document.querySelectorAll('.brand-mark').forEach(element => {
+        let img = element.querySelector('img[data-media-managed="true"]');
+        if (!img) {
+          img = document.createElement('img');
+          img.dataset.mediaManaged = 'true';
+          element.textContent = '';
+          element.appendChild(img);
+        }
+        img.src = logoUrl;
+        img.alt = logo.alt_text || logo.title || 'Kiteezi Recreational Center';
+        img.loading = 'eager';
+        img.decoding = 'async';
+      });
+    }
 
     const hero = document.querySelector('.hero, .page-hero');
     const heroRow = media.find(row => row.slot_key === 'hero') ||
@@ -503,9 +522,11 @@
   }
 
   async function applyTeamPositions() {
-    const response = await fetch(url + '/rest/v1/team_positions?select=department,position,person_name,sort_order,active,public_avatar_url,public_description&active=eq.true&order=sort_order.asc', { headers });
+    const response = await fetch(url + '/rest/v1/team_positions?select=id,department,position,person_name,sort_order,active,public_avatar_url,public_description&active=eq.true&order=sort_order.asc', { headers });
     if (!response.ok) throw new Error('Could not load team positions.');
     const rows = await response.json();
+    let globalMedia = [];
+    try { globalMedia = await getMedia('global'); } catch (error) { console.warn('Global personnel media unavailable:', error); }
     document.querySelectorAll('#public-team-positions').forEach(container => {
       const icons = ['GM','R','SC','FC','BD','GG','P'];
       const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -514,7 +535,8 @@
       container.innerHTML = rows.map((row, i) => {
         const name = escapeHtml(row.person_name || 'Kiteezi team member');
         const role = escapeHtml(row.position || '');
-        const image = safeUrl(row.public_avatar_url) || '';
+        const managedPortrait = globalMedia.find(item => item.slot_key === 'personnel-' + row.id && item.active);
+        const image = safeUrl(managedPortrait?.url || row.public_avatar_url) || '';
         const photo = image
           ? '<img class="team-card-photo" src="' + escapeHtml(image) + '" alt="' + name + '" loading="lazy" decoding="async">'
           : '<div class="team-card-placeholder">' + icons[i % icons.length] + '</div>';
@@ -655,7 +677,7 @@
       */
       const needsTeam = !!document.querySelector('#public-team-positions');
       const needsServices = !!document.querySelector('[data-db-service-price]');
-      const needsMedia = !!document.querySelector('[data-media-index], .hero, .page-hero');
+      const needsMedia = !!document.querySelector('[data-media-index], .hero, .page-hero, .brand-mark');
       const needsCms = !!document.querySelector('.hero, [data-cms-field], meta[name="description"]');
       const needsSocial = !!document.querySelector('[data-social], [data-social-links]');
 
