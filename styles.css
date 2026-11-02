@@ -1083,3 +1083,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{
   .menu-category-visual{height:115px}
   .menu-category-cover-copy{padding:9px 12px 13px}
 }
+
+/* No unapproved or placeholder imagery is rendered for an empty menu category cover. */
+.menu-category-visuals-count-0{display:none!important}
+.menu-category-visuals-count-0+.menu-category-cover-copy{width:100%}
