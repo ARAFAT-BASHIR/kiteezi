@@ -1831,12 +1831,12 @@ async function addMedia(){
       const alt=String(f.get('alt')||'').trim();
       if(!alt)throw Error('Alt text is required.');
       const customPlacement=preset.value==='custom';
-      const page=customPlacement?String(f.get('page')||'').trim():page.value;
-      const area=customPlacement?String(f.get('area')||'').trim():area.value;
-      const slot=customPlacement?String(f.get('slot')||'').trim():slot.value;
-      if(!page||!area||!slot)throw Error('Choose a valid image placement.');
+      const pageValue=customPlacement?String(f.get('page')||'').trim():page.value;
+      const areaValue=customPlacement?String(f.get('area')||'').trim():area.value;
+      const slotValue=customPlacement?String(f.get('slot')||'').trim():slot.value;
+      if(!pageValue||!areaValue||!slotValue)throw Error('Choose a valid image placement.');
       await api('/rest/v1/media',{method:'POST',body:JSON.stringify({
-        title:String(f.get('title')||'').trim(),url:imageUrl,alt_text:alt,page_slug:page,area,slot_key:slot,
+        title:String(f.get('title')||'').trim(),url:imageUrl,alt_text:alt,page_slug:pageValue,area:areaValue,slot_key:slotValue,
         type:'image',sort_order:Number(f.get('sort')||0),is_gallery:false,active:f.get('active')==='on'
       })});
       closeModal();await loadContent();
