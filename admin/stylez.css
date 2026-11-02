@@ -1259,3 +1259,57 @@ body.admin .pos-qty input{width:66px;height:29px;box-sizing:border-box;padding:3
 body.admin .pos-qty button{width:29px;height:29px;flex:0 0 29px}
 @media(max-width:900px){body.admin #posProducts.menu-product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){body.admin #posProducts.menu-product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}body.admin .pos-product,body.admin .menu-product-card{min-height:132px;padding:10px 9px;border-radius:11px}body.admin .pos-product-name,body.admin .menu-product-copy h4{font-size:12px}body.admin .pos-product-meta,body.admin .menu-product-copy p{font-size:10px}body.admin .pos-product-foot,body.admin .menu-product-footer{align-items:stretch;flex-direction:column;gap:7px;margin-top:10px}body.admin .pos-add,body.admin .menu-product-footer .menu-add{width:100%;min-height:31px;padding:6px 4px;font-size:9px;white-space:normal}body.admin .pos-cart-line{grid-template-columns:minmax(0,1fr) auto}body.admin .pos-qty input{width:58px}}
+
+
+/* POS catalogue mirrors the public Menu page; the order/receipt panel stays separate. */
+body.admin .pos-filter-row{display:none}
+body.admin .pos-menu-tools{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(150px,.8fr) auto;align-items:end;gap:12px;margin:14px 0}
+body.admin .pos-menu-search,body.admin .pos-menu-category{display:flex;flex-direction:column;gap:6px;color:#53635b;font-size:12px;font-weight:750}
+body.admin .pos-menu-search input,body.admin .pos-menu-category select{width:100%;min-height:42px;padding:9px 12px;border:1px solid #dce8e0;border-radius:9px;background:#fff;color:#23352c;font:inherit}
+body.admin .pos-menu-tools>.btn{min-height:42px;margin:0}
+body.admin #posCategoryTabs.menu-category-nav{position:sticky;top:0;z-index:5;display:flex;flex-wrap:nowrap;gap:9px;margin:0;padding:12px 0;background:#fff;border-bottom:1px solid #e3ece6;overflow-x:auto}
+body.admin #posCategoryTabs .menu-category-link{flex:0 0 auto;min-height:39px;padding:8px 15px;border:1px solid #dce8e0;border-radius:999px;background:#f5faf6;color:#1b4332;font-size:12px;font-weight:800;white-space:nowrap;text-decoration:none}
+body.admin #posCategoryTabs .menu-category-link:hover{background:#1b4332;border-color:#1b4332;color:#fff}
+body.admin .pos-menu-catalog{display:block}
+body.admin .pos-menu-catalog .menu-category-section{scroll-margin-top:90px;margin:0 0 36px}
+body.admin .pos-menu-catalog .menu-category-cover{position:relative;display:flex;align-items:stretch;min-height:190px;margin:0 0 15px;overflow:hidden;border-radius:16px;background:#f4f8f4;border:1px solid #e1e9e2;box-shadow:0 7px 20px rgba(7,56,77,.07)}
+body.admin .pos-menu-catalog .menu-category-visuals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center;gap:8px;width:58%;min-width:0;padding:12px}
+body.admin .pos-menu-catalog .menu-category-visuals-count-1{grid-template-columns:minmax(0,1fr)}
+body.admin .pos-menu-catalog .menu-category-visuals-count-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+body.admin .pos-menu-catalog .menu-category-visual{display:flex;align-items:center;justify-content:center;min-width:0;height:166px;overflow:hidden;border-radius:10px;background:#fff}
+body.admin .pos-menu-catalog .menu-category-visual img{display:block;width:100%;height:100%;padding:7px;object-fit:contain}
+body.admin .pos-menu-catalog .menu-category-visual-failed{display:none}
+body.admin .pos-menu-catalog .menu-category-cover-copy{display:flex;flex:1;flex-direction:column;justify-content:center;min-width:0;padding:20px;color:#153d30}
+body.admin .pos-menu-catalog .menu-category-kicker{margin-bottom:6px;color:#5b8b37;font-size:10px;font-weight:850;letter-spacing:.16em;text-transform:uppercase}
+body.admin .pos-menu-catalog .menu-category-cover-copy h3{margin:0 0 5px;color:#174c3a;font-family:Georgia,serif;font-size:clamp(24px,3vw,36px);line-height:1.12}
+body.admin .pos-menu-catalog .menu-category-cover-copy p{margin:0;color:#5e6d64;font-size:12px}
+body.admin .pos-menu-catalog .menu-product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+body.admin .pos-menu-catalog .menu-product-card{display:flex;flex-direction:column;justify-content:space-between;min-width:0;min-height:142px;padding:16px;border:1px solid #e2ecef;border-radius:15px;background:#fff;box-shadow:0 5px 17px rgba(7,56,77,.045)}
+body.admin .pos-menu-catalog .menu-product-copy h4{margin:0;color:#075c7a;font-size:15px;font-weight:800;line-height:1.35;overflow-wrap:anywhere}
+body.admin .pos-menu-catalog .menu-product-copy p{margin:6px 0 0;color:#6b7b83;font-size:12px;line-height:1.5}
+body.admin .pos-menu-catalog .menu-product-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:14px}
+body.admin .pos-menu-catalog .menu-product-price{color:#075c7a;font-size:12px;font-weight:850}
+body.admin .pos-menu-catalog .menu-product-footer .menu-add{width:auto;min-height:35px;margin:0;padding:8px 10px;border-radius:9px;font-size:11px;white-space:nowrap}
+body.admin .pos-menu-catalog .menu-product-footer .menu-add:disabled{opacity:.58;cursor:not-allowed}
+@media(max-width:900px){body.admin .pos-menu-catalog .menu-product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){
+ body.admin .pos-menu-tools{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+ body.admin .pos-menu-tools>.btn{grid-column:1/-1;width:100%}
+ body.admin #posCategoryTabs.menu-category-nav{top:0;gap:7px;padding:10px 0}
+ body.admin #posCategoryTabs .menu-category-link{min-height:37px;padding:7px 12px;font-size:11px}
+ body.admin .pos-menu-catalog .menu-category-cover{display:flex;flex-direction:column;min-height:0;margin-bottom:12px;border-radius:14px}
+ body.admin .pos-menu-catalog .menu-category-visuals{width:100%;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:9px 9px 0}
+ body.admin .pos-menu-catalog .menu-category-visuals-count-1{grid-template-columns:minmax(0,1fr)}
+ body.admin .pos-menu-catalog .menu-category-visuals-count-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+ body.admin .pos-menu-catalog .menu-category-visual{height:132px}
+ body.admin .pos-menu-catalog .menu-category-cover-copy{padding:11px 15px 15px}
+ body.admin .pos-menu-catalog .menu-category-cover-copy h3{font-size:25px}
+ body.admin .pos-menu-catalog .menu-product-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+ body.admin .pos-menu-catalog .menu-product-card{min-height:132px;padding:10px 9px;border-radius:11px}
+ body.admin .pos-menu-catalog .menu-product-copy h4{font-size:12px;line-height:1.3}
+ body.admin .pos-menu-catalog .menu-product-copy p{font-size:10px;line-height:1.4}
+ body.admin .pos-menu-catalog .menu-product-footer{align-items:stretch;flex-direction:column;gap:7px;margin-top:10px}
+ body.admin .pos-menu-catalog .menu-product-price{font-size:10px}
+ body.admin .pos-menu-catalog .menu-product-footer .menu-add{width:100%;min-height:31px;padding:6px 4px;font-size:9px;white-space:normal}
+}
+@media(max-width:360px){body.admin .pos-menu-catalog .menu-category-visual{height:115px}}
