@@ -406,9 +406,6 @@
     { test: /^vodka$/, images: [
       { url: 'https://lamarinamx.vtexassets.com/arquivos/ids/227172-800-auto?aspect=true&height=auto&v=637490138674000000&width=800', alt: 'Smirnoff vodka bottle' }
     ] },
-    { test: /accompaniments/, images: [
-      { url: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=900&q=80', alt: 'Golden crispy potato fries served as a side dish' }
-    ] },
     { test: /^buffet$/, images: [
       { url: 'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1200&q=85', alt: 'Restaurant buffet spread' }
     ] }
