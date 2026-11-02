@@ -711,7 +711,7 @@
       const rows = await supabaseFetch('/rest/v1/gallery_items?select=id,title,caption,category,media_type,storage_bucket,storage_path&status=eq.approved&active=eq.true&order=sort_order.asc,created_at.desc&limit=6');
       const cards = (rows||[]).map(x => {
         const url = SUPABASE_URL + '/storage/v1/object/public/' + encodeURIComponent(x.storage_bucket) + '/' + x.storage_path.split('/').map(encodeURIComponent).join('/');
-        const media = x.media_type === 'video' ? '<video class="photo" src="' + escapeHtml(url) + '" muted playsinline preload="metadata" controls></video>' : '<img class="photo" src="' + escapeHtml(url) + '" alt="' + escapeHtml(x.title || 'Kiteezi gallery') + '" loading="lazy">';
+        const media = x.media_type === 'video' ? '<video class="photo" src="' + escapeHtml(url) + '" muted playsinline preload="none" controls></video>' : '<img class="photo" src="' + escapeHtml(url) + '" alt="' + escapeHtml(x.title || 'Kiteezi gallery') + '" loading="lazy" decoding="async">';
         return '<article class="card">' + media + '<div class="card-body"><span class="badge">' + escapeHtml(x.category || 'General') + '</span><h3>' + escapeHtml(x.title || 'Kiteezi') + '</h3>' + (x.caption ? '<p>' + escapeHtml(x.caption) + '</p>' : '') + '</div></article>';
       }).join('');
       target.innerHTML = cards || '<p class="muted">Gallery photos and videos will appear here as they are approved.</p>';
