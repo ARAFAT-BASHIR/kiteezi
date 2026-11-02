@@ -296,7 +296,7 @@
   // Select photography from the specific dish name first. Do not use one generic
   // category photo for every item.
   const MENU_IMAGE_MAP = {
-    coffee: 'https://images.unsplash.com/photo-1681477508108-6d3164936ac4?auto=format&fit=crop&w=900&q=80',
+    coffee: 'https://ellianos.com/cdn/shop/articles/Cappuccino_a1769e54-7786-408e-8290-b6394e504c68.jpg?v=1772501673',
     katogo: 'https://uganda-evisa.com/images/traditional-ugandan-dish-katogo.jpg',
     rolex: 'https://uganda-evisa.com/images/ugandan-rolex-rolls.jpg',
     samosa: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80',
@@ -306,9 +306,9 @@
     chicken_pilawo: 'https://snapcalorie-webflow-website.s3.us-east-2.amazonaws.com/media/food_pics_v2/medium/chicken_pilau.jpg',
     grilled_chicken: 'https://ik.imagekit.io/mva6zbib7/prod/recipes/f01b2e5a-4fc4-4d7f-866b-48f6cded80a2/grilovane_kure/grilovan%C3%A9_ku%C5%99e_TPoFKI94b.png',
     burger: 'https://images.unsplash.com/photo-1767065703793-7012f5fced19?auto=format&fit=crop&w=900&q=80',
-    pizza: 'https://images.unsplash.com/photo-1751368647711-2e2ee6d0b7c6?auto=format&fit=crop&w=900&q=80',
-    fish: 'https://images.unsplash.com/photo-1519233991914-26a44330ccd7?auto=format&fit=crop&w=900&q=80',
-    salad: 'https://images.unsplash.com/photo-1568106690134-f2ee2257a9ef?auto=format&fit=crop&w=900&q=80',
+    pizza: 'https://www.arise-app.com/images/dishes/es/pizza-de-pollo-y-cebolla-morada-5sut61.webp',
+    fish: 'https://static.wixstatic.com/media/cbbe45_161e358d643745fa8c2d1b7e24acf1b3~mv2.jpg',
+    salad: 'https://orders.popskitchen.in/storage/2024/09/image-3.png',
     juice: 'https://images.unsplash.com/photo-1617535394182-641e70651cd8?auto=format&fit=crop&w=900&q=80',
     milkshake: 'https://images.unsplash.com/photo-1553787499-6f9133860278?auto=format&fit=crop&w=900&q=80',
     beer: 'https://images.unsplash.com/photo-1597822738124-151fb72dcb79?auto=format&fit=crop&w=900&q=80',
@@ -334,7 +334,7 @@
       { url: 'https://snapcalorie-webflow-website.s3.us-east-2.amazonaws.com/media/food_pics_v2/medium/goat_meat_stew.jpg', alt: 'Goat meat stew' }
     ] },
     { test: /^fish$/, images: [
-      { url: 'https://shukranifoods.shop/media/Images/Food/2025/09/30/fryed-tilapia.jpg', alt: 'Whole fried tilapia with lime and tomato' }
+      { url: 'https://static.wixstatic.com/media/cbbe45_161e358d643745fa8c2d1b7e24acf1b3~mv2.jpg', alt: 'Whole fried tilapia served with fries and vegetables' }
     ] },
     { test: /^chicken$/, images: [
       { url: 'https://figtree.embiro.tech/assets/roasted-chicken-r8aS-fPV.jpg', alt: 'Whole roasted chicken platter' }
@@ -344,11 +344,20 @@
     ] },
     { test: /burgers|pizzas/, images: [
       { url: 'https://images.unsplash.com/photo-1767065703793-7012f5fced19?auto=format&fit=crop&w=900&q=80', alt: 'Restaurant burger' },
-      { url: 'https://www.timeoutdubai.com/cloud/timeoutdubai/2021/12/16/Gordon-Ramsays-Street-Pizza_1.jpg', alt: 'Freshly baked pizza' }
+      { url: 'https://www.arise-app.com/images/dishes/es/pizza-de-pollo-y-cebolla-morada-5sut61.webp', alt: 'Chicken pizza with mozzarella and red onion' }
     ] },
     { test: /salads|desserts/, images: [
-      { url: 'https://images.unsplash.com/photo-1568106690134-f2ee2257a9ef?auto=format&fit=crop&w=900&q=80', alt: 'Fresh salad' },
-      { url: 'https://loremflickr.com/900/900/ice,cream,scoop?lock=dbabdb91af5949f6a1b1a3b75ecfc421', alt: 'Ice cream dessert' }
+      { url: 'https://orders.popskitchen.in/storage/2024/09/image-3.png', alt: 'Fresh garden salad with lettuce, cucumber, tomatoes and red cabbage' },
+      { url: 'https://dessertlady.ca/media/catalog/product/cache/d13a2fbf3af9a69aea50e5ac875c81c2/d/e/dessert_lady_toronto_fruit_platter_corporate_ordering.jpg', alt: 'Assorted fresh fruit platter with watermelon, pineapple, grapes and berries' }
+    ] },
+    { test: /fruit/, images: [
+      { url: 'https://dessertlady.ca/media/catalog/product/cache/d13a2fbf3af9a69aea50e5ac875c81c2/d/e/dessert_lady_toronto_fruit_platter_corporate_ordering.jpg', alt: 'Assorted fresh fruit platter' }
+    ] },
+    { test: /coffee|hot drinks/, images: [
+      { url: 'https://ellianos.com/cdn/shop/articles/Cappuccino_a1769e54-7786-408e-8290-b6394e504c68.jpg?v=1772501673', alt: 'Cappuccino served in a white cup with matching saucer' }
+    ] },
+    { test: /accompaniments/, images: [
+      { url: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=900&q=80', alt: 'Golden crispy potato fries served as a side dish' }
     ] },
     { test: /^juices$/, images: [
       { url: 'https://glovo.dhmedia.io/image/stores-glovo/stores/afbb152d1b6b5961dba7bfdc1c0cadec149206ff51f067d353beba5d5b360502?t=W3siYXV0byI6eyJxIjoibG93In19LHsicmVzaXplIjp7Im1vZGUiOiJmaXQiLCJ3aWR0aCI6MTI4MCwiaGVpZ2h0IjoxMjB9fV0=', alt: 'Fresh mango, passion and watermelon juices in glasses' }
@@ -365,7 +374,7 @@
       { url: 'https://glovo.dhmedia.io/image/stores-glovo/stores/afbb152d1b6b5961dba7bfdc1c0cadec149206ff51f067d353beba5d5b360502?t=W3siYXV0byI6eyJxIjoibG93In19LHsicmVzaXplIjp7Im1vZGUiOiJmaXQiLCJ3aWR0aCI6MTI4MCwiaGVpZ2h0IjoxMjB9fV0=', alt: 'Fresh blended fruit drinks' }
     ] },
     { test: /hot pot/, images: [
-      { url: 'https://img1.daumcdn.net/thumb/R1280x0.fjpg/?fname=http%3A%2F%2Ft1.daumcdn.net%2Fbrunch%2Fservice%2Fuser%2F5kO%2Fimage%2FEB7o6bTxHGTVmK-JlrLLQ5a6ID8.jpg', alt: 'Tea service with glass teapot and metal serving pot' }
+      { url: 'https://www.elecboy.com.hk/cdn/shop/products/EBHK-12338623-SIDE_1200x1200.jpg?v=1678456258', alt: 'Hot seafood stew served in a white ceramic casserole pot' }
     ] },
     { test: /^spirits$/, images: [
       { url: 'https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/0c6255106182577.5f89cf8d504a9.jpg', alt: 'Uganda Waragi original and flavoured bottles' },
@@ -398,8 +407,7 @@
       { url: 'https://lamarinamx.vtexassets.com/arquivos/ids/227172-800-auto?aspect=true&height=auto&v=637490138674000000&width=800', alt: 'Smirnoff vodka bottle' }
     ] },
     { test: /accompaniments/, images: [
-      { url: 'https://uganda-evisa.com/images/posho-served-in-a-bowl.jpg', alt: 'Ugandan posho accompaniment' },
-      { url: 'https://loremflickr.com/900/900/roasted,potatoes?lock=d0bde5e465c44018b26b145f0e19e6be', alt: 'Roasted potatoes' }
+      { url: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=900&q=80', alt: 'Golden crispy potato fries served as a side dish' }
     ] },
     { test: /^buffet$/, images: [
       { url: 'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1200&q=85', alt: 'Restaurant buffet spread' }
