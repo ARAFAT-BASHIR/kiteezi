@@ -1235,3 +1235,27 @@ body.admin .notification-reply-form{border-top:1px solid #e1e7e2;padding-top:12p
 body.admin .notification-reply-form textarea{width:100%;min-height:70px;resize:vertical}
 body.admin .notification-system-note{font-size:12px;color:#68736d;padding:12px 0}
 @media(max-width:700px){body.admin #notificationPanel{position:fixed;top:70px;left:8px;right:8px;width:auto;max-height:calc(100vh - 82px);overflow:auto}body.admin .notification-workspace{grid-template-columns:1fr;max-height:none;gap:10px}body.admin .notification-list{border-right:0;border-bottom:1px solid #e1e7e2;padding:0 0 8px;max-height:32vh}body.admin .notification-thread{min-height:300px}body.admin .notification-thread-messages{max-height:35vh}}
+
+
+/* POS menu presentation: match the public menu's clean, image-free product cards. */
+body.admin .pos-filter-row{display:flex;flex-direction:column;gap:12px}
+body.admin #posCategoryTabs.menu-category-nav{position:static;top:auto;z-index:1;display:flex;flex-wrap:nowrap;gap:9px;margin:0;padding:10px 0 14px;background:transparent;border-bottom:1px solid #e3ece6;overflow-x:auto}
+body.admin #posCategoryTabs .menu-category-link{flex:0 0 auto;min-height:39px;padding:8px 15px;border:1px solid #dce8e0;border-radius:999px;background:#f5faf6;color:#1b4332;font-size:12px;font-weight:800;white-space:nowrap}
+body.admin #posCategoryTabs .menu-category-link.active{background:#1b4332;border-color:#1b4332;color:#fff}
+body.admin #posProducts.menu-product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+body.admin .pos-product-media,body.admin .pos-cart-thumb{display:none!important}
+body.admin .pos-product,body.admin .menu-product-card{min-height:142px;padding:16px;border:1px solid #e2ecef;border-radius:15px;background:#fff;box-shadow:0 5px 17px rgba(7,56,77,.045)}
+body.admin .pos-product-body{padding:0;gap:0}
+body.admin .pos-product-name,body.admin .menu-product-copy h4{color:#075c7a;font-size:15px;font-weight:800;line-height:1.35}
+body.admin .pos-product-meta,body.admin .menu-product-copy p{min-height:0;margin:6px 0 0;color:#6b7b83;font-size:12px;line-height:1.5}
+body.admin .pos-product-foot,body.admin .menu-product-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:14px}
+body.admin .pos-product-price,body.admin .menu-product-price{color:#075c7a;font-size:12px;font-weight:850}
+body.admin .pos-add,body.admin .menu-product-footer .menu-add{width:auto;min-height:35px;margin:0;padding:8px 10px;border-radius:9px;font-size:11px;white-space:nowrap}
+body.admin .pos-cart-line{grid-template-columns:minmax(0,1fr) auto;gap:10px}
+body.admin .pos-cart-line-details{min-width:0}
+body.admin .pos-cart-line-actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+body.admin .pos-qty{display:flex;align-items:center;gap:5px;margin-top:7px}
+body.admin .pos-qty input{width:66px;height:29px;box-sizing:border-box;padding:3px 5px;border:1px solid #d7dfd9;border-radius:7px;text-align:center;font:inherit;font-size:13px;font-weight:750}
+body.admin .pos-qty button{width:29px;height:29px;flex:0 0 29px}
+@media(max-width:900px){body.admin #posProducts.menu-product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){body.admin #posProducts.menu-product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}body.admin .pos-product,body.admin .menu-product-card{min-height:132px;padding:10px 9px;border-radius:11px}body.admin .pos-product-name,body.admin .menu-product-copy h4{font-size:12px}body.admin .pos-product-meta,body.admin .menu-product-copy p{font-size:10px}body.admin .pos-product-foot,body.admin .menu-product-footer{align-items:stretch;flex-direction:column;gap:7px;margin-top:10px}body.admin .pos-add,body.admin .menu-product-footer .menu-add{width:100%;min-height:31px;padding:6px 4px;font-size:9px;white-space:normal}body.admin .pos-cart-line{grid-template-columns:minmax(0,1fr) auto}body.admin .pos-qty input{width:58px}}
