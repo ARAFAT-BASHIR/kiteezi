@@ -32,12 +32,14 @@
   </div>
   <div class="pos-layout">
     <div class="pos-catalog">
-      <div class="pos-filter-row">
-        <div id="posCategoryTabs" class="pos-category-tabs" role="tablist" aria-label="Menu categories"></div>
-        <input id="posSearch" class="pos-search" type="search" placeholder="Search menu items..." autocomplete="off">
+      <nav id="posCategoryTabs" class="menu-category-nav" aria-label="Browse menu categories"></nav>
+      <div class="pos-menu-tools" aria-label="Menu search and filters">
+        <label class="pos-menu-search"><span>Search the menu</span><input id="posSearch" type="search" placeholder="Search meals, drinks, snacks…" autocomplete="off"></label>
+        <label class="pos-menu-category"><span>Category</span><select id="posCategoryFilter" aria-label="Filter menu by category"><option value="">All categories</option></select></label>
+        <button type="button" class="btn btn-dark" id="posClearMenuFilters">Clear</button>
       </div>
-      <div id="posMenuStatus" class="state">Loading menu…</div>
-      <div id="posProducts" class="pos-products"></div>
+      <div id="posMenuStatus" class="muted" aria-live="polite"></div>
+      <div id="posProducts" class="pos-menu-catalog" aria-live="polite"></div>
     </div>
     <aside class="pos-cart">
       <div class="pos-cart-head">
