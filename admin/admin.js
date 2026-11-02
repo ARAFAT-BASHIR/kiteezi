@@ -1010,7 +1010,7 @@ function posRenderProducts(){
         '<button type="button" class="btn btn-dark menu-add pos-add" data-pos-add="'+esc(item.id)+'"'+((unavailable||onRequest)?' disabled':'')+'>'+
         (unavailable?'Unavailable':onRequest?'Price on request':qty?'Add another ('+qty+')':'Add to Order')+'</button></div></article>';
     }).join('');
-    return '<section class="menu-category-section" id="'+posCategoryId(catName)+'"><div class="menu-category-cover">'+
+    return '<section class="menu-category-section" id="'+posCategoryId(catName)+'"><div class="menu-category-cover'+(images.length?'':' no-menu-images')+'">'+
       '<div class="menu-category-visuals menu-category-visuals-count-'+Math.min(images.length,3)+'">'+visuals+'</div>'+
       '<div class="menu-category-cover-copy"><span class="menu-category-kicker">Kiteezi menu</span><h3>'+esc(catName)+'</h3>'+
       '<p>'+rows.length+' option'+(rows.length===1?'':'s')+' to choose from</p></div></div>'+
@@ -1019,6 +1019,8 @@ function posRenderProducts(){
   box.querySelectorAll('img[data-pos-category-image]').forEach(img=>img.addEventListener('error',()=>{
     img.closest('.menu-category-visual')?.classList.add('menu-category-visual-failed');
     img.removeAttribute('src');
+    const visuals=img.closest('.menu-category-visuals');
+    if(visuals&&!visuals.querySelector('img[src]'))visuals.style.display='none';
   }));
   box.querySelectorAll('[data-pos-add]').forEach(button=>button.onclick=()=>posAddItem(button.dataset.posAdd));
 }
