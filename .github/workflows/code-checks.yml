@@ -136,3 +136,40 @@ jobs:
               raise SystemExit(1)
           print(f"Admin startup DOM contract passed: {len(refs)} bound ids verified.")
           PY
+
+      - name: Check public performance optimizations
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          css = Path("styles.css").read_text(encoding="utf-8")
+          if "@import" in css:
+              raise SystemExit("Public CSS must not use a nested @import font request.")
+
+          for html in sorted(Path(".").glob("*.html")):
+              source = html.read_text(encoding="utf-8")
+              if "styles.css" not in source:
+                  continue
+              if "fonts.googleapis.com/css2" not in source or "fonts.gstatic.com" not in source:
+                  raise SystemExit(f"Font resource hints are missing: {html}")
+              if "styles.css?v=20261102-perf1" not in source:
+                  raise SystemExit(f"Versioned stylesheet cache-bust is missing: {html}")
+              for image in re.findall(r"<img\\b[^>]*>", source, re.I):
+                  if not re.search(r"\\bdecoding\\s*=\\s*[\"']async[\"']", image, re.I):
+                      raise SystemExit(f"An HTML image is missing decoding=async: {html}")
+
+          content = Path("content.js").read_text(encoding="utf-8")
+          if "preload.fetchPriority = 'high'" not in content:
+              raise SystemExit("CMS hero image priority preload is missing.")
+
+          site = Path("site.js").read_text(encoding="utf-8")
+          if 'preload="none" controls></video>' not in site:
+              raise SystemExit("Gallery preview videos must not prefetch media before playback.")
+          if 'decoding="async"' not in site:
+              raise SystemExit("Dynamically rendered images must decode asynchronously.")
+
+          print("Public performance regression checks passed.")
+          PY
