@@ -1093,3 +1093,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{
 /* Empty menu categories use the branded cover surface until an approved image is uploaded. */
 .menu-category-visuals-count-0{display:none!important}
 .menu-category-visuals-count-0+.menu-category-cover-copy{width:100%}
+
+/* Empty menu categories use the branded cover surface until an approved image is uploaded. */
+.menu-category-visuals-count-0{display:none!important}
+.menu-category-visuals-count-0+.menu-category-cover-copy{width:100%}
