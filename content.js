@@ -494,9 +494,11 @@
   }
 
   async function applyTeamPositions() {
-    const response = await fetch(url + '/rest/v1/team_positions?select=department,position,person_name,sort_order,active,public_avatar_url,public_description&active=eq.true&order=sort_order.asc', { headers });
+    const response = await fetch(url + '/rest/v1/team_positions?select=id,department,position,person_name,sort_order,active,public_avatar_url,public_description&active=eq.true&order=sort_order.asc', { headers });
     if (!response.ok) throw new Error('Could not load team positions.');
     const rows = await response.json();
+    let globalMedia = [];
+    try { globalMedia = await getMedia('global'); } catch (error) { console.warn('Global personnel media unavailable:', error); }
     document.querySelectorAll('#public-team-positions').forEach(container => {
       const icons = ['GM','R','SC','FC','BD','GG','P'];
       const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -505,7 +507,8 @@
       container.innerHTML = rows.map((row, i) => {
         const name = escapeHtml(row.person_name || 'Kiteezi team member');
         const role = escapeHtml(row.position || '');
-        const image = safeUrl(row.public_avatar_url) || '';
+        const managedPortrait = globalMedia.find(item => item.slot_key === 'personnel-' + row.id && item.active);
+        const image = safeUrl(managedPortrait?.url || row.public_avatar_url) || '';
         const photo = image
           ? '<img class="team-card-photo" src="' + escapeHtml(image) + '" alt="' + name + '" loading="lazy" decoding="async">'
           : '<div class="team-card-placeholder">' + icons[i % icons.length] + '</div>';
