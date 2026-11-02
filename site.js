@@ -299,18 +299,6 @@
     return 'menu-category-' + slug;
   }
 
-  function menuCategoryImagesFor(rows) {
-    const seen = new Set();
-    return (Array.isArray(rows) ? rows : []).map(item => ({
-      url: safeMenuImageUrl(item?.img_url),
-      alt: String(item?.alt_text || item?.name || 'Kiteezi menu item')
-    })).filter(image => {
-      if (!image.url || seen.has(image.url)) return false;
-      seen.add(image.url);
-      return true;
-    }).slice(0, 3);
-  }
-
   function menuImageFor(item) {
     return safeMenuImageUrl(item?.img_url);
   }
@@ -322,6 +310,12 @@
       // Menu items are the critical payload. Optional CMS copy must not
       // prevent the actual menu catalogue from rendering.
       const items = await getMenuItems();
+      let categoryMediaRows = [];
+      try {
+        categoryMediaRows = await supabaseFetch('/rest/v1/media?select=slot_key,url,alt_text,active&page_slug=eq.menu&area=eq.menu-category&active=eq.true&is_gallery=eq.false&order=sort_order.asc');
+      } catch (mediaError) {
+        console.warn('Menu category cover media unavailable; category sections will render without an unapproved image:', mediaError);
+      }
       let pages = [];
       try {
         pages = await supabaseFetch('/rest/v1/cms_pages?select=title,content&slug=eq.menu&published=eq.true&limit=1');
@@ -390,7 +384,12 @@
         }
 
         target.innerHTML = orderedGroups.map(([catName, rows]) => {
-          const categoryImages = menuCategoryImagesFor(rows);
+          const categorySlug = String(catName || 'other').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'other';
+          const managedCover = categoryMediaRows.find(image => image.slot_key === 'category-' + categorySlug && image.active);
+          const managedCoverUrl = safeMenuImageUrl(managedCover?.url);
+          const categoryImages = managedCoverUrl && !/loremflickr/i.test(managedCoverUrl)
+            ? [{url: managedCoverUrl, alt: String(managedCover.alt_text || (catName + ' menu category'))}]
+            : [];
           const categoryVisuals = categoryImages.map(image =>
             '<div class="menu-category-visual"><img src="' + escapeHtml(image.url) +
             '" alt="' + escapeHtml(image.alt) + '" loading="lazy" decoding="async" data-menu-category-image></div>'
