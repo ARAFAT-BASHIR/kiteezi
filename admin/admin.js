@@ -965,7 +965,10 @@ function posCategoryId(name){
 function posRenderCategories(groups){
   const box=$('#posCategoryTabs');if(!box)return;
   box.classList.add('menu-category-nav');
-  box.innerHTML=groups.map(([name])=>'<a class="menu-category-link" href="#'+posCategoryId(name)+'">'+esc(name)+'</a>').join('');
+  // Defensive fallback: an empty catalogue or a stale caller must never crash
+  // the POS page by passing an undefined groups value.
+  const safeGroups=Array.isArray(groups)?groups:[];
+  box.innerHTML=safeGroups.map(([name])=>'<a class="menu-category-link" href="#'+posCategoryId(name)+'">'+esc(name)+'</a>').join('');
 }
 function posRenderProducts(){
   const box=$('#posProducts'),status=$('#posMenuStatus');if(!box||!status)return;
