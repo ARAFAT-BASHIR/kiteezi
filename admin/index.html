@@ -175,6 +175,8 @@
 </div>
 <div id="accounting-panel-operations" class="accounting-view panel" hidden>
   <div class="report-export-bar"><span class="muted">Operational actions &amp; performance</span><div><button type="button" class="btn" data-report-export="operations">Download CSV</button><button type="button" class="btn" data-report-print="operations">Print / Save PDF</button></div></div>
+  <div class="accounting-filters accounting-operation-filters"><label>From <input id="accountingOpsFrom" type="date"></label><label>To <input id="accountingOpsTo" type="date"></label><label>Department <select id="accountingOpsDepartment"><option value="">All departments</option></select></label><button id="accountingOpsGenerate" class="btn btn-dark" type="button">Generate report</button></div>
+  <p id="accountingOpsPeriodLabel" class="muted accounting-period-label">Select a reporting period and department.</p>
   <div class="accounting-grid-two">
     <div><h3>Operational Actions</h3><div id="accountingActions" class="state">Select Actions &amp; Performance to load.</div></div>
     <div><h3>Performance</h3><div id="accountingPerformance" class="state">Select Actions &amp; Performance to load.</div></div>
