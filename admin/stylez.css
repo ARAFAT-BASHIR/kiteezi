@@ -1240,16 +1240,16 @@ body.admin .notification-reply-form{border-top:1px solid #e1e7e2;padding-top:12p
 body.admin .notification-reply-form textarea{width:100%;min-height:80px;resize:vertical}
 body.admin .notification-system-note{font-size:12px;color:#68736d;padding:12px 0}
 @media(max-width:1100px){
-  body.admin #notificationPanel{left:282px;right:12px;top:135px;max-height:calc(100dvh - 147px);padding:15px}
+  body.admin #notificationPanel{left:clamp(168px,22vw,282px);right:12px;top:135px;max-height:calc(100dvh - 147px);padding:15px}
   body.admin .notification-panel-toolbar{top:-15px;margin:-15px -15px 12px;padding:12px 15px}
   body.admin .notification-workspace{grid-template-columns:minmax(240px,.9fr) minmax(300px,1.1fr);gap:12px;max-height:calc(100dvh - 235px)}
 }
 @media(max-width:900px){
-  body.admin #notificationPanel{left:12px;right:12px;top:150px;max-height:calc(100dvh - 162px)}
+  body.admin #notificationPanel{left:clamp(168px,22vw,230px);right:12px;top:150px;max-height:calc(100dvh - 162px)}
   body.admin .notification-workspace{max-height:calc(100dvh - 250px)}
 }
 @media(max-width:700px){
-  body.admin #notificationPanel{position:fixed;top:145px;left:8px;right:8px;width:auto;max-width:none;max-height:calc(100dvh - 153px);overflow:auto;padding:12px}
+  body.admin #notificationPanel{position:fixed;top:calc(var(--admin-mobile-nav-bottom, 145px) + 8px);left:8px;right:8px;width:auto;max-width:none;max-height:calc(100dvh - 161px);overflow:auto;padding:12px}
   body.admin .notification-panel-toolbar{top:-12px;align-items:flex-start;flex-wrap:wrap;margin:-12px -12px 10px;padding:10px 12px;gap:8px}
   body.admin .notification-panel-toolbar h2{width:100%;font-size:17px}
   body.admin .notification-panel-actions{width:100%;justify-content:flex-end}
@@ -1377,4 +1377,21 @@ body.admin .pos-menu-catalog .menu-category-cover.no-menu-images .menu-category-
   #accountingPrintRoot .metrics{display:grid!important;grid-template-columns:repeat(2,1fr)!important;gap:8px!important}
   #accountingPrintRoot .metric{border:1px solid #d5ddd7!important;box-shadow:none!important;break-inside:avoid}
   #accountingPrintRoot .state{color:#53635b}
+}
+
+
+/* Accounting export letterhead and tablet notification clearance */
+body.admin .accounting-print-footer{gap:10px;flex-wrap:wrap}
+@media (min-width:701px) and (max-width:1100px){
+  body.admin #notificationPanel{left:clamp(168px,22vw,230px)!important;right:10px!important;top:138px!important;width:auto!important}
+  body.admin .notification-workspace{grid-template-columns:minmax(150px,.82fr) minmax(180px,1.18fr)!important;gap:10px!important}
+  body.admin .notification-list{padding-right:8px!important}
+  body.admin .notification-item{padding:10px!important}
+}
+@media(max-width:700px){
+  body.admin #notificationPanel{left:8px!important;right:8px!important;top:145px!important;max-height:calc(100dvh - 153px)!important}
+  body.admin .notification-panel-toolbar{flex-wrap:nowrap!important;align-items:center!important}
+  body.admin .notification-panel-toolbar h2{width:auto!important;flex:1 1 auto!important}
+  body.admin .notification-panel-actions{width:auto!important;flex:0 0 auto!important}
+  body.admin .notification-close{position:static!important}
 }
