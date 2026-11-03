@@ -2106,7 +2106,7 @@ async function exportAccountingWord(view){
     :view==='cash'&&lastAccountingCashReport
       ?'Reporting period: '+lastAccountingCashReport.from+' to '+lastAccountingCashReport.to+' | Source: '+lastAccountingCashReport.source
       :'Generated: '+new Date().toLocaleString('en-GB');
-  const headerLogo=logo?'<img src="'+accountingWordEscape(logo)+'" alt="Kiteezi logo">':'';
+  const headerLogo=logo?'<img src="'+accountingWordEscape(logo)+'" alt="Kiteezi logo" style="display:block;width:58px;height:58px;object-fit:contain">':'';
   let businessName='Kiteezi Recreational Center',tagline='Comfort • Dining • Recreation',phone='+256 766 529086',email='kreationalcenter@gmail.com',website='https://kiteezirecreationalcenter.com',address='Kiteezi, Lusanjja, Kampala, Uganda';
   try{
     const brandSettings=await api('/rest/v1/site_settings?select=key,value&key=in.(business_name,business_tagline,phone,business_email,website,address)');
