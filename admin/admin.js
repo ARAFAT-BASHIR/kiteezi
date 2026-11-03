@@ -2015,7 +2015,7 @@ async function loadAccountingCashReport(){
   const range=accountingDateRange(),from=range.from,to=range.to;
   if(from>to)throw Error('The cash report start date cannot be after the end date.');
   const source=$('#accountingCashSource')?.value||'All';
-  const fetchSafe=path=>api(path).catch(err=>{console.warn('Accounting cash source unavailable',path,err);return[]});
+  const fetchSafe=path=>api(path);
   const [bookings,orders,events,purchases]=await Promise.all([
     fetchSafe('/rest/v1/bookings?select=id,total,booking_date,status,payment_status,created_at&booking_date=gte.'+from+'&booking_date=lte.'+to+'&status=neq.cancelled'),
     fetchSafe('/rest/v1/orders?select=id,total,created_at,status,payment_status,paid_at&created_at=gte.'+from+'T00:00:00&created_at=lte.'+to+'T23:59:59&status=neq.cancelled'),
