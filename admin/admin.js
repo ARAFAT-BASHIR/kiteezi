@@ -2131,7 +2131,7 @@ async function exportAccountingWord(view){
     'th,td{border:1px solid #b9c8bf;padding:6px 7px;vertical-align:top;}tr{page-break-inside:avoid;}'+
     'tbody tr:nth-child(even){background:#f3f6f3;}.summary{width:72%;}.summary th{background:#2d6a4f;}'+
     '.doc-footer{border-top:1px solid #1b4332;padding-top:6px;margin-top:22px;font-size:8pt;color:#58665e;text-align:center;}'+
-    '</style></head><body><div style="mso-element:header" id="h1"><table style="width:100%;border:0;border-bottom:2px solid #1b4332"><tr><td style="width:75px;border:0">'+headerLogo+'</td><td style="border:0"><strong style="font-size:15pt;color:#1b4332">'+safeName+'</strong><br><span style="font-size:8pt;color:#65736b">'+safeTagline+'</span></td></tr></table></div><div style="mso-element:footer" id="f1"><p style="border-top:1px solid #1b4332;padding-top:5px;text-align:center;font-size:8pt;color:#58665e">KITEEZI RECREATIONAL CENTER | Official Management &amp; Financial Record | Confidential | Page <span style="mso-field-code:\" PAGE \"">1</span> of <span style="mso-field-code:\" NUMPAGES \"">1</span></p></div><div class="Section1">'+
+    '</style></head><body><div style="mso-element:header" id="h1"><table style="width:100%;border:0;border-bottom:2px solid #1b4332"><tr><td style="width:75px;border:0">'+headerLogo+'</td><td style="border:0"><strong style="font-size:15pt;color:#1b4332">'+safeName+'</strong><br><span style="font-size:8pt;color:#65736b">'+safeTagline+'</span></td></tr></table></div><div style="mso-element:footer" id="f1"><p style="border-top:1px solid #1b4332;padding-top:5px;text-align:center;font-size:8pt;color:#58665e">'+footerText+' | CONFIDENTIAL | Page <span style="mso-field-code:\" PAGE \"">1</span> of <span style="mso-field-code:\" NUMPAGES \"">1</span></p></div><div class="Section1">'+
     '<h1 class="report-title">'+accountingWordEscape(title)+'</h1><p class="report-meta">'+accountingWordEscape(period)+'</p>'+
     sections.join('')+'</div></body></html>';
   const blob=new Blob(['\ufeff',doc],{type:'application/msword;charset=utf-8'});
@@ -2154,6 +2154,8 @@ async function printAccountingPanel(view){
   }catch{}
   if(!logoUrl)logoUrl=$('.brand-mark img')?.src||'';
   if(logoUrl&&!/^https?:/i.test(logoUrl))logoUrl=new URL(logoUrl,location.href).href;
+  let printBusinessName='Kiteezi Recreational Center',printTagline='Comfort • Dining • Recreation',printPhone='+256 766 529086',printEmail='kreationalcenter@gmail.com',printWebsite='https://kiteezirecreationalcenter.com',printAddress='Kiteezi, Lusanjja, Kampala, Uganda';
+  try{const brandRows=await api('/rest/v1/site_settings?select=key,value&key=in.(business_name,business_tagline,phone,business_email,website,address)');const values=Object.fromEntries((brandRows||[]).map(x=>[x.key,x.value]));printBusinessName=values.business_name||printBusinessName;printTagline=values.business_tagline||printTagline;printPhone=values.phone||printPhone;printEmail=values.business_email||printEmail;printWebsite=values.website||printWebsite;printAddress=values.address||printAddress;}catch{}
   const root=document.createElement('main');root.id='accountingPrintRoot';
   const header=document.createElement('header');header.className='accounting-print-header';
   if(logoUrl){const img=document.createElement('img');img.src=logoUrl;img.alt='Kiteezi Recreational Center logo';header.appendChild(img);}
@@ -2186,8 +2188,6 @@ async function printAccountingPanel(view){
     content.appendChild(clone);
   }
   content.querySelectorAll('.state:empty').forEach(x=>x.remove());
-  let printBusinessName='Kiteezi Recreational Center',printTagline='Comfort • Dining • Recreation',printPhone='+256 766 529086',printEmail='kreationalcenter@gmail.com',printWebsite='https://kiteezirecreationalcenter.com',printAddress='Kiteezi, Lusanjja, Kampala, Uganda';
-  try{const r=await api('/rest/v1/site_settings?select=key,value&key=in.(business_name,business_tagline,phone,business_email,website,address)');const v=Object.fromEntries((r||[]).map(x=>[x.key,x.value]));printBusinessName=v.business_name||printBusinessName;printTagline=v.business_tagline||printTagline;printPhone=v.phone||printPhone;printEmail=v.business_email||printEmail;printWebsite=v.website||printWebsite;printAddress=v.address||printAddress;}catch{}
   const footer=document.createElement('footer');footer.className='accounting-print-footer';
   footer.innerHTML='<strong>'+esc(printBusinessName)+'</strong><span>'+esc(printAddress)+' · '+esc(printPhone)+' · '+esc(printEmail)+' · '+esc(printWebsite)+'</span><span class="accounting-page-number"></span>';
   root.append(header,meta,content,footer);document.body.appendChild(root);
