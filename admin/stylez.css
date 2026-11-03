@@ -1345,3 +1345,36 @@ body.admin .pos-menu-catalog .menu-category-cover.no-menu-images .menu-category-
 /* Use the same official logo image treatment in the admin workspace */
 .admin .brand-mark{display:inline-flex;align-items:center;justify-content:center;overflow:hidden;background:#fff!important}
 .admin .brand-mark img{display:block;width:100%;height:100%;max-width:none;object-fit:contain;object-position:center;background:#fff;border-radius:inherit}
+
+/* Branded, database-generated Accounting & Finance print documents */
+.accounting-operation-filters{margin:14px 0 8px}
+.accounting-period-label{margin:4px 0 16px}
+#accountingPrintRoot{display:none}
+@media print{
+  @page{size:A4 portrait;margin:32mm 15mm 25mm}
+  body.admin:has(#accountingPrintRoot){background:#fff!important}
+  body.admin:has(#accountingPrintRoot)>*{display:none!important}
+  body.admin:has(#accountingPrintRoot) #accountingPrintRoot{display:block!important;position:static!important;color:#202820!important;font-family:Arial,sans-serif!important;font-size:10pt!important;line-height:1.42!important}
+  #accountingPrintRoot .accounting-print-header{position:fixed;top:-25mm;left:0;right:0;height:20mm;display:flex;align-items:center;justify-content:center;gap:12px;border-bottom:2px solid #1b4332;padding-bottom:5px;text-align:left}
+  #accountingPrintRoot .accounting-print-header img{width:52px;height:46px;object-fit:contain}
+  #accountingPrintRoot .accounting-print-header h1{font-size:15pt;letter-spacing:.06em;color:#1b4332;margin:0;font-weight:800}
+  #accountingPrintRoot .accounting-print-header p{font-size:8pt;letter-spacing:.08em;margin:2px 0 0;color:#68736d}
+  #accountingPrintRoot .accounting-print-meta{margin:0 0 14px;text-align:center;border-bottom:1px solid #cbd5ce;padding:4px 0 10px}
+  #accountingPrintRoot .accounting-print-meta h2{font-size:15pt;color:#1b4332;margin:0 0 4px}
+  #accountingPrintRoot .accounting-print-meta p{font-size:8pt;color:#68736d;margin:0}
+  #accountingPrintRoot .accounting-print-footer{position:fixed;bottom:-19mm;left:0;right:0;height:14mm;border-top:1px solid #1b4332;padding-top:5px;display:flex;justify-content:space-between;align-items:flex-start;font-size:7.5pt;color:#53635b}
+  #accountingPrintRoot .accounting-print-footer strong{color:#1b4332}
+  #accountingPrintRoot .accounting-page-number:after{content:"Page " counter(page) " of " counter(pages)}
+  #accountingPrintRoot table{width:100%!important;border-collapse:collapse!important;font-size:8pt!important;break-inside:auto!important}
+  #accountingPrintRoot thead{display:table-header-group}
+  #accountingPrintRoot tr{break-inside:avoid}
+  #accountingPrintRoot th{background:#eaf0eb!important;color:#173c2d!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #accountingPrintRoot th,#accountingPrintRoot td{border:1px solid #d5ddd7!important;padding:6px 7px!important;text-align:left;vertical-align:top}
+  #accountingPrintRoot .table-scroll{overflow:visible!important;max-height:none!important}
+  #accountingPrintRoot .accounting-grid-two{display:block!important}
+  #accountingPrintRoot .accounting-grid-two>div{margin-bottom:14px;break-inside:avoid}
+  #accountingPrintRoot h3{color:#1b4332!important;font-size:11pt!important;margin:12px 0 6px}
+  #accountingPrintRoot .metrics{display:grid!important;grid-template-columns:repeat(2,1fr)!important;gap:8px!important}
+  #accountingPrintRoot .metric{border:1px solid #d5ddd7!important;box-shadow:none!important;break-inside:avoid}
+  #accountingPrintRoot .state{color:#53635b}
+}
