@@ -2028,7 +2028,7 @@ async function loadAccountingCashReport(){
     ...bookings.map(x=>({source:'Bookings',id:x.id,date:x.booking_date||'',status:x.status||'',direction:paid(x)?'Money In':'Receivable',amount:Number(x.total||0)})),
     ...events.map(x=>({source:'Events',id:x.id,date:x.event_date||'',status:x.status||'',direction:'Payment not recorded',amount:Number(x.total||0)})),
     ...purchases.map(x=>({source:'Purchases',id:x.po_number||x.id,date:(paid(x)&&x.paid_at?x.paid_at:x.ordered_at||x.created_at)?.slice(0,10)||'',status:x.status||'',direction:paid(x)?'Money Out':'Payable',amount:Number(x.total||0),supplier:x.supplier||''}))
-  ].filter(x=>source==='All'||x.source===source).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  ].filter(x=>(source==='All'||x.source===source)&&x.date>=from&&x.date<=to).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   const cashIn=rows.filter(x=>x.direction==='Money In').reduce((a,x)=>a+x.amount,0);
   const cashOut=rows.filter(x=>x.direction==='Money Out').reduce((a,x)=>a+x.amount,0);
   const outstanding=rows.filter(x=>x.direction==='Receivable').reduce((a,x)=>a+x.amount,0);
