@@ -2114,11 +2114,11 @@ async function exportAccountingWord(view){
     businessName=values.business_name||businessName;tagline=values.business_tagline||tagline;phone=values.phone||phone;email=values.business_email||email;website=values.website||website;address=values.address||address;
   }catch{}
   const safeName=accountingWordEscape(businessName),safeTagline=accountingWordEscape(tagline);
-  const footerText=accountingWordEscape(businessName)+' | '+accountingWordEscape(address)+' | '+accountingWordEscape(phone)+' | '+accountingWordEscape(email)+' | '+accountingWordEscape(website);
+  const footerName=accountingWordEscape(businessName),footerAddress=accountingWordEscape(address),footerPhone=accountingWordEscape(phone),footerEmail=accountingWordEscape(email),footerWebsite=accountingWordEscape(website);
   const doc='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+accountingWordEscape(title)+'</title><style>'+
     '@page Section1{size:21cm 29.7cm;margin:2.2cm 1.7cm 2cm 1.7cm;mso-header:h1;mso-footer:f1;mso-header-margin:0.65cm;mso-footer-margin:0.65cm;}div.Section1{page:Section1;}'+
     'body{font-family:Arial,sans-serif;color:#202820;font-size:10pt;line-height:1.35;}'+
-    '.doc-header{border-bottom:3px solid #1b4332;padding:0 0 10px;margin-bottom:16px;text-align:center;}'+
+    '.doc-header{border-bottom:3px solid #1b4332;padding:0 0 10px;margin-bottom:16px;text-align:left;}'+
     '.doc-header img{height:64px;max-width:110px;object-fit:contain;vertical-align:middle;margin-right:12px;}'+
     '.brand{display:inline-block;vertical-align:middle;text-align:left;}'+
     '.brand h1{font-size:17pt;color:#1b4332;margin:0;font-weight:bold;letter-spacing:1px;}'+
@@ -2130,8 +2130,8 @@ async function exportAccountingWord(view){
     'thead{display:table-header-group;}th{background:#1b4332;color:#fff;font-weight:bold;text-align:left;}'+
     'th,td{border:1px solid #b9c8bf;padding:6px 7px;vertical-align:top;}tr{page-break-inside:avoid;}'+
     'tbody tr:nth-child(even){background:#f3f6f3;}.summary{width:72%;}.summary th{background:#2d6a4f;}'+
-    '.doc-footer{border-top:1px solid #1b4332;padding-top:6px;margin-top:22px;font-size:8pt;color:#58665e;text-align:center;}'+
-    '</style></head><body><div style="mso-element:header" id="h1"><table style="width:100%;border:0;border-bottom:2px solid #1b4332"><tr><td style="width:75px;border:0">'+headerLogo+'</td><td style="border:0"><strong style="font-size:15pt;color:#1b4332">'+safeName+'</strong><br><span style="font-size:8pt;color:#65736b">'+safeTagline+'</span></td></tr></table></div><div style="mso-element:footer" id="f1"><p style="border-top:1px solid #1b4332;padding-top:5px;text-align:center;font-size:8pt;color:#58665e">'+footerText+' | CONFIDENTIAL | Page <span style="mso-field-code:\" PAGE \"">1</span> of <span style="mso-field-code:\" NUMPAGES \"">1</span></p></div><div class="Section1">'+
+    '.doc-footer{border-top:2px solid #1b4332;padding-top:6px;margin-top:22px;font-size:8pt;color:#34483c;text-align:center;line-height:1.35;}'+
+    '</style></head><body><div style="mso-element:header" id="h1"><table style="width:100%;border:0;border-bottom:2px solid #1b4332"><tr><td style="width:75px;border:0">'+headerLogo+'</td><td style="border:0"><strong style="font-size:15pt;color:#1b4332">'+safeName+'</strong><br><span style="font-size:8pt;color:#65736b">'+safeTagline+'</span></td></tr></table></div><div style="mso-element:footer" id="f1"><p style="border-top:2px solid #1b4332;padding-top:6px;text-align:center;font-size:8pt;line-height:1.35;color:#34483c;margin:0"><strong style="color:#1b4332;font-size:8.5pt">'+footerName+'</strong><br>'+footerAddress+' &nbsp; | &nbsp; '+footerPhone+' &nbsp; | &nbsp; '+footerEmail+'<br>'+footerWebsite+'<br><strong style="color:#1b4332">CONFIDENTIAL</strong> &nbsp; • &nbsp; Page <span style="mso-field-code:\" PAGE \"">1</span> of <span style="mso-field-code:\" NUMPAGES \"">1</span></p></div><div class="Section1">'+
     '<h1 class="report-title">'+accountingWordEscape(title)+'</h1><p class="report-meta">'+accountingWordEscape(period)+'</p>'+
     sections.join('')+'</div></body></html>';
   const blob=new Blob(['\ufeff',doc],{type:'application/msword;charset=utf-8'});
