@@ -1214,9 +1214,14 @@ body.admin .pos-category-card:focus-visible{outline:3px solid #d4af37;outline-of
 @media(max-width:1100px){body.admin .pos-category-cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:600px){body.admin .pos-category-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}body.admin .pos-category-card-name{font-size:12px;padding:8px 8px 2px}body.admin .pos-category-card-count{padding:0 8px 8px}}
 
-/* Notification inbox and reply sidebar */
-body.admin #notificationPanel{width:min(920px,calc(100vw - 36px));right:18px;max-height:calc(100vh - 110px);overflow:hidden;padding:16px;display:none}
-body.admin .notification-workspace{display:grid;grid-template-columns:minmax(230px,0.78fr) minmax(300px,1.22fr);gap:14px;min-height:340px;max-height:calc(100vh - 205px)}
+/* Notification inbox: keep the panel clear of the fixed admin navigation. */
+body.admin #notificationPanel{position:fixed;left:294px;right:24px;top:88px;width:auto;max-width:1200px;max-height:calc(100dvh - 112px);margin:0 0 0 auto;overflow:auto;padding:16px;display:none;z-index:120;box-shadow:0 18px 45px rgba(17,35,27,.2)}
+body.admin .notification-panel-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:-16px;z-index:2;background:#fff;padding:4px 0 12px;border-bottom:1px solid #e1e7e2}
+body.admin .notification-panel-toolbar h2{margin:0}
+body.admin .notification-panel-actions{display:flex;align-items:center;gap:8px}
+body.admin .notification-close{background:#f4f6f4;border:1px solid #dce3de;color:#263b30;white-space:nowrap}
+body.admin .notification-close:hover{background:#e8eee9}
+body.admin .notification-workspace{display:grid;grid-template-columns:minmax(230px,0.78fr) minmax(300px,1.22fr);gap:14px;min-height:340px;max-height:calc(100dvh - 205px)}
 body.admin .notification-list{min-width:0;overflow:auto;border-right:1px solid #e1e7e2;padding-right:10px}
 body.admin .notification-item{display:flex;flex-direction:column;align-items:flex-start;text-align:left;width:100%;gap:5px;padding:12px;border:1px solid #e1e7e2;border-radius:12px;background:#fff;margin-bottom:8px;cursor:pointer;font:inherit;color:inherit}
 body.admin .notification-item[aria-pressed="true"]{border-color:#2d6a4f;background:#edf4ef}
@@ -1234,7 +1239,20 @@ body.admin .notification-message-body{white-space:pre-wrap;overflow-wrap:anywher
 body.admin .notification-reply-form{border-top:1px solid #e1e7e2;padding-top:12px;display:grid;gap:8px}
 body.admin .notification-reply-form textarea{width:100%;min-height:70px;resize:vertical}
 body.admin .notification-system-note{font-size:12px;color:#68736d;padding:12px 0}
-@media(max-width:700px){body.admin #notificationPanel{position:fixed;top:70px;left:8px;right:8px;width:auto;max-height:calc(100vh - 82px);overflow:auto}body.admin .notification-workspace{grid-template-columns:1fr;max-height:none;gap:10px}body.admin .notification-list{border-right:0;border-bottom:1px solid #e1e7e2;padding:0 0 8px;max-height:32vh}body.admin .notification-thread{min-height:300px}body.admin .notification-thread-messages{max-height:35vh}}
+@media(max-width:900px){
+  body.admin #notificationPanel{left:12px;right:12px;top:150px;max-height:calc(100dvh - 162px)}
+  body.admin .notification-workspace{max-height:calc(100dvh - 250px)}
+}
+@media(max-width:700px){
+  body.admin #notificationPanel{position:fixed;top:150px;left:8px;right:8px;width:auto;max-width:none;max-height:calc(100dvh - 160px);overflow:auto}
+  body.admin .notification-panel-toolbar{top:-16px;align-items:flex-start;flex-wrap:wrap}
+  body.admin .notification-panel-toolbar h2{width:100%;font-size:17px}
+  body.admin .notification-panel-actions{width:100%;justify-content:flex-end}
+  body.admin .notification-workspace{grid-template-columns:1fr;max-height:none;min-height:0;gap:10px}
+  body.admin .notification-list{border-right:0;border-bottom:1px solid #e1e7e2;padding:0 0 8px;max-height:25vh}
+  body.admin .notification-thread{min-height:260px}
+  body.admin .notification-thread-messages{max-height:30vh}
+}
 
 
 /* POS menu presentation: match the public menu's clean, image-free product cards. */
