@@ -2070,14 +2070,92 @@ function printAccountingCash(){if(!lastAccountingCashReport)return alert('Genera
 const PUSH_FUNCTION_URL=URL+'/functions/v1/kiteezi-push';
 function pushSupported(){return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window&&location.protocol==='https:';}
 function pushB64ToBytes(value){const padding='='.repeat((4-(value.length%4))%4);const raw=atob((value+padding).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(raw,c=>c.charCodeAt(0));}
-function pushBytesToB64(buffer){const bytes=new Uint8Array(buffer);let s='';for(const b of bytes)s+=String.fromCharCode(b);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
-async function registerKiteeziServiceWorker(){if(!('serviceWorker' in navigator))throw Error('This browser does not support service workers.');await navigator.serviceWorker.register('../sw.js',{scope:'../',updateViaCache:'none'});return navigator.serviceWorker.ready;}
-async function getPushPublicKey(){const r=await fetch(PUSH_FUNCTION_URL,{headers:{apikey:KEY}});const d=await r.json().catch(()=>null);if(!r.ok||!d?.publicKey)throw Error(d?.error||'Push notifications are not configured yet.');return d.publicKey;}
-async function currentPushSubscription(){if(!('serviceWorker' in navigator))return null;const reg=await navigator.serviceWorker.getRegistration(new window.URL('../',location.href).href);return reg?.pushManager?.getSubscription()||null;}
+function pushBytesToB64(buffer){const bytes=new Uint8Array(buffer);let s='';for(const b of bytes)s+=String.fromCharCode(b);return btoa(s).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');}
+async function registerKiteeziServiceWorker(){
+  if(!('serviceWorker' in navigator))throw Error('This browser does not support service workers.');
+  if(!window.isSecureContext)throw Error('Phone notifications require the secure HTTPS website.');
+  const scriptUrl=new URL('../sw.js',location.href);
+  const scopeUrl=new URL('../',location.href);
+  await navigator.serviceWorker.register(scriptUrl.href,{scope:scopeUrl.href,updateViaCache:'none'});
+  return await navigator.serviceWorker.ready;
+}
+async function getPushPublicKey(){
+  const r=await fetch(PUSH_FUNCTION_URL,{method:'GET',headers:{apikey:KEY,Accept:'application/json'},cache:'no-store',credentials:'omit'});
+  const d=await r.json().catch(()=>null);
+  if(!r.ok||!d?.publicKey)throw Error(d?.error||'The push service did not return its public key. Refresh the page and try again.');
+  return d.publicKey;
+}
+async function currentPushSubscription(){
+  if(!('serviceWorker' in navigator))return null;
+  const scope=new URL('../',location.href).href;
+  const reg=await navigator.serviceWorker.getRegistration(scope);
+  return reg?.pushManager?.getSubscription()||null;
+}
 function setPushStatus(t,k=''){const el=$('#pushNotificationStatus');if(!el)return;el.hidden=false;el.textContent=t;el.className='notice'+(k==='error'?' danger':'');}
-async function loadPushSettings(){const button=$('#enablePushNotifications'),disable=$('#disablePushNotifications');if(!button&&!disable)return;if(!pushSupported()){if(button)button.hidden=true;if(disable)disable.hidden=true;setPushStatus('Phone notifications are not supported in this browser. Use a current HTTPS browser.','error');return;}try{const sub=await currentPushSubscription();if(sub){if(button)button.hidden=true;if(disable)disable.hidden=false;setPushStatus('Phone notifications are enabled on this device.');}else{if(button)button.hidden=false;if(disable)disable.hidden=true;setPushStatus(Notification.permission==='denied'?'Notifications are blocked in this browser. Allow them in browser settings before enabling again.':'Phone notifications are not enabled on this device.');}}catch(e){setPushStatus('Unable to check phone notification status.','error');}}
-async function enablePhoneNotifications(){if(!pushSupported())return setPushStatus('This browser does not support phone notifications.','error');try{const permission=await Notification.requestPermission();if(permission!=='granted')return setPushStatus('Notification permission was not granted.','error');const publicKey=await getPushPublicKey();const reg=await registerKiteeziServiceWorker();const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushB64ToBytes(publicKey)});const json=JSON.parse(JSON.stringify(sub));const body={organization_id:profile?.organization_id,user_id:session.user.id,endpoint:json.endpoint,p256dh:json.keys?.p256dh||pushBytesToB64(sub.getKey('p256dh')),auth:json.keys?.auth||pushBytesToB64(sub.getKey('auth')),updated_at:new Date().toISOString()};if(!body.organization_id)throw Error('Your staff profile has no organization assigned.');await api('/rest/v1/push_subscriptions?on_conflict=user_id%2Cendpoint',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify(body)});await loadPushSettings();setPushStatus('Phone notifications are enabled. Kiteezi can now alert this device even when the site is closed.');}catch(e){console.error(e);setPushStatus(humanAdminError(e,'Could not enable phone notifications. Please try again.'),'error');}}
-async function disablePhoneNotifications(){try{const sub=await currentPushSubscription();if(sub){const endpoint=sub.endpoint;await sub.unsubscribe().catch(()=>{});await api('/rest/v1/push_subscriptions?user_id=eq.'+encodeURIComponent(session.user.id)+'&endpoint=eq.'+encodeURIComponent(endpoint),{method:'DELETE'});}await loadPushSettings();}catch(e){setPushStatus(humanAdminError(e,'Could not disable phone notifications. Please try again.'),'error');}}
+async function loadPushSettings(){
+  const button=$('#enablePushNotifications'),disable=$('#disablePushNotifications');
+  if(!button&&!disable)return;
+  if(!pushSupported()){
+    if(button)button.hidden=true;if(disable)disable.hidden=true;
+    setPushStatus('Phone notifications require a supported browser and the secure HTTPS website.','error');return;
+  }
+  try{
+    const sub=await currentPushSubscription();
+    if(sub){
+      let registered=false;
+      if(session?.user?.id){
+        const rows=await api('/rest/v1/push_subscriptions?select=id&user_id=eq.'+encodeURIComponent(session.user.id)+'&endpoint=eq.'+encodeURIComponent(sub.endpoint)+'&limit=1');
+        registered=Array.isArray(rows)&&rows.length>0;
+      }
+      if(registered){
+        if(button)button.hidden=true;if(disable)disable.hidden=false;
+        setPushStatus('Phone notifications are enabled and registered for this device.');
+      }else{
+        if(button)button.hidden=false;if(disable)disable.hidden=true;
+        setPushStatus('This browser has a notification subscription that is not registered with Kiteezi. Select Enable to repair it.');
+      }
+    }else{
+      if(button)button.hidden=false;if(disable)disable.hidden=true;
+      setPushStatus(Notification.permission==='denied'?'Notifications are blocked by this browser. Allow notifications for kiteezirecreationalcenter.com in Android site settings, then return here.':'Phone notifications are not enabled on this device.');
+    }
+  }catch(e){
+    if(button)button.hidden=false;
+    setPushStatus('Could not verify this device registration: '+String(e?.message||e||'Network error'),'error');
+  }
+}
+async function enablePhoneNotifications(){
+  if(!pushSupported())return setPushStatus('This browser does not support phone notifications.','error');
+  try{
+    if(!session?.user?.id)throw Error('Sign in to your staff account before enabling phone notifications.');
+    const permission=await Notification.requestPermission();
+    if(permission!=='granted')return setPushStatus(permission==='denied'?'Notifications are blocked. Open Android browser site settings for kiteezirecreationalcenter.com and allow notifications, then try again.':'Notification permission was not granted.','error');
+    const publicKey=await getPushPublicKey();
+    const reg=await registerKiteeziServiceWorker();
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushB64ToBytes(publicKey)});
+    const json=JSON.parse(JSON.stringify(sub));
+    const body={organization_id:profile?.organization_id,user_id:session.user.id,endpoint:json.endpoint,p256dh:json.keys?.p256dh||pushBytesToB64(sub.getKey('p256dh')),auth:json.keys?.auth||pushBytesToB64(sub.getKey('auth')),updated_at:new Date().toISOString()};
+    if(!body.organization_id)throw Error('Your staff profile has no organization assigned.');
+    const saved=await api('/rest/v1/push_subscriptions?on_conflict=user_id%2Cendpoint',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify(body)});
+    if(!Array.isArray(saved)||!saved.length)throw Error('The browser subscribed, but Kiteezi did not confirm saving this device. Please retry.');
+    await loadPushSettings();
+    setPushStatus('Phone notifications are enabled and registered. You can now receive Kiteezi alerts on this device.');
+  }catch(e){
+    console.error('Kiteezi push registration failed:',e);
+    const message=String(e?.message||e||'');
+    setPushStatus(message==='Failed to fetch'?'Could not reach Kiteezi notification service. Check your connection and retry; the service connection has been repaired.':humanAdminError(e,'Could not enable phone notifications. Please try again.'),'error');
+  }
+}
+async function disablePhoneNotifications(){
+  try{
+    const sub=await currentPushSubscription();
+    if(sub){
+      await api('/rest/v1/push_subscriptions?user_id=eq.'+encodeURIComponent(session.user.id)+'&endpoint=eq.'+encodeURIComponent(sub.endpoint),{method:'DELETE'});
+      await sub.unsubscribe().catch(()=>{});
+    }
+    await loadPushSettings();
+  }catch(e){setPushStatus(humanAdminError(e,'Could not disable phone notifications. Please try again.'),'error');}
+}
 function canSendStaffNotifications(){return ['owner','manager','general_manager','ceo','cfo','finance_manager','reception_manager'].includes(String(profile?.role||'').toLowerCase());}
 async function sendStaffNotification(){if(!canSendStaffNotifications())return msg(Error('You do not have permission to send staff notifications.'));const profiles=await api('/rest/v1/profiles?select=id,full_name,role,active,position_id,team_positions!profiles_position_id_fkey(position,department)&active=eq.true&order=full_name.asc');const roles=[...new Set(profiles.map(x=>x.role).filter(Boolean))].sort();const departments=[...new Set(profiles.map(x=>x.team_positions?.department).filter(Boolean))].sort();const personOptions=profiles.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.full_name||x.id)+' — '+esc(x.role||'staff')+(x.team_positions?.department?' — '+esc(x.team_positions.department):'')+'</option>').join('');const roleOptions=roles.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');const deptOptions=departments.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');modal('Send staff notification','<form id="staffNotificationForm" class="form"><label>Send to<select name="mode"><option value="person">One staff member</option><option value="role">Everyone with a role</option><option value="department">Everyone in a department</option><option value="everyone">Everyone</option></select></label><label id="staffNotificationPersonWrap">Staff member<select name="person">'+personOptions+'</select></label><label id="staffNotificationRoleWrap" hidden>Role<select name="role">'+roleOptions+'</select></label><label id="staffNotificationDepartmentWrap" hidden>Department<select name="department">'+deptOptions+'</select></label><label>Title<input name="title" maxlength="160" required></label><label>Message<textarea name="message" maxlength="2000" rows="5" required></textarea></label><button class="btn btn-dark" type="submit">Send notification</button></form>');const form=$('#staffNotificationForm'),mode=form.querySelector('[name=mode]'),pw=$('#staffNotificationPersonWrap'),rw=$('#staffNotificationRoleWrap'),dw=$('#staffNotificationDepartmentWrap');const sync=()=>{pw.hidden=mode.value!=='person';rw.hidden=mode.value!=='role';dw.hidden=mode.value!=='department'};mode.onchange=sync;sync();form.onsubmit=async e=>{e.preventDefault();const fd=new FormData(form),m=String(fd.get('mode'));let ids=[];if(m==='person')ids=[String(fd.get('person')||'')];else if(m==='role')ids=profiles.filter(x=>String(x.role)===String(fd.get('role'))).map(x=>x.id);else if(m==='department')ids=profiles.filter(x=>String(x.team_positions?.department)===String(fd.get('department'))).map(x=>x.id);else ids=profiles.map(x=>x.id);ids=[...new Set(ids)].filter(Boolean);if(!ids.length)return alert('No active staff members match that target.');try{const r=await fetch(PUSH_FUNCTION_URL,{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:JSON.stringify({action:'send',recipient_user_ids:ids,title:String(fd.get('title')||''),message:String(fd.get('message')||'')})});const d=await r.json().catch(()=>null);if(!r.ok)throw Error(d?.error||'Notification could not be sent.');closeModal();alert('Notification sent to '+d.count+' staff member'+(d.count===1?'':'s')+'.');}catch(err){msg(err)}};}
 async function sendPasswordRecovery(email){const r=await fetch(URL+'/auth/v1/recover',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({email,redirect_to:location.origin+location.pathname+'?password_reset=1'})});if(!r.ok){const d=await r.json().catch(()=>null);throw Error(d?.msg||d?.message||'Password recovery could not be started.')}return true}
