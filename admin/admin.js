@@ -2140,63 +2140,63 @@ async function exportAccountingWord(view){
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
 async function printAccountingPanel(view){
-  const source=document.getElementById('accounting-panel-'+view);
-  if(!source)throw Error('The selected report section could not be found.');
-  if(view==='operations')await loadAccountingOperations();
-  else if(view==='cash')await loadAccountingCashReport();
-  const panel=document.getElementById('accounting-panel-'+view);
-  if(!panel)throw Error('The selected report section could not be found.');
-  document.getElementById('accountingPrintRoot')?.remove();
-  let logoUrl='';
+  // Open the print document immediately from the user's button click so mobile
+  // browsers do not block the report after the asynchronous data refresh.
+  const printWindow=window.open('','_blank');
+  if(!printWindow){alert('Your browser blocked the print window. Allow pop-ups for this website and try again.');return;}
   try{
-    const settings=await api('/rest/v1/site_settings?select=key,value&order=key.asc');
-    logoUrl=settings.find(x=>x.key==='logo_url')?.value||'';
-  }catch{}
-  if(!logoUrl)logoUrl=$('.brand-mark img')?.src||'';
-  if(logoUrl&&!/^https?:/i.test(logoUrl))logoUrl=new URL(logoUrl,location.href).href;
-  let printBusinessName='Kiteezi Recreational Center',printTagline='Comfort • Dining • Recreation',printPhone='+256 766 529086',printEmail='kreationalcenter@gmail.com',printWebsite='https://kiteezirecreationalcenter.com',printAddress='Kiteezi, Lusanjja, Kampala, Uganda';
-  try{const brandRows=await api('/rest/v1/site_settings?select=key,value&key=in.(business_name,business_tagline,phone,business_email,website,address)');const values=Object.fromEntries((brandRows||[]).map(x=>[x.key,x.value]));printBusinessName=values.business_name||printBusinessName;printTagline=values.business_tagline||printTagline;printPhone=values.phone||printPhone;printEmail=values.business_email||printEmail;printWebsite=values.website||printWebsite;printAddress=values.address||printAddress;}catch{}
-  const root=document.createElement('main');root.id='accountingPrintRoot';
-  const header=document.createElement('header');header.className='accounting-print-header';
-  if(logoUrl){const img=document.createElement('img');img.src=logoUrl;img.alt='Kiteezi Recreational Center logo';header.appendChild(img);}
-  const brand=document.createElement('div');brand.innerHTML='<h1>'+esc(printBusinessName)+'</h1><p>'+esc(printTagline)+'</p>';header.appendChild(brand);
-  const meta=document.createElement('div');meta.className='accounting-print-meta';
-  const titles={overview:'Financial Overview',statements:'Financial Statements',cash:'Cash & Sales Report',purchases:'Purchases & Inventory Report',operations:'Actions & Performance Report',ledger:'General Ledger Report'};
-  const title=titles[view]||'Accounting & Finance Report';
-  const detail=view==='operations'&&lastAccountingOperationsReport
-    ?'Period: '+lastAccountingOperationsReport.from+' to '+lastAccountingOperationsReport.to+' · Department: '+(lastAccountingOperationsReport.department||'All departments')+' · '+lastAccountingOperationsReport.actions.length+' actions'
-    :view==='cash'&&lastAccountingCashReport
-      ?'Period: '+lastAccountingCashReport.from+' to '+lastAccountingCashReport.to+' · Source: '+(lastAccountingCashReport.source||'All')
-      :'Generated: '+new Date().toLocaleString('en-GB');
-  meta.innerHTML='<h2>'+title+'</h2><p>'+esc(detail)+'</p>';
-  const content=document.createElement('section');content.className='accounting-print-content';
-  if(view==='operations'){
-    const report=lastAccountingOperationsReport;
-    if(!report)throw Error('Generate Actions & Performance before printing.');
-    const actions=document.getElementById('accountingActions');
-    const performance=document.getElementById('accountingPerformance');
-    content.innerHTML='<h3>Operational Actions</h3>';
-    if(actions)content.appendChild(actions.cloneNode(true));
-    const heading=document.createElement('h3');heading.textContent='Department Performance';content.appendChild(heading);
-    if(performance)content.appendChild(performance.cloneNode(true));
-    if(!report.actions.length){const p=document.createElement('p');p.textContent='No actions were recorded for the selected department and reporting period.';content.appendChild(p);}
-  }else{
-    const clone=panel.cloneNode(true);
-    clone.removeAttribute('hidden');clone.classList.remove('accounting-view','panel');
-    clone.querySelectorAll('.report-export-bar,.accounting-filters,button,input,select,textarea').forEach(x=>x.remove());
-    clone.querySelectorAll('[hidden]').forEach(x=>x.remove());
-    content.appendChild(clone);
-  }
-  content.querySelectorAll('.state:empty').forEach(x=>x.remove());
-  const footer=document.createElement('footer');footer.className='accounting-print-footer';
-  footer.innerHTML='<strong>'+esc(printBusinessName)+'</strong><span>'+esc(printAddress)+' · '+esc(printPhone)+' · '+esc(printEmail)+' · '+esc(printWebsite)+'</span><span class="accounting-page-number"></span>';
-  root.append(header,meta,content,footer);document.body.appendChild(root);
-  const previousTitle=document.title;document.title='Kiteezi-'+view+'-Report-'+today();
-  document.body.classList.add('accounting-printing');
-  let cleaned=false;
-  const cleanup=()=>{if(cleaned)return;cleaned=true;document.body.classList.remove('accounting-printing');root.remove();document.title=previousTitle;window.removeEventListener('afterprint',cleanup);};
-  window.addEventListener('afterprint',cleanup);
-  try{window.print();}finally{setTimeout(cleanup,30000);}
+    if(view==='operations')await loadAccountingOperations();
+    else if(view==='cash')await loadAccountingCashReport();
+    const panel=document.getElementById('accounting-panel-'+view);
+    if(!panel)throw Error('The selected report section could not be found.');
+    let logoUrl='';
+    try{const settings=await api('/rest/v1/site_settings?select=key,value&order=key.asc');logoUrl=settings.find(x=>x.key==='logo_url')?.value||'';}catch{}
+    if(!logoUrl)logoUrl=$('.brand-mark img')?.src||'';
+    if(logoUrl&&!/^https?:/i.test(logoUrl))logoUrl=new URL(logoUrl,location.href).href;
+    let businessName='Kiteezi Recreational Center',tagline='Comfort • Dining • Recreation',phone='+256 766 529086',email='kreationalcenter@gmail.com',website='https://kiteezirecreationalcenter.com',address='Kiteezi, Lusanjja, Kampala, Uganda';
+    try{
+      const rows=await api('/rest/v1/site_settings?select=key,value&key=in.(business_name,business_tagline,phone,business_email,website,address)');
+      const values=Object.fromEntries((rows||[]).map(x=>[x.key,x.value]));
+      businessName=values.business_name||businessName;tagline=values.business_tagline||tagline;phone=values.phone||phone;email=values.business_email||email;website=values.website||website;address=values.address||address;
+    }catch{}
+    const titles={overview:'Financial Overview',statements:'Financial Statements',cash:'Cash & Sales Report',purchases:'Purchases & Inventory Report',operations:'Actions & Performance Report',ledger:'General Ledger Report'};
+    const title=titles[view]||'Accounting & Finance Report';
+    const detail=view==='operations'&&lastAccountingOperationsReport
+      ?'Reporting period: '+lastAccountingOperationsReport.from+' to '+lastAccountingOperationsReport.to+' | Department: '+(lastAccountingOperationsReport.department||'All departments')
+      :view==='cash'&&lastAccountingCashReport
+        ?'Reporting period: '+lastAccountingCashReport.from+' to '+lastAccountingCashReport.to+' | Source: '+(lastAccountingCashReport.source||'All')
+        :'Generated: '+new Date().toLocaleString('en-GB');
+    const content=document.createElement('section');
+    if(view==='operations'){
+      const report=lastAccountingOperationsReport;
+      if(!report)throw Error('Generate Actions & Performance before printing.');
+      content.innerHTML='<h3>Operational Actions</h3>';
+      const actions=document.getElementById('accountingActions'),performance=document.getElementById('accountingPerformance');
+      if(actions)content.appendChild(actions.cloneNode(true));
+      const heading=document.createElement('h3');heading.textContent='Department Performance';content.appendChild(heading);
+      if(performance)content.appendChild(performance.cloneNode(true));
+      if(!report.actions.length){const p=document.createElement('p');p.textContent='No actions were recorded for the selected department and reporting period.';content.appendChild(p);}
+    }else{
+      const clone=panel.cloneNode(true);clone.removeAttribute('hidden');clone.classList.remove('accounting-view','panel');
+      clone.querySelectorAll('.report-export-bar,.accounting-filters,button,input,select,textarea').forEach(x=>x.remove());
+      clone.querySelectorAll('[hidden]').forEach(x=>x.remove());content.appendChild(clone);
+    }
+    content.querySelectorAll('.state:empty').forEach(x=>x.remove());
+    const logo=logoUrl?'<img src="'+esc(logoUrl)+'" alt="Kiteezi logo">':'';
+    const safe=(v)=>esc(String(v??''));
+    const reportHtml='<!doctype html><html><head><meta charset="utf-8"><title>'+safe(title)+'</title><style>'+
+      '@page{size:A4 portrait;margin:38mm 16mm 31mm}'+
+      '*{box-sizing:border-box}html,body{margin:0;padding:0;background:#fff;color:#202820;font-family:Arial,Helvetica,sans-serif;font-size:10pt;line-height:1.42}'+
+      '.letterhead{position:fixed;top:-29mm;left:0;right:0;height:25mm;display:flex;align-items:center;gap:14px;border-bottom:3px solid #1b4332;padding:0 0 7px;background:#fff}'+
+      '.letterhead img{width:62px;height:58px;object-fit:contain;flex:0 0 62px}.brand h1{margin:0;color:#1b4332;font-family:Georgia,serif;font-size:21pt;line-height:1.1;font-weight:700}.brand p{margin:5px 0 0;color:#2d6a4f;font-family:Georgia,serif;font-size:11pt;font-style:italic}'+
+      '.report-title{text-align:center;margin:0 0 4px;color:#1b4332;font-family:Georgia,serif;font-size:22pt;line-height:1.2}.report-meta{text-align:center;color:#59665f;font-size:9pt;margin:0 0 17px;padding:0 0 11px;border-bottom:1px solid #9bb9a4}'+
+      'h3{margin:17px 0 8px;color:#1b4332;font-family:Georgia,serif;font-size:14pt}table{width:100%;border-collapse:collapse;margin:8px 0 17px;font-size:8.5pt;break-inside:auto}thead{display:table-header-group}tr{break-inside:avoid}th{background:#1b4332!important;color:#fff!important;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}th,td{border:1px solid #aebfb3;padding:7px 8px;text-align:left;vertical-align:top}tbody tr:nth-child(even){background:#f1f6f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.metric{border:1px solid #cbd8cf;border-radius:5px;padding:10px;break-inside:avoid}.metric b{display:block;color:#1b4332;font-size:14pt;margin-bottom:4px}.accounting-grid-two{display:block}.accounting-grid-two>div{margin-bottom:15px}.table-scroll{overflow:visible!important;max-height:none!important}.state{color:#53635b}.letter-footer{position:fixed;bottom:-25mm;left:0;right:0;border-top:2px solid #1b4332;padding:6px 0 0;text-align:center;background:#fff;color:#34483c;font-size:8pt;line-height:1.35}.letter-footer .contacts{font-weight:600}.letter-footer .web{margin-top:3px}.letter-footer .confidential{margin-top:3px;color:#1b4332;font-weight:700;font-size:8.5pt}.page-number:after{content:"Page " counter(page) " of " counter(pages)}'+
+      '</style></head><body><header class="letterhead">'+logo+'<div class="brand"><h1>'+safe(businessName)+'</h1><p>'+safe(tagline)+'</p></div></header>'+
+      '<footer class="letter-footer"><div class="contacts">'+safe(address)+' &nbsp; | &nbsp; '+safe(phone)+' &nbsp; | &nbsp; '+safe(email)+'</div><div class="web">'+safe(website)+'</div><div class="confidential">CONFIDENTIAL &nbsp; • &nbsp; <span class="page-number"></span></div></footer>'+
+      '<main><h2 class="report-title">'+safe(title)+'</h2><p class="report-meta">'+safe(detail)+'</p>'+content.innerHTML+'</main>'+
+      '<script>window.addEventListener("load",function(){var imgs=Array.from(document.images);Promise.all(imgs.map(function(i){return i.decode?i.decode().catch(function(){}):Promise.resolve()})).then(function(){setTimeout(function(){window.focus();window.print()},350)});});window.addEventListener("afterprint",function(){setTimeout(function(){window.close()},500)});<\/script></body></html>';
+    printWindow.document.open();printWindow.document.write(reportHtml);printWindow.document.close();
+  }catch(error){printWindow.close();msg(error);}
 }
 async function downloadAccountingCash(){
   try{
