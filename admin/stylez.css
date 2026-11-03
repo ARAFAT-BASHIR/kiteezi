@@ -1214,44 +1214,50 @@ body.admin .pos-category-card:focus-visible{outline:3px solid #d4af37;outline-of
 @media(max-width:1100px){body.admin .pos-category-cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:600px){body.admin .pos-category-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}body.admin .pos-category-card-name{font-size:12px;padding:8px 8px 2px}body.admin .pos-category-card-count{padding:0 8px 8px}}
 
-/* Notification inbox: keep the panel clear of the fixed admin navigation. */
-body.admin #notificationPanel{position:fixed;left:294px;right:24px;top:88px;width:auto;max-width:1200px;max-height:calc(100dvh - 112px);margin:0 0 0 auto;overflow:auto;padding:16px;display:none;z-index:120;box-shadow:0 18px 45px rgba(17,35,27,.2)}
-body.admin .notification-panel-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:-16px;z-index:2;background:#fff;padding:4px 0 12px;border-bottom:1px solid #e1e7e2}
-body.admin .notification-panel-toolbar h2{margin:0}
-body.admin .notification-panel-actions{display:flex;align-items:center;gap:8px}
-body.admin .notification-close{background:#f4f6f4;border:1px solid #dce3de;color:#263b30;white-space:nowrap}
+/* Notification inbox: roomy desktop workspace with a persistent close control. */
+body.admin #notificationPanel{position:fixed;left:294px;right:18px;top:82px;width:auto;max-width:none;max-height:calc(100dvh - 100px);margin:0;overflow:auto;padding:20px;display:none;z-index:120;box-shadow:0 18px 45px rgba(17,35,27,.2)}
+body.admin .notification-panel-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;position:sticky;top:-20px;z-index:5;background:#fff;margin:-20px -20px 16px;padding:14px 20px;border-bottom:1px solid #e1e7e2}
+body.admin .notification-panel-toolbar h2{margin:0;font-size:20px}
+body.admin .notification-panel-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+body.admin .notification-close{position:sticky;top:0;z-index:8;background:#f4f6f4;border:1px solid #dce3de;color:#263b30;white-space:nowrap;min-width:76px}
 body.admin .notification-close:hover{background:#e8eee9}
-body.admin .notification-workspace{display:grid;grid-template-columns:minmax(230px,0.78fr) minmax(300px,1.22fr);gap:14px;min-height:340px;max-height:calc(100dvh - 205px)}
-body.admin .notification-list{min-width:0;overflow:auto;border-right:1px solid #e1e7e2;padding-right:10px}
-body.admin .notification-item{display:flex;flex-direction:column;align-items:flex-start;text-align:left;width:100%;gap:5px;padding:12px;border:1px solid #e1e7e2;border-radius:12px;background:#fff;margin-bottom:8px;cursor:pointer;font:inherit;color:inherit}
+body.admin .notification-workspace{display:grid;grid-template-columns:minmax(300px,.95fr) minmax(420px,1.25fr);gap:18px;min-height:420px;max-height:calc(100dvh - 190px)}
+body.admin .notification-list{min-width:0;overflow:auto;border-right:1px solid #e1e7e2;padding-right:14px}
+body.admin .notification-item{display:flex;flex-direction:column;align-items:flex-start;text-align:left;width:100%;gap:6px;padding:14px;border:1px solid #e1e7e2;border-radius:12px;background:#fff;margin-bottom:9px;cursor:pointer;font:inherit;color:inherit}
 body.admin .notification-item[aria-pressed="true"]{border-color:#2d6a4f;background:#edf4ef}
 body.admin .notification-item.unread{border-left:4px solid #2d6a4f}
-body.admin .notification-sender{font-size:11px;color:#68736d}
-body.admin .notification-preview{font-size:13px;line-height:1.4;color:#39463f;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+body.admin .notification-sender{font-size:12px;color:#68736d}
+body.admin .notification-preview{font-size:14px;line-height:1.45;color:#39463f;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 body.admin .notification-thread{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
 body.admin .notification-thread-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;border-bottom:1px solid #e1e7e2;padding:2px 0 12px}
-body.admin .notification-thread-head h3{margin:0;font-size:16px}
-body.admin .notification-thread-messages{overflow:auto;flex:1;min-height:120px;padding:14px 2px;display:flex;flex-direction:column;gap:10px}
-body.admin .notification-message{max-width:92%;padding:10px 12px;border-radius:12px;background:#f3f5f3;border:1px solid #e4e9e5}
+body.admin .notification-thread-head h3{margin:0;font-size:17px}
+body.admin .notification-thread-messages{overflow:auto;flex:1;min-height:150px;padding:16px 2px;display:flex;flex-direction:column;gap:12px}
+body.admin .notification-message{max-width:92%;padding:12px 14px;border-radius:12px;background:#f3f5f3;border:1px solid #e4e9e5}
 body.admin .notification-message.sent{align-self:flex-end;background:#e8f4ec;border-color:#d0e7d7}
 body.admin .notification-message-meta{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;font-size:11px;color:#68736d;margin-bottom:5px}
-body.admin .notification-message-body{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px}
+body.admin .notification-message-body{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
 body.admin .notification-reply-form{border-top:1px solid #e1e7e2;padding-top:12px;display:grid;gap:8px}
-body.admin .notification-reply-form textarea{width:100%;min-height:70px;resize:vertical}
+body.admin .notification-reply-form textarea{width:100%;min-height:80px;resize:vertical}
 body.admin .notification-system-note{font-size:12px;color:#68736d;padding:12px 0}
+@media(max-width:1100px){
+  body.admin #notificationPanel{left:282px;right:12px;top:135px;max-height:calc(100dvh - 147px);padding:15px}
+  body.admin .notification-panel-toolbar{top:-15px;margin:-15px -15px 12px;padding:12px 15px}
+  body.admin .notification-workspace{grid-template-columns:minmax(240px,.9fr) minmax(300px,1.1fr);gap:12px;max-height:calc(100dvh - 235px)}
+}
 @media(max-width:900px){
   body.admin #notificationPanel{left:12px;right:12px;top:150px;max-height:calc(100dvh - 162px)}
   body.admin .notification-workspace{max-height:calc(100dvh - 250px)}
 }
 @media(max-width:700px){
-  body.admin #notificationPanel{position:fixed;top:150px;left:8px;right:8px;width:auto;max-width:none;max-height:calc(100dvh - 160px);overflow:auto}
-  body.admin .notification-panel-toolbar{top:-16px;align-items:flex-start;flex-wrap:wrap}
+  body.admin #notificationPanel{position:fixed;top:145px;left:8px;right:8px;width:auto;max-width:none;max-height:calc(100dvh - 153px);overflow:auto;padding:12px}
+  body.admin .notification-panel-toolbar{top:-12px;align-items:flex-start;flex-wrap:wrap;margin:-12px -12px 10px;padding:10px 12px;gap:8px}
   body.admin .notification-panel-toolbar h2{width:100%;font-size:17px}
   body.admin .notification-panel-actions{width:100%;justify-content:flex-end}
+  body.admin .notification-close{position:sticky;top:0;z-index:10}
   body.admin .notification-workspace{grid-template-columns:1fr;max-height:none;min-height:0;gap:10px}
-  body.admin .notification-list{border-right:0;border-bottom:1px solid #e1e7e2;padding:0 0 8px;max-height:25vh}
+  body.admin .notification-list{border-right:0;border-bottom:1px solid #e1e7e2;padding:0 0 8px;max-height:24vh}
   body.admin .notification-thread{min-height:260px}
-  body.admin .notification-thread-messages{max-height:30vh}
+  body.admin .notification-thread-messages{max-height:32vh}
 }
 
 
