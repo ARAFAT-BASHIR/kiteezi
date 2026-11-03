@@ -2106,7 +2106,7 @@ async function exportAccountingWord(view){
       :'Generated: '+new Date().toLocaleString('en-GB');
   const headerLogo=logo?'<img src="'+accountingWordEscape(logo)+'" alt="Kiteezi logo">':'';
   const doc='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+accountingWordEscape(title)+'</title><style>'+
-    '@page Section1{size:21cm 29.7cm;margin:2.2cm 1.7cm 2cm 1.7cm;mso-header-margin:0.8cm;mso-footer-margin:0.8cm;}div.Section1{page:Section1;}'+
+    '@page Section1{size:21cm 29.7cm;margin:2.2cm 1.7cm 2cm 1.7cm;mso-header:h1;mso-footer:f1;mso-header-margin:0.65cm;mso-footer-margin:0.65cm;}div.Section1{page:Section1;}'+
     'body{font-family:Arial,sans-serif;color:#202820;font-size:10pt;line-height:1.35;}'+
     '.doc-header{border-bottom:3px solid #1b4332;padding:0 0 10px;margin-bottom:16px;text-align:center;}'+
     '.doc-header img{height:64px;max-width:110px;object-fit:contain;vertical-align:middle;margin-right:12px;}'+
@@ -2121,9 +2121,9 @@ async function exportAccountingWord(view){
     'th,td{border:1px solid #b9c8bf;padding:6px 7px;vertical-align:top;}tr{page-break-inside:avoid;}'+
     'tbody tr:nth-child(even){background:#f3f6f3;}.summary{width:72%;}.summary th{background:#2d6a4f;}'+
     '.doc-footer{border-top:1px solid #1b4332;padding-top:6px;margin-top:22px;font-size:8pt;color:#58665e;text-align:center;}'+
-    '</style></head><body><div class="Section1"><div class="doc-header">'+headerLogo+'<div class="brand"><h1>KITEEZI RECREATIONAL CENTER</h1><p>YOUR OASIS OF COMFORT, DINING &amp; RELAXATION</p></div></div>'+
+    '</style></head><body><div style="mso-element:header" id="h1"><table style="width:100%;border:0;border-bottom:2px solid #1b4332"><tr><td style="width:75px;border:0">'+headerLogo+'</td><td style="border:0"><strong style="font-size:15pt;color:#1b4332">KITEEZI RECREATIONAL CENTER</strong><br><span style="font-size:8pt;color:#65736b">YOUR OASIS OF COMFORT, DINING &amp; RELAXATION</span></td></tr></table></div><div style="mso-element:footer" id="f1"><p style="border-top:1px solid #1b4332;padding-top:5px;text-align:center;font-size:8pt;color:#58665e">KITEEZI RECREATIONAL CENTER | Official Management &amp; Financial Record | Confidential | Page <span style="mso-field-code:\" PAGE \"">1</span> of <span style="mso-field-code:\" NUMPAGES \"">1</span></p></div><div class="Section1">'+
     '<h1 class="report-title">'+accountingWordEscape(title)+'</h1><p class="report-meta">'+accountingWordEscape(period)+'</p>'+
-    sections.join('')+'<div class="doc-footer"><strong>KITEEZI RECREATIONAL CENTER</strong> | Official Management &amp; Financial Record | Confidential</div></div></body></html>';
+    sections.join('')+'</div></body></html>';
   const blob=new Blob(['\ufeff',doc],{type:'application/msword;charset=utf-8'});
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='kiteezi-'+view+'-report-'+today()+'.doc';
