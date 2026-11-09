@@ -607,7 +607,7 @@
             <span><span class="brand-name">Kiteezi Recreational Center</span><small>Comfort • Dining • Recreation</small></span>
           </div>
           <p>Swimming, dining, sports, gardens, celebrations and everyday relaxation in Kiteezi.</p>
-          <div class="socials" aria-label="Social media"><a data-social="tiktok" href="https://www.tiktok.com/@kiteezi.recreational" target="_blank" rel="noopener noreferrer" aria-label="TikTok" title="TikTok"><i class="fa-brands fa-tiktok" aria-hidden="true"></i></a></div>
+          <div class="socials" data-social-links aria-label="Social media"></div>
         </div>
         <div><h4>Explore</h4><a href="/">Home</a><a href="/menu/">Restaurant &amp; Menu</a><a href="/events/">Events &amp; Catering</a><a href="/sports/">Sports</a><a href="/about/">About Kiteezi</a><a href="/gallery/">Gallery</a></div>
         <div><h4>Swimming</h4><a href="/booking/?service=swimming">Public Swimming</a><a href="/swimming-schedule/">School Swimming</a><a href="/inquiry/?type=coaching">Swimming Training</a><a href="/inquiry/?type=swimming">Swimming Enquiries</a></div>
