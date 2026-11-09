@@ -1,0 +1,457 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20261109-logo" />
+<link rel="apple-touch-icon" href="https://aldpezvbetliuvagiekg.supabase.co/storage/v1/object/public/site-media/branding/logo-13768bb3-49ea-42c8-91fa-76a8215ff976.jpg" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Restaurant menu at Kiteezi Recreational Center — meals, drinks and catering in Kiteezi, Lusanjja, Kampala.">
+<meta name="theme-color" content="#1b4332">
+<title>Menu | Kiteezi Recreational Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap">
+<link rel="stylesheet" href="/styles.css?v=20261102-brand1">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+<style>
+  .menu-tools{
+    display:grid;
+    grid-template-columns:minmax(0,1.7fr) minmax(180px,1fr) auto;
+    gap:12px;
+    align-items:end;
+    margin:0 0 18px;
+  }
+  .menu-tools label{display:grid;gap:6px;font-weight:700}
+  .menu-tools input,.menu-tools select{width:100%;padding:11px 12px;border:1px solid #cfd8d2;border-radius:10px;background:#fff;color:#173126}
+  #menuResultSummary{margin:0 0 14px}
+  @media(max-width:700px){
+    .menu-tools{grid-template-columns:1fr}
+    .menu-tools .btn{width:100%}
+  }
+
+  .menu-order-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-top:12px;
+  }
+
+  .menu-add{
+    padding:8px 12px;
+    font-size:13px;
+    white-space:nowrap;
+  }
+
+  .cart-nav-button{
+    border:0;
+    cursor:pointer;
+  }
+
+/* Fixed order and tracking actions stay outside the navigation and never scroll away. */
+  .menu-cart-float,
+  .menu-track-float{
+    position:fixed;
+    left:18px;
+    right:auto;
+    z-index:1200;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    min-height:46px;
+    border:0;
+    border-radius:999px;
+    padding:12px 17px;
+    font:700 14px/1.2 Inter,sans-serif;
+    text-decoration:none;
+    box-shadow:0 8px 24px rgba(0,0,0,.2);
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .menu-cart-float{
+    bottom:88px;
+    background:var(--green,#087fa5);
+    color:#fff;
+  }
+  .menu-track-float{
+    bottom:24px;
+    background:var(--gold,#f04b16);
+    color:#fff;
+  }
+  .menu-cart-float:hover,.menu-track-float:hover{
+    transform:translateY(-2px);
+    box-shadow:0 11px 28px rgba(0,0,0,.24);
+  }
+  .menu-cart-float:focus-visible,.menu-track-float:focus-visible{
+    outline:3px solid #fff;
+    outline-offset:3px;
+  }
+  @media(max-width:620px){
+    .menu-cart-float,.menu-track-float{
+      left:12px;
+      right:auto;
+      min-height:42px;
+      padding:10px 14px;
+      font-size:12px;
+    }
+    .menu-cart-float{bottom:80px}
+    .menu-track-float{bottom:20px}
+  }
+  @media(max-width:360px){
+    .menu-cart-float,.menu-track-float{
+      left:9px;
+      right:auto;
+      min-height:39px;
+      padding:9px 12px;
+      font-size:11px;
+    }
+    .menu-cart-float{bottom:72px}
+    .menu-track-float{bottom:17px}
+  }
+  [data-cart-count]{
+    display:inline-grid;
+    place-items:center;
+    min-width:20px;
+    height:20px;
+    padding:0 5px;
+    margin-left:5px;
+    border-radius:999px;
+    background:#fff;
+    color:#1b4332;
+    font-size:11px;
+    font-weight:800;
+  }
+
+  @media(max-width:620px){
+    .menu-order-row{
+      align-items:flex-start;
+      flex-direction:column;
+    }
+
+    .menu-add{
+      width:100%;
+    }
+  }
+</style>
+</head>
+
+<body>
+
+<header class="nav menu-page-nav">
+  <div class="container navin">
+
+    <a class="brand" href="/">
+      <span class="brand-mark"><img src="https://aldpezvbetliuvagiekg.supabase.co/storage/v1/object/public/site-media/branding/logo-13768bb3-49ea-42c8-91fa-76a8215ff976.jpg" alt="Kiteezi Recreational Center logo" decoding="async"></span>
+
+      <span>
+        <span class="brand-name">
+          Kiteezi Recreational Center
+        </span>
+
+        <small data-site-setting="business_tagline">
+          Comfort • Dining • Recreation
+        </small>
+      </span>
+    </a>
+
+    <button
+      class="mobile btn"
+      data-mobile
+      aria-label="Open navigation"
+      aria-expanded="false"
+      type="button"
+    >
+      ☰
+    </button>
+
+    <nav class="links menu-page-links" aria-label="Main navigation">
+
+      <a href="/">Home</a>
+
+      <a href="/swimming/">
+        Swimming
+      </a>
+
+      <a
+        href="/menu/"
+        aria-current="page"
+      >
+        Menu
+      </a>
+
+      <a href="/events/">
+        Events
+      </a>
+      <a href="/gallery/">Gallery</a>
+
+      <a href="/sports/">
+        Sports
+      </a>
+
+      <a href="/about/">
+        About
+      </a>
+
+      <a href="/contact/">
+        Contact
+      </a>
+
+      <button
+        type="button"
+        class="btn btn-dark cart-nav-button"
+        data-cart-open
+        aria-label="Open shopping cart"
+      >
+        Cart
+        <span
+          data-cart-count
+          hidden
+        >
+          0
+        </span>
+      </button>
+
+      
+
+      <a
+        class="btn btn-primary"
+        href="/booking/?service=restaurant"
+      >
+        Book Now
+      </a>
+      <a class="btn btn-dark" href="/inquiry/?type=chef">Ask a Question</a>
+
+    </nav>
+
+  </div>
+</header>
+
+<button type="button" class="menu-cart-float" data-cart-open aria-label="Open order">Order <span data-cart-count hidden>0</span></button>
+<a class="menu-track-float" href="/tracking/" aria-label="Track your order">Track Order</a>
+
+<main>
+  <section class="hero" data-menu-hero data-media-hero>
+    <div class="container hero-content">
+      <div class="eyebrow" data-menu-eyebrow>Restaurant • Bar • Catering</div>
+      <h1 data-menu-title>Kiteezi Restaurant & Bar</h1>
+      <p data-menu-description>Meals, drinks and catering prepared for Kiteezi guests.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="#menu">View Menu</a>
+        <button class="btn btn-light" type="button" data-cart-open>View Cart <span data-cart-count hidden>0</span></button>
+        <a class="btn btn-light" href="/booking/?service=restaurant">Request Catering</a>
+        <a class="btn btn-light" data-site-setting-href="/whatsapp_link" href="#" target="_blank" rel="noopener">WhatsApp</a>
+      </div>
+    </div>
+  </section>
+  <section class="section" id="menu">
+    <div class="container">
+      <div class="section-head">
+        <div class="eyebrow">Our menu</div>
+        <h2 data-menu-intro-title>Meals, light bites and refreshments.</h2>
+        <p data-menu-intro>Select menu items and add them to your order.</p>
+      </div>
+      <nav id="menu-category-nav" class="menu-category-nav" aria-label="Browse menu categories"></nav>
+      <div class="menu-tools" aria-label="Menu search and filters">
+        <label class="menu-search">
+          <span>Search the menu</span>
+          <input id="publicMenuSearch" type="search" placeholder="Search meals, drinks, snacks…" autocomplete="off">
+        </label>
+        <label class="menu-category">
+          <span>Category</span>
+          <select id="publicMenuCategory" aria-label="Filter menu by category">
+            <option value="">All categories</option>
+          </select>
+        </label>
+        <button type="button" class="btn btn-dark" id="clearMenuFilters">Clear</button>
+      </div>
+      <div id="menuResultSummary" class="muted" aria-live="polite"></div>
+      <div id="menu-catalog" class="grid grid-3" aria-live="polite">Browse our menu below.</div>
+    </div>
+  </section>
+</main>
+
+
+<footer class="footer">
+
+  <div class="container footer-grid">
+
+
+    <div>
+
+      <div
+        class="brand"
+        style="color:#fff"
+      >
+
+        <span class="brand-mark"><img src="https://aldpezvbetliuvagiekg.supabase.co/storage/v1/object/public/site-media/branding/logo-13768bb3-49ea-42c8-91fa-76a8215ff976.jpg" alt="Kiteezi Recreational Center logo" decoding="async"></span>
+
+        <span>
+
+          <span class="brand-name">
+            Kiteezi Recreational Center
+          </span>
+
+          <small style="color:#bfcfc5">
+
+            <span data-site-setting="location">
+              Kiteezi • Lusanjja • Kampala
+            </span>
+
+          </small>
+
+        </span>
+
+      </div>
+
+      <p>
+        Swimming, dining, sports, gardens, celebrations
+        and everyday relaxation in Kiteezi.
+      </p>
+
+      <div class="socials">
+
+        <a
+          data-social="facebook"
+          href="https://www.facebook.com/p/Kiteezi-Recreational-Centre-61569332887691/"
+          aria-label="Facebook"
+         target="_blank" rel="noopener noreferrer">
+          f
+        </a>
+
+        <a
+          data-social="instagram"
+          href="https://www.instagram.com/kiteezi_recreational_center/"
+          aria-label="Instagram"
+         target="_blank" rel="noopener noreferrer">
+          ◎
+        </a>
+
+        <a
+          data-social="youtube"
+          href="https://youtube.com/@kiteezirecreationalcenter"
+          aria-label="YouTube"
+         target="_blank" rel="noopener noreferrer">
+          ▶
+        </a>
+
+        <a
+          data-social="whatsapp"
+          data-site-setting="whatsapp_link" href="https://wa.me/256709763803"
+          aria-label="WhatsApp"
+         target="_blank" rel="noopener noreferrer"><span aria-hidden="true">◉</span></a>
+
+      </div>
+
+    </div>
+
+
+    <div>
+
+      <h4>
+        Explore
+      </h4>
+
+      <a href="/">
+        Home
+      </a>
+
+      <a href="/swimming/">
+        Swimming
+      </a>
+
+      <a href="/events/">
+        Events & Catering
+      </a>
+
+      <a href="/sports/">
+        Sports
+      </a>
+
+      <a href="/about/">
+        About Kiteezi
+      </a>
+
+    </div>
+
+
+    <div>
+
+      <h4>
+        Menu
+      </h4>
+
+      <a href="#menu">
+        Meals
+      </a>
+
+      <a href="#menu">
+        Breakfast
+      </a>
+
+      <a href="#menu">
+        Drinks
+      </a>
+
+      <a href="#menu">
+        Snacks
+      </a>
+
+      <a href="/booking/?service=event">
+        Event Catering
+      </a>
+
+    </div>
+
+
+    <div>
+
+      <h4>
+        Contact
+      </h4>
+
+      <a
+        data-site-setting="phone" href="#"
+      >
+        +256 766 529086
+      </a>
+
+      <a
+        data-site-setting="whatsapp" data-site-setting-href="/whatsapp_link" href="#" target="_blank" rel="noopener" aria-label="WhatsApp" title="WhatsApp"><span aria-hidden="true">◉</span></a>
+
+      <a
+        data-site-setting="location"
+        href="/contact/"
+      >
+        Kiteezi, Lusanjja, Kampala
+      </a>
+
+      <a href="/contact/">
+        Contact page
+      </a>
+
+    </div>
+
+  </div>
+
+
+  <div class="container copyright">
+
+    © <span data-year></span>
+    Kiteezi Recreational Center.
+    All rights reserved.
+
+  </div>
+
+</footer>
+
+
+<script src="/config.js"></script>
+<script src="/content.js?v=20261102-brand1"></script>
+<script src="/site.js?v=20261102-perf1"></script>
+
+</body>
+</html>
