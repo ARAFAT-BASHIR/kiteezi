@@ -357,7 +357,7 @@
 
 
   async function applyCmsPage() {
-    const slug = (location.pathname.split('/').pop() || 'index.html').replace(/\.html$/i, '') || 'index';
+    const slug = (location.pathname.replace(/\/+$/, '').split('/').pop() || 'index').replace(/\.html$/i, '') || 'index';
     const response = await fetch(
       url + '/rest/v1/cms_pages?select=title,content,published&slug=eq.' + encodeURIComponent(slug) + '&published=eq.true&limit=1',
       { headers }
@@ -393,7 +393,7 @@
   }
 
   async function applyMedia() {
-    const pageSlug = (location.pathname.split('/').pop() || 'index.html').replace(/\.html$/i, '') || 'index';
+    const pageSlug = (location.pathname.replace(/\/+$/, '').split('/').pop() || 'index').replace(/\.html$/i, '') || 'index';
     const media = await getMedia(pageSlug);
     const orderedImages = media
       .filter(row => row.slot_key !== 'hero')
