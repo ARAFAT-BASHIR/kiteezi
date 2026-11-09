@@ -69,7 +69,7 @@ jobs:
           import tempfile
 
           root = Path(".").resolve()
-          script_re = re.compile(r"<script(?![^>]*\bsrc\s*=)[^>]*>(.*?)</script\s*>", re.I | re.S)
+          script_re = re.compile(r"<script(?![^>]*\bsrc\s*=)(?![^>]*\btype\s*=\s*[\"']application/ld\+json[\"'])[^>]*>(.*?)</script\s*>", re.I | re.S)
           tag_re = re.compile(r"<([A-Za-z][A-Za-z0-9-]*)\b([^>]*)>", re.I | re.S)
           ref_re = re.compile(r"""(?:src|href)\s*=\s*["']([^"']+)["']""", re.I)
           dynamic_ref_attr_re = re.compile(r"""\bdata-site-setting-href\s*=""", re.I)
