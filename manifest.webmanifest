@@ -1,8 +1,8 @@
 {
   "name": "Kiteezi Recreational Center",
   "short_name": "Kiteezi",
-  "start_url": "/kiteezi/",
-  "scope": "/kiteezi/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1b4332"
