@@ -3,6 +3,8 @@ Allow: /
 
 Disallow: /admin/
 Disallow: /checkout.html
+Disallow: /checkout/
 Disallow: /tracking.html
+Disallow: /tracking/
 
 Sitemap: https://kiteezirecreationalcenter.com/sitemap.xml
