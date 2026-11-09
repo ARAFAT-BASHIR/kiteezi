@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-<link rel="icon" type="image/jpeg" href="https://aldpezvbetliuvagiekg.supabase.co/storage/v1/object/public/site-media/branding/logo-13768bb3-49ea-42c8-91fa-76a8215ff976.jpg?v=20261109-favicon" />
-<link rel="apple-touch-icon" href="https://aldpezvbetliuvagiekg.supabase.co/storage/v1/object/public/site-media/branding/logo-13768bb3-49ea-42c8-91fa-76a8215ff976.jpg?v=20261109-favicon" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20261109-logo" />
+<link rel="apple-touch-icon" href="https://aldpezvbetliuvagiekg.supabase.co/storage/v1/object/public/site-media/branding/logo-13768bb3-49ea-42c8-91fa-76a8215ff976.jpg" />
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="School swimming availability at Kiteezi Recreational Center">
@@ -21,8 +21,8 @@
 </head>
 <body>
 <header class="nav"><div class="container navin">
-<a class="brand" href="index.html"><span class="brand-mark"><img src="https://aldpezvbetliuvagiekg.supabase.co/storage/v1/object/public/site-media/branding/logo-13768bb3-49ea-42c8-91fa-76a8215ff976.jpg" alt="Kiteezi Recreational Center logo" decoding="async"></span><span><span class="brand-name">Kiteezi Recreational Center</span><small>Comfort • Dining • Recreation</small></span></a>
-<nav class="links" aria-label="Main navigation"><a href="index.html">Home</a><a href="swimming.html">Swimming</a><a href="menu.html">Menu</a><a href="events.html">Events</a><a href="gallery.html">Gallery</a><a href="sports.html">Sports</a><a href="contact.html">Contact</a></nav>
+<a class="brand" href="/"><span class="brand-mark"><img src="https://aldpezvbetliuvagiekg.supabase.co/storage/v1/object/public/site-media/branding/logo-13768bb3-49ea-42c8-91fa-76a8215ff976.jpg" alt="Kiteezi Recreational Center logo" decoding="async"></span><span><span class="brand-name">Kiteezi Recreational Center</span><small>Comfort • Dining • Recreation</small></span></a>
+<nav class="links" aria-label="Main navigation"><a href="/">Home</a><a href="/swimming/">Swimming</a><a href="/menu/">Menu</a><a href="/events/">Events</a><a href="/gallery/">Gallery</a><a href="/sports/">Sports</a><a href="/contact/">Contact</a></nav>
 </div></header>
 
 <main>
@@ -38,7 +38,7 @@
 <label for="schoolSlot">Available one-hour booking time</label>
 <select id="schoolSlot" disabled><option value="">Choose an available time</option></select>
 <button id="continueSchoolBooking" class="btn btn-primary" type="button" disabled>Continue to booking</button>
-<a class="btn btn-dark ask-question" href="inquiry.html?type=swimming">Ask a question</a>
+<a class="btn btn-dark ask-question" href="/inquiry/?type=swimming">Ask a question</a>
 </div>
 
 <h2>Weekly occupied timetable</h2>
@@ -115,7 +115,7 @@ daySelect.addEventListener('change',updateAvailability);
 slotEl.addEventListener('change',function(){go.disabled=!slotEl.value;});
 go.addEventListener('click',function(){
 if(!daySelect.value||!slotEl.value)return;
-location.href='school-swimming-booking.html?day='+encodeURIComponent(daySelect.value)+'&time='+encodeURIComponent(slotEl.value);
+location.href='school-swimming-/booking/?day='+encodeURIComponent(daySelect.value)+'&time='+encodeURIComponent(slotEl.value);
 });
 load();
 })();
