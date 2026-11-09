@@ -275,7 +275,7 @@
       instagram: safeUrl(settings.instagram, {allowRelative: false}),
       youtube: safeUrl(settings.youtube || settings.youtube_link, {allowRelative: false}),
       whatsapp: safeUrl(whatsappLink, {allowRelative: false}),
-      tiktok: safeUrl(settings.tiktok || settings.tiktok_link, {allowRelative: false}),
+      tiktok: safeUrl(settings.tiktok || settings.tiktok_link, {allowRelative: false}) || 'https://www.tiktok.com/@kiteezi.recreational',
       x: safeUrl(settings.x || settings.twitter_link, {allowRelative: false}),
       twitter: safeUrl(settings.twitter || settings.x || settings.twitter_link, {allowRelative: false})
     };
@@ -580,8 +580,8 @@
             (item.platform === 'x' && existing.has('twitter'))) return;
         const link = document.createElement('a');
         link.dataset.social = item.platform;
-        link.href = '#';
-        link.hidden = true;
+        link.href = item.platform === 'tiktok' ? 'https://www.tiktok.com/@kiteezi.recreational' : '#';
+        link.hidden = item.platform !== 'tiktok';
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
         link.setAttribute('aria-label', item.label);
