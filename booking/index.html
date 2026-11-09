@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20261109-logo" />
+<link rel="apple-touch-icon" href="https://aldpezvbetliuvagiekg.supabase.co/storage/v1/object/public/site-media/branding/logo-13768bb3-49ea-42c8-91fa-76a8215ff976.jpg" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0f5132">
+
+  <title>Book Now | Kiteezi Recreational Center</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap">
+<link rel="stylesheet" href="/styles.css?v=20261102-brand1">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+  <style>
+    .booking-wrap{max-width:1050px;margin:auto}
+    .form-card{background:#fff;border-radius:18px;padding:28px;box-shadow:0 12px 35px rgba(0,0,0,.08)}
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+    .field{display:flex;flex-direction:column;gap:7px}
+    .full{grid-column:1/-1}
+    .field label{font-weight:700}
+    .field input,.field select,.field textarea{
+      width:100%;
+      box-sizing:border-box;
+      padding:13px 14px;
+      border:1px solid #d7ddd8;
+      border-radius:10px;
+      font:inherit;
+      background:#fff
+    }
+    .field textarea{min-height:110px;resize:vertical}
+    .section-box{
+      padding:20px;
+      border:1px solid #e1e6e1;
+      border-radius:14px;
+      background:#fafcf9
+    }
+    .section-box h3{margin-top:0}
+    .food-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px
+    }
+    .food-item{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px;
+      border:1px solid #e1e6e1;
+      border-radius:10px;
+      background:#fff
+    }
+    .food-item label{
+      display:flex;
+      gap:9px;
+      align-items:center;
+      cursor:pointer
+    }
+    .food-item input{width:auto}
+    .quantity{
+      width:70px!important;
+      padding:8px!important
+    }
+    .booking-menu-tools{display:grid;gap:12px;margin:14px 0}
+    .booking-menu-tools input{width:100%;box-sizing:border-box;padding:13px 14px;border:1px solid #d7ddd8;border-radius:10px;font:inherit;background:#fff}
+    .booking-menu-categories{display:flex;gap:8px;flex-wrap:wrap}
+    .booking-menu-category{border:1px solid #cbd5ce;background:#fff;color:#1b4332;border-radius:999px;padding:8px 14px;font:inherit;font-size:.9rem;font-weight:700;cursor:pointer}
+    .booking-menu-category.active{background:#1b4332;border-color:#1b4332;color:#fff}
+    .booking-food-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .booking-food-grid .food-item{align-items:flex-start;min-width:0}
+    .booking-food-grid .food-item label{align-items:flex-start;min-width:0;flex:1}
+    .booking-food-grid .food-item label span{overflow-wrap:anywhere}
+    .booking-food-grid .quantity{flex:0 0 64px;margin-top:2px}
+    @media(max-width:900px){.booking-food-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:560px){.booking-food-grid{grid-template-columns:1fr}.booking-food-grid .food-item{padding:11px}}
+    .summary{
+      margin-top:20px;
+      padding:18px;
+      border-radius:12px;
+      background:#f7f1e6
+    }
+    .summary-row{
+      display:flex;
+      justify-content:space-between;
+      gap:15px;
+      padding:7px 0;
+      border-bottom:1px solid rgba(0,0,0,.08)
+    }
+    .summary-row:last-child{border-bottom:0}
+    .status{
+      margin-top:18px;
+      padding:14px 16px;
+      border-radius:10px;
+      display:none
+    }
+    .status.show{display:block}
+    .status.success{background:#e8f5ec;color:#14532d}
+    .status.error{background:#fdecec;color:#991b1b}
+    .hidden{display:none!important}
+    @media(max-width:720px){
+      .form-grid,.food-grid{grid-template-columns:1fr}
+      .full{grid-column:auto}
+      .form-card{padding:20px}
+    }
+  </style>
+<style>
+.payment-instructions{margin-top:14px;padding:16px;border:1px solid #dce6df;border-radius:14px;background:#f4f1de;color:#1b4332}
+.payment-instructions h4{margin:0 0 8px;color:#1b4332}
+.payment-instructions p{margin:5px 0}
+.payment-network{padding:12px;margin:10px 0;background:#fff;border:1px solid #e1e8e2;border-radius:10px}
+.payment-network strong{display:block;margin-bottom:6px}
+.payment-instructions small{display:block;margin-top:10px;line-height:1.5}
+</style>
+</head>
+
+<body>
+
+<header class="nav">
+  <div class="container navin">
+
+    <a class="brand" href="/">
+      <span class="brand-mark"><img src="https://aldpezvbetliuvagiekg.supabase.co/storage/v1/object/public/site-media/branding/logo-13768bb3-49ea-42c8-91fa-76a8215ff976.jpg" alt="Kiteezi Recreational Center logo" decoding="async"></span>
+      <span class="brand-name">
+        Kiteezi Recreational Center
+      </span>
+    </a>
+
+    <nav class="links">
+      <a href="/">Home</a>
+      <a href="/swimming/">Swimming</a>
+      <a href="/sports/">Sports</a>
+      <a href="/menu/">Dining</a>
+      <a href="/events/">Events</a><a href="/gallery/">Gallery</a>
+      <a href="/about/">About</a>
+      <a class="btn btn-primary" href="/booking/">Book Now</a>
+    </nav>
+
+  </div>
+</header>
+
+<main>
+
+<section class="hero">
+  <div class="container hero-content">
+    <div class="eyebrow">Reservations</div>
+
+    <h1>Book your visit.</h1>
+
+    <p>
+      Select your service, date, time, number of guests and catering requirements.
+      You no longer need to type out the food you want.
+    </p>
+  </div>
+</section>
+
+<section class="section">
+
+<div class="container booking-wrap">
+
+<div class="form-card">
+
+<form id="bookingForm">
+
+<div class="form-grid">
+
+<div class="field">
+<label for="customerName">Full name *</label>
+<input
+  id="customerName"
+  name="customerName"
+  required
+  maxlength="120"
+  autocomplete="name"
+>
+</div>
+
+<div class="field">
+<label for="phone">Phone number *</label>
+<input id="phone" name="phone" type="tel" required maxlength="30" autocomplete="tel" inputmode="tel" placeholder="+256 7** *** *** or 07** *** ***">
+<small class="muted">Uganda local numbers are accepted. International numbers may be entered with +country code.</small>
+</div>
+
+<div class="field">
+<label for="email">Email</label>
+<input
+  id="email"
+  name="email"
+  type="email"
+  maxlength="160"
+  autocomplete="email"
+>
+</div>
+
+<div class="field">
+<label for="service">Service *</label>
+
+<select id="service" name="service" required><option value="">Select a service</option></select>
+
+</div>
+
+<div class="field">
+<label for="bookingDate">Date *</label>
+<input
+  id="bookingDate"
+  name="bookingDate"
+  type="date"
+  required
+>
+</div>
+
+<div class="field">
+<label for="bookingTime">Time *</label>
+<input
+  id="bookingTime"
+  name="bookingTime"
+  type="time"
+  required
+>
+</div>
+
+<div class="field">
+<label for="guests">Number of people *</label>
+<input
+  id="guests"
+  name="guests"
+  type="number"
+  min="1"
+  max="1000"
+  value="1"
+  required
+>
+</div>
+
+<div class="field">
+<label for="occasion">Booking type</label>
+
+<select id="occasion" name="occasion">
+
+<option value="">Select</option>
+<option>Personal visit</option>
+<option>Family outing</option>
+<option>Birthday</option>
+<option>Wedding</option>
+<option>Corporate</option>
+<option>Team / Sports group</option>
+<option>Other</option>
+
+</select>
+
+</div>
+
+
+<!-- CATERING -->
+
+<div
+  id="cateringBox"
+  class="section-box full hidden"
+>
+
+<h3>
+Food & drinks
+</h3>
+
+<p>
+
+Select a buffet package or individual menu items.
+</p>
+
+
+<div class="field">
+
+<label for="cateringType">
+Catering option
+</label>
+
+<select id="cateringType" name="cateringType">
+
+<option value="">Select catering</option>
+
+<option value="none">
+No catering
+</option>
+
+<option value="buffet">
+Buffet package
+</option>
+
+<option value="menu">
+Individual menu items
+</option>
+
+<option value="both">
+Buffet + individual items
+</option>
+
+</select>
+
+</div>
+
+
+<!-- BUFFET -->
+
+<div
+  id="buffetBox"
+  class="field hidden"
+>
+
+<label for="buffet">
+Choose buffet
+</label>
+
+<select id="buffet"><option value="">Select buffet</option></select>
+
+<small>
+Final buffet pricing is confirmed by Kiteezi staff.
+</small>
+
+</div>
+
+
+<!-- MENU -->
+
+<div
+  id="menuBox"
+  class="field hidden"
+>
+
+<label>
+Choose menu items
+</label>
+
+<div class="booking-menu-tools">
+  <input id="bookingMenuSearch" type="search" placeholder="Search meals and drinks..." aria-label="Search menu items">
+  <div id="bookingMenuCategories" class="booking-menu-categories" aria-label="Menu categories"></div>
+  <small id="bookingMenuCount" class="muted" aria-live="polite"></small>
+</div>
+<div
+  id="menuItems"
+  class="food-grid booking-food-grid"
+>
+Loading menu items...
+</div>
+
+</div>
+
+</div>
+
+
+<div class="field full">
+
+<label for="notes">
+Additional requirements
+</label>
+
+<textarea
+  id="notes"
+  name="notes"
+  maxlength="3000"
+  placeholder="Additional booking instructions"
+></textarea>
+
+</div>
+
+
+<div class="field full">
+
+<label for="paymentMethod">
+Preferred payment method
+</label>
+
+<select
+  id="paymentMethod"
+  name="paymentMethod"
+>
+
+<option value="">
+Select payment method
+</option>
+
+<option value="Mobile Money">
+Mobile Money
+</option>
+
+<option value="Cash">
+Cash
+</option>
+
+</select>
+
+<div id="mobileMoneyInstructions" class="payment-instructions hidden" aria-live="polite">
+  <h4>Pay by Mobile Money</h4>
+  <p>Use either network below. Follow the dial instructions and enter the merchant code.</p>
+  <div class="payment-network">
+    <strong>MTN Mobile Money</strong>
+    <p>Dial <b>*165*3#</b></p>
+    <p>Enter merchant ID: <b>716644</b></p>
+    <p>Merchant name: <b>Kiteezi Recreational Center</b></p>
+  </div>
+  <div class="payment-network">
+    <strong>Airtel Money</strong>
+    <p>Dial <b>*185*9#</b></p>
+    <p>Enter merchant code: <b>4371872</b></p>
+    <p>Merchant name: <b>Kiteezi Recreational Center</b></p>
+  </div>
+  <small>Before confirming, check that the merchant name displayed on your phone is Kiteezi Recreational Center.</small>
+</div>
+
+<div id="cashPaymentNote" class="payment-instructions hidden" aria-live="polite">
+  Pay cash at the reception/cashier when you arrive.
+</div>
+
+</div>
+
+</div>
+
+
+<div class="summary">
+
+<h3>
+Booking summary
+</h3>
+
+<div class="summary-row">
+<span>Service</span>
+<strong id="summaryService">—</strong>
+</div>
+
+<div class="summary-row">
+<span>Date</span>
+<strong id="summaryDate">—</strong>
+</div>
+
+<div class="summary-row">
+<span>Time</span>
+<strong id="summaryTime">—</strong>
+</div>
+
+<div class="summary-row">
+<span>Guests</span>
+<strong id="summaryGuests">—</strong>
+</div>
+
+<div class="summary-row">
+<span>Catering</span>
+<strong id="summaryCatering">None</strong>
+</div>
+
+<div class="summary-row">
+<span>Estimated total</span>
+<strong id="summaryTotal">UGX 0</strong>
+</div>
+
+</div>
+
+
+<div style="margin-top:20px">
+
+<button
+  class="btn btn-primary"
+  id="submitBooking"
+  type="submit"
+>
+Submit Booking Request
+</button>
+
+</div>
+
+
+<div
+  id="bookingStatus"
+  class="status"
+  role="status"
+  aria-live="polite"
+></div>
+
+
+</form>
+
+</div>
+
+</div>
+
+</section>
+
+</main>
+
+
+<footer class="footer">
+
+<div class="container footer-grid">
+
+<div>
+<h3>Kiteezi Recreational Center</h3>
+<p>Comfort • Dining • Recreation</p>
+<p data-site-setting="location">Kiteezi, Lusanja, Kampala, Uganda</p>
+</div>
+
+<div>
+<h3>Explore</h3>
+<p><a href="/swimming/">Swimming</a></p>
+<p><a href="/sports/">Sports</a></p>
+<p><a href="/menu/">Dining</a></p>
+<p><a href="/events/">Events</a></p>
+</div>
+
+<div>
+<h3>Contact</h3>
+<p>
+<a data-site-setting="phone" href="#">
++256 766 529086
+</a>
+</p>
+</div>
+
+</div>
+
+</footer>
+
+
+<script src="/config.js"></script>
+<script src="/content.js?v=20261102-brand1"></script>
+<script src="/site.js?v=20261102-perf1"></script>
+
+<script>
+(function(){
+'use strict';
+const queryParams=new URLSearchParams(location.search); const requestedService=queryParams.get('service'); const schoolDay=queryParams.get('day'); const schoolTime=queryParams.get('time');
+if(requestedService==='training'){
+  location.replace('/inquiry/?type=coaching');
+  return;
+}
+const C=window.KITEEZI_CONFIG||{},URL=String(C.SUPABASE_URL||'').replace(/\/+$/,''),KEY=String(C.SUPABASE_ANON_KEY||'');
+const $=s=>document.querySelector(s),form=$('#bookingForm'),service=$('#service'),guests=$('#guests'),cateringBox=$('#cateringBox'),buffetBox=$('#buffetBox'),menuBox=$('#menuBox'),menuItems=$('#menuItems'),buffet=$('#buffet'),cateringType=$('#cateringType'),status=$('#bookingStatus'),submit=$('#submitBooking');let services=[],menus=[],buffets=[],buffetItems=[],buffetSelections={};
+const paymentMethod=$('#paymentMethod'),mobileMoneyInstructions=$('#mobileMoneyInstructions'),cashPaymentNote=$('#cashPaymentNote');
+function updatePaymentInstructions(){
+  const method=paymentMethod?.value||'';
+  mobileMoneyInstructions?.classList.toggle('hidden',method!=='Mobile Money');
+  cashPaymentNote?.classList.toggle('hidden',method!=='Cash');
+}
+paymentMethod?.addEventListener('change',updatePaymentInstructions);
+const esc=v=>String(v??'').replace(/[&<>"]/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[x]));const money=v=>'UGX '+new Intl.NumberFormat('en-UG').format(Number(v)||0);
+function humanBookingError(error,fallback='We could not complete the booking right now. Please try again in a moment.'){const m=String(error?.message??error??'').trim();if(!m||m==='[object Object]')return fallback;if(/(?:supabase|postgrest|pgrst|postgres|sql|schema|relation|column|constraint|permission denied|function .* does not exist|does not exist|http\s*\d{3}|\b(?:3f000|42883|42501|235\d{3})\b|fetch failed|network error|unexpected .* response|syntax error|jwt)/i.test(m)||/^\s*[\[{].*[\]}]\s*$/.test(m))return fallback;return m;}
+async function get(path){const r=await fetch(URL+path,{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw Error(humanBookingError(d?.message||d?.error||d,'We could not load the latest booking options. Please refresh and try again.'));return d}
+async function load(){[services,menus,buffets,buffetItems]=await Promise.all([
+get('/rest/v1/services?select=id,name,description,active,price,pricing_mode,team_threshold,small_group_price,full_team_price&active=eq.true&order=name.asc'),
+get('/rest/v1/menu_items?select=id,name,description,price,price_on_request,in_stock,category_id,menu_categories(name,sort_order)&in_stock=eq.true&order=name.asc'),
+get('/rest/v1/booking_bundles?select=id,name,description,price_per_person,price_on_request,pricing_mode,serves_people&active=eq.true&order=sort_order.asc'),
+get('/rest/v1/booking_bundle_items?select=id,bundle_id,name,description,component_area,selection_mode,min_select,max_select,item_quantity,sort_order&active=eq.true&order=bundle_id,sort_order')
+]);const params=queryParams,requested=params.get('service'),wanted=String(requested||'').toLowerCase();const match=requested?services.find(x=>String(x.name||'').toLowerCase().replace(/\s+/g,'-').includes(wanted)||String(x.name||'').toLowerCase()===wanted):null;service.innerHTML='<option value="">Select service</option>'+services.filter(x=>!String(x.name||'').toLowerCase().includes('school swimming')).map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join('')+(match&&/school swimming/i.test(match.name)?'<option value="'+match.id+'" selected hidden>'+esc(match.name)+'</option>':'');if(match)service.value=match.id;const dateInput=$('#bookingDate'),timeInput=$('#bookingTime');if(schoolDay&&/school swimming/i.test(match?.name||'')){const d=nextDateForDay(schoolDay);if(dateInput)dateInput.value=d;if(timeInput)timeInput.value=schoolTime||'';dateInput.readOnly=true;timeInput.readOnly=true}if(params.get('date')&&dateInput)dateInput.value=params.get('date');if(params.get('time')&&timeInput)timeInput.value=params.get('time');buffet.innerHTML='<option value="">Select buffet</option>'+buffets.map(x=>'<option value="'+x.id+'">'+esc(x.name)+' — '+(x.pricing_mode==='fixed_package'?money(x.price_per_person)+' / platter (serves '+(x.serves_people||1)+')':(x.price_on_request?'Price on request':money(x.price_per_person)+'/person'))+'</option>').join('');renderMenu();renderBuffet();update()}
+let activeMenuCategory='All';
+function renderMenu(){
+  const search=$('#bookingMenuSearch'),categoryNav=$('#bookingMenuCategories'),count=$('#bookingMenuCount');
+  const categories=[...new Set(menus.map(x=>x.menu_categories?.name||'Other'))].sort((a,b)=>{
+    const aa=menus.find(x=>(x.menu_categories?.name||'Other')===a)?.menu_categories?.sort_order??999;
+    const bb=menus.find(x=>(x.menu_categories?.name||'Other')===b)?.menu_categories?.sort_order??999;
+    return Number(aa)-Number(bb)||a.localeCompare(b);
+  });
+  categoryNav.innerHTML=['All',...categories].map(name=>'<button type="button" class="booking-menu-category '+(activeMenuCategory===name?'active':'')+'" data-booking-category="'+esc(name)+'" aria-pressed="'+(activeMenuCategory===name?'true':'false')+'">'+esc(name)+'</button>').join('');
+  menuItems.innerHTML=menus.map(x=>{
+    const por=x.price_on_request||Number(x.price)===0,cat=x.menu_categories?.name||'Other';
+    return '<div class="food-item" data-booking-menu-card data-category="'+esc(cat)+'" data-search="'+esc([x.name,x.description,cat].join(' ')).toLowerCase()+'"><label><input type="checkbox" data-id="'+x.id+'" '+(por?'disabled':'')+'><span><strong>'+esc(x.name)+'</strong><br><small>'+esc(x.description||'')+' · '+(por?'Price on request':money(x.price))+'</small></span></label><input class="quantity" data-q="'+x.id+'" type="number" min="1" value="1" '+(por?'disabled':'')+' aria-label="Quantity for '+esc(x.name)+'"></div>';
+  }).join('')||'<p class="muted">No menu items are currently available.</p>';
+  menuItems.querySelectorAll('[data-id]').forEach(x=>x.onchange=update);
+  menuItems.querySelectorAll('[data-q]').forEach(x=>x.oninput=update);
+  categoryNav.querySelectorAll('[data-booking-category]').forEach(button=>button.addEventListener('click',()=>{
+    activeMenuCategory=button.dataset.bookingCategory;
+    categoryNav.querySelectorAll('[data-booking-category]').forEach(b=>{const active=b.dataset.bookingCategory===activeMenuCategory;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});
+    filterBookingMenu();
+  }));
+  search?.addEventListener('input',filterBookingMenu);
+  filterBookingMenu();
+}
+function filterBookingMenu(){
+  const q=String($('#bookingMenuSearch')?.value||'').trim().toLowerCase();
+  let visible=0;
+  menuItems.querySelectorAll('[data-booking-menu-card]').forEach(card=>{
+    const show=(activeMenuCategory==='All'||card.dataset.category===activeMenuCategory)&&(!q||card.dataset.search.includes(q));
+    card.classList.toggle('hidden',!show);
+    if(show)visible++;
+  });
+  $('#bookingMenuCount').textContent=visible+' item'+(visible===1?'':'s')+' found';
+}
+function bundleFor(id){return buffets.find(x=>x.id===id)}
+function bundleItemsFor(id){return buffetItems.filter(x=>x.bundle_id===id)}
+function renderBuffet(){const b=bundleFor(buffet.value);if(!b){buffetBox.querySelector('[data-buffet-components]')?.remove();return}const items=bundleItemsFor(b.id),areas=[];items.forEach(x=>{if(!areas.includes(x.component_area))areas.push(x.component_area)});let html='<div data-buffet-components class="field" style="margin-top:14px"><strong>Buffet components</strong><p class="muted">Choose the required options. Included items are shown automatically.</p>';for(const area of areas){const group=items.filter(x=>x.component_area===area),choose=group.filter(x=>x.selection_mode==='choose'),fixed=group.filter(x=>x.selection_mode==='fixed');const min=choose[0]?.min_select||0,max=choose[0]?.max_select||0;html+='<div class="section-box" style="margin-top:12px"><h4>'+esc(area)+(choose.length?' — Choose '+min+(max!==min?'–'+max:''):'')+'</h4>';if(fixed.length)html+='<p><strong>Included:</strong> '+fixed.map(x=>esc(x.name)+(x.item_quantity>1?' × '+x.item_quantity:'')).join(', ')+'</p>';if(choose.length)html+=choose.map(x=>{const type=max===1?'radio':'checkbox';const checked=(buffetSelections[b.id]||[]).includes(x.id);return '<label style="display:block;margin:7px 0"><input type="'+type+'" name="buffet_'+b.id+'_'+area.replace(/[^a-z0-9]/gi,'_')+'" data-buffet-option="'+x.id+'" '+(checked?'checked':'')+'> '+esc(x.name)+'</label>'}).join('');html+='</div>'}html+='</div>';buffetBox.insertAdjacentHTML('beforeend',html);buffetBox.querySelectorAll('[data-buffet-option]').forEach(x=>x.onchange=()=>{const ids=[...buffetBox.querySelectorAll('[data-buffet-option]:checked')].map(y=>y.dataset.buffetOption);buffetSelections[b.id]=ids;update()})}
+function isSportsOrSwimming(){const s=services.find(x=>x.id===service.value),n=String(s?.name||'').toLowerCase();return /football|basketball|swimming/.test(n)}
+function updateCateringMode(){const optional=isSportsOrSwimming();cateringBox.classList.remove('hidden');const none=[...cateringType.options].find(x=>x.value==='none'),placeholder=[...cateringType.options].find(x=>x.value==='');if(placeholder)placeholder.textContent=optional?'Catering (optional)':'Select catering (required)';if(none)none.disabled=!optional;if(!optional&&cateringType.value==='none')cateringType.value='';if(optional&&cateringType.value==='')cateringType.value='none';const mode=cateringType.value;buffetBox.classList.toggle('hidden',!(mode==='buffet'||mode==='both'));menuBox.classList.toggle('hidden',!(mode==='menu'||mode==='both'));if(mode==='none'||mode===''){$('#buffet').value='';menuItems.querySelectorAll('[data-id]').forEach(x=>x.checked=false)}}
+function selected(){if(!['menu','both'].includes(cateringType.value))return[];return[...menuItems.querySelectorAll('[data-id]:checked')].map(x=>({type:'menu_item',id:x.dataset.id,quantity:Math.max(1,Number(menuItems.querySelector('[data-q="'+x.dataset.id+'"]').value)||1)}))}
+function selectedBuffetOptions(){const b=bundleFor(buffet.value);return b?(buffetSelections[b.id]||[]).map(id=>({id})):[]}
+function buffetValidation(){const b=bundleFor(buffet.value);if(!b)return null;for(const area of [...new Set(bundleItemsFor(b.id).filter(x=>x.selection_mode==='choose').map(x=>x.component_area))]){const g=bundleItemsFor(b.id).filter(x=>x.selection_mode==='choose'&&x.component_area===area),min=g[0].min_select||0,max=g[0].max_select||0,count=(buffetSelections[b.id]||[]).filter(id=>g.some(x=>x.id===id)).length;if(count<min||count>max)return area+': choose '+min+(max!==min?'–'+max:'')+' option(s).'}return null}
+function nextDateForDay(day){const d=Number(day);if(!d)return'';const now=new Date(),current=now.getDay()||7;let delta=d-current;if(delta<0)delta+=7;const target=new Date(now);target.setDate(now.getDate()+delta);return new Date(target-target.getTimezoneOffset()*60000).toISOString().slice(0,10)}
+function serviceComponent(){const id=service.value;return id?[{type:'service',id,quantity:Math.max(1,Number(guests.value)||1)}]:[]}
+function components(){const a=serviceComponent(),b=['buffet','both'].includes(cateringType.value)&&buffet.value?[{type:'buffet',id:buffet.value,quantity:Number(guests.value)||1,options:selectedBuffetOptions()}]:[];return a.concat(b,selected())}
+function update(){updateCateringMode();const s=services.find(x=>x.id===service.value),p=Math.max(1,Number(guests.value)||1);$('#summaryService').textContent=s?.name||'—';$('#summaryDate').textContent=$('#bookingDate').value||'—';$('#summaryTime').textContent=$('#bookingTime').value||'—';$('#summaryGuests').textContent=p;const parts=[];if(buffet.value){const b=bundleFor(buffet.value);parts.push(b?.name||'Buffet');const err=buffetValidation();if(err)parts.push('('+err+')')}selected().forEach(x=>parts.push(menus.find(m=>m.id===x.id)?.name+' × '+x.quantity));$('#summaryCatering').textContent=parts.join(', ')||'None';let total=0;if(s){let u=Number(s.price||0);if(s.pricing_mode==='per_person_team')u=p>=Number(s.team_threshold||0)?Number(s.full_team_price||4000):Number(s.small_group_price||5000);total+=s.pricing_mode==='per_person_team'?u*p:u}if(buffet.value){const b=bundleFor(buffet.value);if(b&&!b.price_on_request){total+=b.pricing_mode==='fixed_package'?Number(b.price_per_person||0)*Math.max(1,Math.ceil(p/Number(b.serves_people||1))):Number(b.price_per_person||0)*p}}selected().forEach(x=>{const m=menus.find(y=>y.id===x.id);total+=Number(m?.price||0)*x.quantity});$('#summaryTotal').textContent=money(total)}
+[service,cateringType,buffet,guests,$('#bookingDate'),$('#bookingTime')].forEach(x=>x&&x.addEventListener('input',()=>{if(x===buffet){renderBuffet()}update() }));menuItems.addEventListener('change',update);
+form.addEventListener('submit',async e=>{e.preventDefault();if(!form.checkValidity())return form.reportValidity();if(!service.value){status.textContent='Please select a service.';status.className='status show error';return}if(!isSportsOrSwimming()&&(!cateringType.value||cateringType.value==='none')){status.textContent='Please select a catering option for this type of booking.';status.className='status show error';return}if(['buffet','both'].includes(cateringType.value)&&buffet.value){const err=buffetValidation();if(err){status.textContent=err;status.className='status show error';return}}const data=new FormData(form);if(/school swimming/i.test(services.find(x=>x.id===service.value)?.name||'')&&(!schoolDay||!schoolTime)){status.textContent='Choose your weekly school swimming day and time first.';status.className='status show error';return}submit.disabled=true;submit.textContent='Submitting…';try{const r=await fetch(URL+'/rest/v1/rpc/submit_public_booking_v3',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify({p_customer_name:data.get('customerName'),p_phone:data.get('phone'),p_email:data.get('email')||null,p_booking_date:data.get('bookingDate'),p_start_time:data.get('bookingTime'),p_people:Number(data.get('guests')),p_notes:[data.get('notes')||'',data.get('paymentMethod')?'Preferred payment method: '+data.get('paymentMethod'):'' ].filter(Boolean).join(' · ')||null,p_components:components()})});const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw Error(humanBookingError(d?.message||d?.error||d,'We could not submit your booking right now. Please try again in a moment.'));localStorage.setItem('kiteezi_track_phone_v1',String(data.get('phone')||''));form.reset();updatePaymentInstructions();buffetSelections={};renderMenu();renderBuffet();update();status.innerHTML='Booking submitted — wait for confirmation.<br><a class="btn btn-dark" style="margin-top:12px;display:inline-flex" href="/tracking/?type=booking&id='+encodeURIComponent(d?.booking_id||'')+'">Check booking status</a>';status.className='status show success'}catch(e){status.textContent=humanBookingError(e,'We could not submit your booking right now. Please try again in a moment.');status.className='status show error'}finally{submit.disabled=false;submit.textContent='Submit Booking Request'}});
+load().catch(e=>{status.textContent=humanBookingError(e,'We could not load the current services and menu options. Please refresh and try again.');status.className='status show error'});update();})();
+</script>
+
+</body>
+</html>
