@@ -1,0 +1,1288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20261109-logo" />
+<link rel="apple-touch-icon" href="https://aldpezvbetliuvagiekg.supabase.co/storage/v1/object/public/site-media/branding/logo-13768bb3-49ea-42c8-91fa-76a8215ff976.jpg" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#1b4332">
+
+  <title>Checkout | Kiteezi Recreational Center</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap">
+<link rel="stylesheet" href="/styles.css?v=20261102-brand1">
+
+  <style>
+    .checkout {
+      padding: 56px 0 80px;
+    }
+
+    .checkout-grid {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 28px;
+    }
+
+    .panel {
+      background: #fff;
+      border: 1px solid #e6e9e5;
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.05);
+    }
+
+    .cart-line {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 14px;
+      align-items: center;
+      padding: 15px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .qty {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .qty button {
+      width: 34px;
+      height: 34px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .qty button:hover {
+      background: #f5f7f5;
+    }
+
+    .remove {
+      border: 0;
+      background: none;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 20px;
+      font-weight: 800;
+      margin-top: 20px;
+    }
+
+    .field {
+      margin: 0 0 16px;
+    }
+
+    .field label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 7px;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px 13px;
+      border: 1px solid #ccd4ce;
+      border-radius: 10px;
+      font: inherit;
+    }
+
+    .field textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    .delivery-fields {
+      display: none;
+    }
+
+    .delivery-fields.show {
+      display: block;
+    }
+
+    .notice {
+      padding: 13px 15px;
+      border-radius: 10px;
+      background: #f4f7f4;
+      margin-bottom: 18px;
+    }
+
+    .error {
+      color: #a61b1b;
+      margin-top: 12px;
+    }
+
+    .success {
+      display: none;
+      text-align: center;
+    }
+
+    .success.show {
+      display: block;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 40px 10px;
+    }
+
+    .muted {
+      opacity: .7;
+    }
+
+    @media (max-width: 800px) {
+      .checkout-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .cart-line {
+        grid-template-columns: 1fr;
+      }
+
+      .qty {
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="nav">
+  <div class="container navin">
+
+    <a class="brand" href="/">
+      <span class="brand-mark"><img src="https://aldpezvbetliuvagiekg.supabase.co/storage/v1/object/public/site-media/branding/logo-13768bb3-49ea-42c8-91fa-76a8215ff976.jpg" alt="Kiteezi Recreational Center logo" decoding="async"></span>
+
+      <span>
+        <span class="brand-name">
+          Kiteezi Recreational Center
+        </span>
+
+        <small>
+          Comfort • Dining • Recreation
+        </small>
+      </span>
+    </a>
+
+    <nav class="links">
+      <a href="/menu/">Menu</a>
+      <a href="/booking/">Bookings</a>
+
+      <a
+        class="btn btn-primary"
+        href="/menu/"
+      >
+        Continue Shopping
+      </a>
+    </nav>
+
+  </div>
+</header>
+
+
+<main class="checkout">
+
+  <div class="container">
+
+    <div class="section-head">
+
+      <div class="eyebrow">
+        Online order
+      </div>
+
+      <h1>
+        Complete your order
+      </h1>
+
+      <p>
+        Review your food and drinks, choose pickup, delivery, or dine in,
+        then submit your order to Kiteezi.
+      </p>
+
+    </div>
+
+
+    <!-- EMPTY CART -->
+
+    <div
+      id="empty"
+      class="panel empty"
+      hidden
+    >
+      <h2>
+        Your cart is empty
+      </h2>
+
+      <p class="muted">
+        Add meals or drinks from the Kiteezi menu first.
+      </p>
+
+      <a
+        class="btn btn-primary"
+        href="/menu/"
+      >
+        Browse Menu
+      </a>
+    </div>
+
+
+    <!-- CHECKOUT -->
+
+    <div
+      id="checkout-app"
+      class="checkout-grid"
+    >
+
+      <!-- CART -->
+
+      <section class="panel">
+
+        <h2>
+          Your order
+        </h2>
+
+        <div id="cart-lines"></div>
+        <div id="cart-availability" class="notice" hidden></div>
+
+        <div class="total">
+
+          <span>
+            Total
+          </span>
+
+          <span id="cart-total">
+            UGX 0
+          </span>
+
+        </div>
+
+      </section>
+
+
+      <!-- CUSTOMER -->
+
+      <section class="panel">
+
+        <form id="order-form">
+
+          <h2>
+            Customer details
+          </h2>
+
+
+          <div class="field">
+
+            <label for="name">
+              Full name *
+            </label>
+
+            <input
+              id="name"
+              name="name"
+              required
+              autocomplete="name"
+            >
+
+          </div>
+
+
+          <div class="field">
+
+            <label for="phone">Phone number *</label>
+            <input id="phone" name="phone" required autocomplete="tel" inputmode="tel" placeholder="+256 7** *** *** or 07** *** ***">
+            <small class="muted">Uganda local numbers are accepted. International numbers may be entered with +country code.</small>
+
+          </div>
+
+
+          <div class="field">
+
+            <label for="email">
+              Email
+            </label>
+
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autocomplete="email"
+            >
+
+          </div>
+
+
+          <div class="field">
+
+            <label for="fulfillment">
+              Receive your order *
+            </label>
+
+            <select
+              id="fulfillment"
+              name="fulfillment"
+              required
+            >
+
+              <option value="pickup">
+                Pickup from Kiteezi
+              </option>
+
+              <option value="delivery">
+                Delivery
+              </option>
+
+              <option value="dine_in">
+                Dine in
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div
+            id="delivery-fields"
+            class="delivery-fields"
+          >
+
+            <div class="field">
+
+              <label for="address">
+                Delivery address *
+              </label>
+
+              <textarea
+                id="address"
+                name="address"
+                placeholder="Location, landmark and directions"
+              ></textarea>
+
+            </div>
+
+          </div>
+
+
+          <div class="field">
+
+            <label for="notes">
+              Order notes
+            </label>
+
+            <textarea
+              id="notes"
+              name="notes"
+              placeholder="Any additional instructions"
+            ></textarea>
+
+          </div>
+
+
+          <div class="notice">
+
+            Your order will be sent to Kiteezi for processing.
+
+          </div>
+
+
+          <button
+            id="submit"
+            class="btn btn-primary"
+            type="submit"
+          >
+            Place Order
+          </button>
+
+
+          <div
+            id="form-error"
+            class="error"
+            role="alert"
+            aria-live="polite"
+          ></div>
+
+        </form>
+
+
+        <!-- SUCCESS -->
+
+        <div
+          id="success"
+          class="success"
+        >
+
+          <h2>
+            Order received
+          </h2>
+
+          <p>
+            Your order has been submitted — wait for confirmation.
+          </p>
+
+          <p id="success-detail"></p>
+
+          <a
+            class="btn btn-primary"
+            href="/menu/"
+          >
+            Order More
+          </a>
+
+        </div>
+
+      </section>
+
+    </div>
+
+  </div>
+
+</main>
+
+
+<script src="/config.js"></script>
+
+<script>
+(function () {
+
+  'use strict';
+
+
+  const C =
+    window.KITEEZI_CONFIG || {};
+
+
+  const SUPABASE_URL =
+    String(C.SUPABASE_URL || '')
+      .replace(/\/+$/, '');
+
+
+  const SUPABASE_KEY =
+    C.SUPABASE_ANON_KEY || '';
+
+
+  const CART_KEY =
+    'kiteezi_cart_v2';
+
+  const ORDER_REQUEST_KEY =
+    'kiteezi_order_request_id_v1';
+
+
+  const cartLines =
+    document.getElementById('cart-lines');
+
+
+  const cartTotal =
+    document.getElementById('cart-total');
+
+
+  const checkoutApp =
+    document.getElementById('checkout-app');
+
+
+  const emptyCart =
+    document.getElementById('empty');
+
+
+  const form =
+    document.getElementById('order-form');
+
+
+  const fulfillment =
+    document.getElementById('fulfillment');
+
+
+  const deliveryFields =
+    document.getElementById('delivery-fields');
+
+
+  const address =
+    document.getElementById('address');
+
+
+  const submitButton =
+    document.getElementById('submit');
+
+
+  const errorBox =
+    document.getElementById('form-error');
+
+
+  const successBox =
+    document.getElementById('success');
+
+
+  const successDetail =
+    document.getElementById('success-detail');
+
+
+  function humanOrderError(error, fallback='We could not submit your order right now. Please try again in a moment.') {
+    const message = String(error?.message ?? error ?? '').trim();
+    if (!message || message === '[object Object]') return fallback;
+    if (/(?:supabase|postgrest|pgrst|postgres|sql|schema|relation|column|constraint|permission denied|function .* does not exist|does not exist|http\s*\d{3}|\b(?:3f000|42883|42501|235\d{3})\b|fetch failed|network error|syntax error|jwt)/i.test(message) || /^\s*[\[{].*[\]}]\s*$/.test(message)) {
+      return fallback;
+    }
+    return message;
+  }
+
+  function money(value) {
+
+    return 'UGX ' +
+      new Intl.NumberFormat('en-UG')
+        .format(
+          Math.max(
+            0,
+            Number(value) || 0
+          )
+        );
+
+  }
+
+
+  function escapeHtml(value) {
+
+    return String(value ?? '')
+      .replace(
+        /[&<>"']/g,
+        character => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        }[character])
+      );
+
+  }
+
+
+  function readCart() {
+
+    try {
+
+      const stored =
+        JSON.parse(
+          localStorage.getItem(
+            CART_KEY
+          ) || '[]'
+        );
+
+
+      if (!Array.isArray(stored)) {
+        return [];
+      }
+
+
+      return stored
+        .map(item => ({
+
+          id:
+            item.id ||
+            item.menu_item_id,
+
+          name:
+            item.name ||
+            item.product_name ||
+            'Menu item',
+
+          price:
+            Number(
+              item.price ??
+              item.unit_price ??
+              item.product_price
+            ) || 0,
+
+          qty:
+            Math.max(
+              1,
+              Number(
+                item.qty ??
+                item.quantity
+              ) || 1
+            )
+
+        }))
+        .filter(item => item.id);
+
+    } catch (error) {
+
+      console.error(
+        'Cart could not be read:',
+        error
+      );
+
+      return [];
+
+    }
+
+  }
+
+
+  function writeCart(cart) {
+
+    localStorage.setItem(
+      CART_KEY,
+      JSON.stringify(cart)
+    );
+
+  }
+
+
+  let cart = readCart();
+
+  const availabilityBox = document.getElementById('cart-availability');
+
+  async function validateCartAvailability() {
+    if (!cart.length) {
+      availabilityBox.hidden = true;
+      return false;
+    }
+    const ids = cart.map(x => x.id).filter(Boolean);
+    const params = ids.map(id => encodeURIComponent(id)).join(',');
+    try {
+      const response = await fetch(
+        SUPABASE_URL + '/rest/v1/menu_items?select=id,name,in_stock,price,price_on_request&id=in.(' + params + ')',
+        { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' } }
+      );
+
+      if (!response.ok) {
+        throw new Error('availability check failed');
+      }
+
+      const rows = await response.json();
+      const byId = new Map((Array.isArray(rows) ? rows : []).map(x => [String(x.id), x]));
+      const unavailable = cart.filter(item => {
+        const row = byId.get(String(item.id));
+        return !row || row.in_stock !== true || row.price_on_request === true || Number(row.price || 0) <= 0;
+      });
+
+      if (unavailable.length) {
+        availabilityBox.hidden = false;
+        availabilityBox.innerHTML =
+          '<strong>Some items need your attention.</strong><br>' +
+          unavailable.map(x => {
+            const row = byId.get(String(x.id));
+            if (!row) {
+              return escapeHtml(x.name) + ' is no longer available on the menu.';
+            }
+            if (row.in_stock !== true) {
+              return escapeHtml(x.name) + ' is currently unavailable.';
+            }
+            return escapeHtml(x.name) + ' cannot be ordered online right now.';
+          }).join('<br>');
+
+        submitButton.disabled = true;
+        return false;
+      }
+
+      availabilityBox.hidden = true;
+      return true;
+    } catch (error) {
+      availabilityBox.hidden = false;
+      availabilityBox.textContent =
+        'We’re having trouble checking whether your selected items are still available. Please refresh the page and try again.';
+      submitButton.disabled = true;
+      return false;
+    }
+  }
+
+
+  function renderCart() {
+
+    if (!cart.length) {
+
+      checkoutApp.hidden =
+        true;
+
+      emptyCart.hidden =
+        false;
+
+      return;
+
+    }
+
+
+    checkoutApp.hidden =
+      false;
+
+    emptyCart.hidden =
+      true;
+
+
+    cartLines.innerHTML =
+      cart.map(
+        (item, index) => `
+
+          <div class="cart-line">
+
+            <div>
+
+              <strong>
+                ${escapeHtml(item.name)}
+              </strong>
+
+              <div class="muted">
+                ${money(item.price)} each
+              </div>
+
+            </div>
+
+
+            <div class="qty">
+
+              <button
+                type="button"
+                data-minus="${index}"
+                aria-label="Decrease ${escapeHtml(item.name)} quantity"
+              >
+                −
+              </button>
+
+              <strong>
+                ${item.qty}
+              </strong>
+
+              <button
+                type="button"
+                data-plus="${index}"
+                aria-label="Increase ${escapeHtml(item.name)} quantity"
+              >
+                +
+              </button>
+
+            </div>
+
+
+            <button
+              type="button"
+              class="remove"
+              data-remove="${index}"
+            >
+              Remove
+            </button>
+
+          </div>
+
+        `
+      ).join('');
+
+
+    const total =
+      cart.reduce(
+        (sum, item) =>
+          sum +
+          (
+            Number(item.price) || 0
+          ) *
+          (
+            Number(item.qty) || 0
+          ),
+        0
+      );
+
+
+    cartTotal.textContent = money(total);
+    validateCartAvailability();
+  }
+
+
+  cartLines.addEventListener(
+    'click',
+    event => {
+
+      const plus =
+        event.target.closest(
+          '[data-plus]'
+        );
+
+
+      const minus =
+        event.target.closest(
+          '[data-minus]'
+        );
+
+
+      const remove =
+        event.target.closest(
+          '[data-remove]'
+        );
+
+
+      if (plus) {
+
+        const index =
+          Number(
+            plus.dataset.plus
+          );
+
+
+        if (cart[index]) {
+
+          cart[index].qty += 1;
+
+          writeCart(cart);
+
+          renderCart();
+
+        }
+
+        return;
+
+      }
+
+
+      if (minus) {
+
+        const index =
+          Number(
+            minus.dataset.minus
+          );
+
+
+        if (cart[index]) {
+
+          cart[index].qty -= 1;
+
+
+          if (
+            cart[index].qty <= 0
+          ) {
+
+            cart.splice(
+              index,
+              1
+            );
+
+          }
+
+
+          writeCart(cart);
+
+          renderCart();
+
+        }
+
+        return;
+
+      }
+
+
+      if (remove) {
+
+        const index =
+          Number(
+            remove.dataset.remove
+          );
+
+
+        cart.splice(
+          index,
+          1
+        );
+
+
+        writeCart(cart);
+
+        renderCart();
+
+      }
+
+    }
+  );
+
+
+  function updateFulfillment() {
+
+    const isDelivery =
+      fulfillment.value ===
+      'delivery';
+
+
+    deliveryFields.classList.toggle(
+      'show',
+      isDelivery
+    );
+
+
+    address.required =
+      isDelivery;
+
+  }
+
+
+  fulfillment.addEventListener(
+    'change',
+    updateFulfillment
+  );
+
+
+  async function submitOrder() {
+
+    if (!cart.length) {
+      renderCart();
+      throw new Error('Your cart is empty.');
+    }
+
+    if (!(await validateCartAvailability())) {
+      throw new Error('Please review the availability message above before placing your order.');
+    }
+
+
+    if (
+      !SUPABASE_URL ||
+      !SUPABASE_KEY
+    ) {
+
+      throw new Error(
+        'The ordering service is temporarily unavailable. Please refresh and try again.'
+      );
+
+    }
+
+
+    const formData =
+      new FormData(form);
+
+
+    const customerName =
+      String(
+        formData.get('name') || ''
+      ).trim();
+
+
+    const phone =
+      String(
+        formData.get('phone') || ''
+      ).trim();
+
+
+    const email =
+      String(
+        formData.get('email') || ''
+      ).trim();
+
+
+    const method =
+      String(
+        formData.get('fulfillment') ||
+        'pickup'
+      ).trim()
+        .toLowerCase();
+
+
+    const deliveryAddress =
+      String(
+        formData.get('address') || ''
+      ).trim();
+
+
+    const notes =
+      String(
+        formData.get('notes') || ''
+      ).trim();
+
+
+    if (!customerName) {
+
+      throw new Error(
+        'Please enter your full name.'
+      );
+
+    }
+
+
+    if (!phone) {
+
+      throw new Error(
+        'Please enter your phone number.'
+      );
+
+    }
+
+
+    if (
+      method === 'delivery' &&
+      !deliveryAddress
+    ) {
+
+      throw new Error(
+        'Please enter your delivery address.'
+      );
+
+    }
+
+
+    /*
+     * The RPC receives only menu_item_id + qty.
+     *
+     * Supabase then reads the current price from menu_items.
+     * This prevents the browser from changing the price.
+     */
+
+    const items =
+      cart.map(item => ({
+
+        menu_item_id:
+          item.id,
+
+        qty:
+          Math.max(
+            1,
+            Number(item.qty) || 1
+          )
+
+      }));
+
+
+    let clientRequestId =
+      localStorage.getItem(ORDER_REQUEST_KEY);
+
+    if (!clientRequestId) {
+      clientRequestId =
+        (window.crypto && typeof window.crypto.randomUUID === 'function')
+          ? window.crypto.randomUUID()
+          : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, character => {
+              const random = Math.floor(Math.random() * 16);
+              const value = character === 'x' ? random : (random & 0x3) | 0x8;
+              return value.toString(16);
+            });
+      localStorage.setItem(ORDER_REQUEST_KEY, clientRequestId);
+    }
+
+    const response =
+      await fetch(
+        SUPABASE_URL +
+        '/rest/v1/rpc/place_website_order_idempotent',
+        {
+
+          method: 'POST',
+
+          headers: {
+
+            apikey:
+              SUPABASE_KEY,
+
+            Authorization:
+              'Bearer ' +
+              SUPABASE_KEY,
+
+            'Content-Type':
+              'application/json'
+
+          },
+
+          body:
+            JSON.stringify({
+
+              p_client_request_id:
+                clientRequestId,
+
+              p_customer_name:
+                customerName,
+
+              p_phone:
+                phone,
+
+              p_email:
+                email || null,
+
+              p_fulfillment_method:
+                method,
+
+              p_delivery_address:
+                deliveryAddress ||
+                null,
+
+              p_customer_notes:
+                notes ||
+                null,
+
+              p_items:
+                items
+
+            })
+
+        }
+      );
+
+
+    const responseText =
+      await response.text();
+
+
+    let responseData;
+
+
+    try {
+
+      responseData =
+        responseText
+          ? JSON.parse(
+              responseText
+            )
+          : null;
+
+    } catch {
+
+      responseData =
+        responseText;
+
+    }
+
+
+    if (!response.ok) {
+
+      const message =
+        typeof responseData ===
+        'string'
+          ? responseData
+          : (
+              responseData?.message ||
+              responseData?.error ||
+              responseData?.hint ||
+              'The order could not be submitted.'
+            );
+
+
+      throw new Error(
+        message
+      );
+
+    }
+
+
+    /*
+     * RETURNS TABLE(order_id uuid, order_total numeric)
+     *
+     * PostgREST normally returns an array.
+     */
+
+    const result =
+      Array.isArray(
+        responseData
+      )
+        ? responseData[0]
+        : responseData;
+
+
+    if (
+      !result ||
+      !result.order_id
+    ) {
+
+      throw new Error(
+        'Kiteezi did not return a valid order confirmation.'
+      );
+
+    }
+
+
+    return result;
+
+  }
+
+
+  form.addEventListener(
+    'submit',
+    async event => {
+
+      event.preventDefault();
+
+
+      errorBox.textContent =
+        '';
+
+
+      submitButton.disabled =
+        true;
+
+
+      submitButton.textContent =
+        'Submitting…';
+
+
+      try {
+
+        const result =
+          await submitOrder();
+
+
+        /*
+         * The database has accepted the order.
+         * Only clear the local cart after confirmation.
+         */
+
+        localStorage.setItem('kiteezi_track_phone_v1', phone);
+        localStorage.setItem('kiteezi_last_order_id_v1', String(result.order_id));
+
+        localStorage.removeItem(
+          CART_KEY
+        );
+        localStorage.removeItem(ORDER_REQUEST_KEY);
+
+
+        cart = [];
+
+
+        renderCart();
+
+
+        form.hidden =
+          true;
+
+
+        successDetail.innerHTML =
+          'Order reference: <strong>' +
+          escapeHtml(result.order_id) +
+          '</strong><br>' +
+          '<a class="btn btn-primary" style="margin-top:12px" href="/tracking/?type=order&id=' +
+          encodeURIComponent(result.order_id) +
+          '">Check order status</a>';
+
+        successBox.classList.add('show');
+
+
+      } catch (error) {
+
+        console.error(
+          'Order submission failed:',
+          error
+        );
+
+
+        errorBox.textContent =
+          humanOrderError(error);
+
+      } finally {
+
+        submitButton.disabled =
+          false;
+
+
+        submitButton.textContent =
+          'Place Order';
+
+      }
+
+    }
+  );
+
+
+  updateFulfillment();
+
+  renderCart();
+
+})();
+</script>
+
+<a class="kiteezi-inquiry-fallback" href="/inquiry/?type=general" style="position:fixed;right:16px;bottom:16px;z-index:9999;background:#d9b534;color:#10261c;padding:12px 18px;border-radius:999px;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.18);text-decoration:none;">Ask a question</a></body>
+</html>
