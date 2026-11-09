@@ -1280,6 +1280,7 @@ async function loadOrders(){
   let rows=await api(q);
   if(!rows.length){
     $('#ordersTable').innerHTML='<div class="state">No orders have been recorded yet.</div>';
+    if($('#orderStatusTable'))$('#orderStatusTable').innerHTML='<div class="state">No station progress has been recorded for the current orders.</div>';
     return;
   }
   if(['chef','barista'].includes(profile?.role)){
@@ -1449,7 +1450,11 @@ const html='<!doctype html><html><head><title>Receipt '+esc(id.slice(0,8).toUppe
 w.document.write(html);w.document.close();w.focus();setTimeout(()=>w.print(),250);
 }
 async function loadOrderItems(id){
-  setOrderMainView('items');
+  $('#orderCreatePanel').hidden=true;
+  $('#orderManagementPanel').hidden=false;
+  $('#stationWorkPanel').hidden=true;
+  $('#ordersMainNav [data-order-main]').forEach(b=>b.classList.toggle('active',b.dataset.orderMain==='items'));
+  setOrderView('items');
   const rows=await api('/rest/v1/order_items?select=id,order_id,qty,unit_price,item_name_snapshot,notes,menu_items(name,station_id,service_stations(name))&order_id=eq.'+encodeURIComponent(id)+'&order=id');
   const box=$('#orderItemsTable');if(!box)return;
   box.innerHTML=rows.length
