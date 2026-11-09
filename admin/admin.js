@@ -987,6 +987,11 @@ function posRenderCategories(groups){
   // the POS page by passing an undefined groups value.
   const safeGroups=Array.isArray(groups)?groups:[];
   box.innerHTML=safeGroups.map(([name])=>'<a class="menu-category-link" href="#'+posCategoryId(name)+'">'+esc(name)+'</a>').join('');
+  box.querySelectorAll('a.menu-category-link').forEach(link=>link.addEventListener('click',event=>{
+    event.preventDefault();
+    const target=document.getElementById(String(link.getAttribute('href')||'').slice(1));
+    if(target)target.scrollIntoView({behavior:'smooth',block:'start'});
+  }));
 }
 function posRenderProducts(){
   const box=$('#posProducts'),status=$('#posMenuStatus');if(!box||!status)return;
@@ -1184,7 +1189,7 @@ async function changeStationOrderStatus(orderId,stationId,status){
 
 function setOrderMainView(view){
   const key=String(view||'new');
-  const create=$('#orderCreatePanel'), manage=$('#orderManagementPanel'), station=$('#stationWorkPanel');
+  const create=$('#orderCreatePanel'),manage=$('#orderManagementPanel'),station=$('#stationWorkPanel');
   const stationRole=!!stationNameForRole();
   if(!create||!manage)return;
   if(stationRole){
@@ -1198,31 +1203,39 @@ function setOrderMainView(view){
     if(key==='station')loadStationOrders();
     return;
   }
-  if(station)station.hidden=true;
+  const isStationRegister=key==='station';
+  if(station)station.hidden=!isStationRegister;
   create.hidden=key!=='new';
-  manage.hidden=key==='new';
-  if(key!=='new') setOrderView(key==='status'?'status':key==='items'?'items':'orders');
+  manage.hidden=key==='new'||isStationRegister;
   $$('#ordersMainNav [data-order-main]').forEach(b=>{
     b.hidden=false;
     b.classList.toggle('active',b.dataset.orderMain===key);
   });
+  if(key==='orders'||key==='status')setOrderView(key);
+  if(key==='items'){setOrderView('items');loadAllOrderItems().catch(msg);}
+  if(isStationRegister)loadStationOrderRegister().catch(msg);
 }
 function setOrderView(view){
-  const orders=$('#ordersTable'),items=$('#orderItemsTable');
-  if(!orders||!items)return;
   const key=String(view||'orders');
-  orders.hidden=key==='items';
-  items.hidden=key!=='items';
-  orders.classList.toggle('order-view-status',key==='status');
-  orders.classList.toggle('order-view-orders',key==='orders');
-  document.querySelectorAll('#ordersSubnav [data-order-view]').forEach(b=>b.classList.toggle('active',b.dataset.orderView===key));
+  const orders=$('#ordersTable'),status=$('#orderStatusTable'),items=$('#orderItemsTable');
+  if(orders)orders.hidden=key!=='orders';
+  if(status)status.hidden=key!=='status';
+  if(items)items.hidden=key!=='items';
 }
 function setupOrderViews(){
   const main=$('#ordersMainNav');
   const stationRefresh=$('#refreshStationOrders');
   if(stationRefresh&&!stationRefresh.dataset.bound){
     stationRefresh.dataset.bound='1';
-    stationRefresh.addEventListener('click',()=>loadStationOrders());
+    stationRefresh.addEventListener('click',()=>{
+      if(stationNameForRole())loadStationOrders().catch(msg);
+      else loadStationOrderRegister().catch(msg);
+    });
+  }
+  const printStation=$('#printStationOrders');
+  if(printStation&&!printStation.dataset.bound){
+    printStation.dataset.bound='1';
+    printStation.addEventListener('click',()=>printStationOrders().catch(msg));
   }
   const stationBox=$('#stationOrdersTable');
   if(stationBox&&!stationBox.dataset.bound){
@@ -1241,20 +1254,6 @@ function setupOrderViews(){
       setOrderMainView(b.dataset.orderMain);
     });
   }
-  const sub=$('#ordersSubnav');if(!sub||sub.dataset.bound)return;
-  sub.dataset.bound='1';
-  sub.addEventListener('click',e=>{
-    const b=e.target.closest('[data-order-view]');if(!b)return;
-    setOrderView(b.dataset.orderView);
-  });
-  if(!document.getElementById('kiteezi-order-view-style')){
-    const style=document.createElement('style');
-    style.id='kiteezi-order-view-style';
-    style.textContent='#ordersTable.order-view-orders table th:nth-child(5),#ordersTable.order-view-orders table td:nth-child(5){display:none}#ordersTable.order-view-status table th:nth-child(3),#ordersTable.order-view-status table td:nth-child(3),#ordersTable.order-view-status table th:nth-child(6),#ordersTable.order-view-status table td:nth-child(6),#ordersTable.order-view-status table th:nth-child(7),#ordersTable.order-view-status table td:nth-child(7){display:none}';
-    document.head.appendChild(style);
-  }
-  setOrderView('orders');
-  setOrderMainView(stationNameForRole()?'station':'new');
 }
 function setupPos(){
   if(window.__KITEEZI_POS_BOUND__)return;window.__KITEEZI_POS_BOUND__=true;
@@ -1307,7 +1306,24 @@ async function loadOrders(){
     const normalized=normalizePhone(phone),digits=normalized.replace(/^\+/,'');
     return /^[1-9][0-9]{7,14}$/.test(digits)?'https://wa.me/'+digits+'?text='+encodeURIComponent(text):'';
   };
-  $('#ordersTable').innerHTML='<table><tr><th>Order</th><th>Customer</th><th>Fulfillment</th><th>Overall</th><th>Station Progress</th><th>Payment</th><th>Total</th><th>Actions</th></tr>'+
+  const statusBox=$('#orderStatusTable');
+  if(statusBox){
+    const statusRows=rows.flatMap(r=>stationRows(r.id).map(s=>{
+      const stationName=s.service_stations?.name||'Station';
+      const current=String(s.status||'waiting').toLowerCase();
+      const reason=s.cancellation_reason||'';
+      const canChange=['owner','manager','general_manager','ceo','reception_manager'].includes(profile?.role)||
+        (profile?.role==='chef'&&stationName==='Kitchen')||(profile?.role==='barista'&&stationName==='Barista');
+      const control=canChange&&['pending','open','confirmed'].includes(r.status)
+        ? '<select data-station-status="'+esc(r.id)+'" data-station-id="'+esc(s.station_id)+'" data-current-status="'+esc(current)+'"><option value="waiting" '+(current==='waiting'?'selected':'')+'>Waiting</option><option value="accepted" '+(current==='accepted'?'selected':'')+'>Accepted</option><option value="in_progress" '+(current==='in_progress'?'selected':'')+'>In Progress</option><option value="complete" '+(current==='complete'?'selected':'')+'>Completed</option><option value="cancelled" '+(current==='cancelled'?'selected':'')+'>Cancelled</option></select>'
+        : '<span class="pill">'+esc(stationStatusLabel(current))+'</span>';
+      return '<tr><td>#'+esc(String(r.id).slice(0,8).toUpperCase())+'</td><td>'+esc(r.customers?.name||'Customer')+'</td><td>'+esc(stationName)+'</td><td>'+control+'</td><td>'+esc(reason||'—')+'</td><td>'+esc(r.status||'')+'</td></tr>';
+    }));
+    statusBox.innerHTML=statusRows.length
+      ? '<table><tr><th>Order</th><th>Customer</th><th>Station</th><th>Station Status</th><th>Cancellation Reason</th><th>Overall Order</th></tr>'+statusRows.join('')+'</table>'
+      : '<div class="state">No station progress has been recorded for the current orders.</div>';
+  }
+  $('#ordersTable').innerHTML='<table><tr><th>Order</th><th>Customer</th><th>Fulfillment</th><th>Order Status</th><th>Payment</th><th>Total</th><th>Actions</th></tr>'+
     rows.map(r=>{
       const method=String(r.fulfillment_method||'pickup').toLowerCase(),customerName=r.customers?.name||'',phone=String(r.customers?.phone||'').trim();
       const station=stationRows(r.id);
@@ -1329,7 +1345,7 @@ async function loadOrders(){
       const cancelBtn=hasPermission('orders.cancel')&&(r.status!=='completed'&&r.status!=='cancelled')?'<button class="btn" data-admin-cancel="'+r.id+'" data-customer="'+esc(customerName)+'" data-phone="'+esc(phone)+'">Cancel</button> ':'';
       const itemsBtn='<button class="btn" data-items="'+r.id+'">Items</button> <button class="btn" data-receipt="'+r.id+'">Receipt</button> ';
       const deleteBtn=profile?.role==='owner'?'<button class="btn danger" data-delete-order="'+r.id+'">Delete</button>':'';
-      return '<tr data-items="'+r.id+'"><td>#'+esc(r.id.slice(0,8).toUpperCase())+'<br>'+esc(r.source)+'</td><td>'+esc(customerName)+'<br>'+esc(phone)+'</td><td>'+esc(method==='delivery'?'Delivery':method==='dine_in'?'Dine in':'Pickup from Kiteezi')+'</td><td>'+esc(r.status==='pending'||r.status==='open'?'Waiting for Confirmation':r.status==='confirmed'?'In Progress':r.status==='completed'?'Complete':r.status)+'</td><td>'+stationHtml+'</td><td>'+esc(r.payment_status)+'</td><td>UGX '+money(r.total)+'</td><td class="actions">'+confirmBtn+completeBtn+paidBtn+cancelBtn+itemsBtn+deleteBtn+'</td></tr>';
+      return '<tr data-items="'+r.id+'"><td>#'+esc(r.id.slice(0,8).toUpperCase())+'<br>'+esc(r.source)+'</td><td>'+esc(customerName)+'<br>'+esc(phone)+'</td><td>'+esc(method==='delivery'?'Delivery':method==='dine_in'?'Dine in':'Pickup from Kiteezi')+'</td><td><span class="pill">'+esc(r.status==='pending'||r.status==='open'?'Pending':r.status==='confirmed'?'Confirmed':r.status==='completed'?'Completed':r.status)+'</span></td><td>'+esc(r.payment_status||'unpaid')+'</td><td>UGX '+money(r.total)+'</td><td class="actions">'+confirmBtn+completeBtn+paidBtn+cancelBtn+itemsBtn+deleteBtn+'</td></tr>';
     }).join('')+'</table>';
   document.querySelectorAll('[data-confirm-wa]').forEach(x=>x.onclick=()=>confirmOrderWithCocktailChoice(x.dataset.confirmWa,'confirmed',null,x.dataset.wa,x.dataset.watext));
   document.querySelectorAll('[data-paid]').forEach(x=>x.onclick=()=>setOrder(x.dataset.paid,null,'paid'));
@@ -1337,8 +1353,13 @@ async function loadOrders(){
   document.querySelectorAll('[data-station-status]').forEach(x=>x.onchange=async()=>{
     const orderId=x.dataset.stationStatus;
     const newStatus=x.value;
+    let cancellationReason=null;
+    if(newStatus==='cancelled'){
+      cancellationReason=String(prompt('Enter the reason for cancelling this station order:')||'').trim();
+      if(!cancellationReason){x.value=x.dataset.currentStatus||'waiting';return;}
+    }
     try{
-      await api('/rest/v1/rpc/set_order_station_status',{method:'POST',body:JSON.stringify({p_order_id:orderId,p_station_id:x.dataset.stationId,p_status:newStatus})});
+      await api('/rest/v1/rpc/set_order_station_status',{method:'POST',body:JSON.stringify({p_order_id:orderId,p_station_id:x.dataset.stationId,p_status:newStatus,p_reason:cancellationReason})});
       const fresh=await api('/rest/v1/orders?select=id,status,fulfillment_method,customers(name,phone)&id=eq.'+encodeURIComponent(orderId)+'&limit=1');
       await loadOrders();
       const order=fresh?.[0];
@@ -1427,7 +1448,62 @@ const css='@page{size:'+pageSize+';margin:0}body{font:14px Arial,sans-serif;colo
 const html='<!doctype html><html><head><title>Receipt '+esc(id.slice(0,8).toUpperCase())+'</title><style>'+css+'</style></head><body class="print-'+esc(saved)+'"><div class="receipt"><div class="head"><div>'+(logo?'<img class="logo" src="'+esc(logo)+'" alt="Kiteezi Recreational Center">':'<h2>Kiteezi Recreational Center</h2>')+'</div><div class="meta"><strong>RECEIPT</strong><br>#'+esc(id.slice(0,8).toUpperCase())+'<br><span class="muted">'+esc(order.created_at||'')+'</span></div></div><p><strong>Customer:</strong> '+esc(order.customers?.name||'Walk-in customer')+'<br><strong>Phone:</strong> '+esc(order.customers?.phone||'')+'<br><strong>Payment:</strong> '+esc(order.payment_status||'unpaid')+'<br><strong>Fulfillment:</strong> '+esc(order.fulfillment_method||'pickup')+'</p><table class="items"><thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead><tbody>'+rows+'</tbody></table><div class="total">TOTAL: UGX '+money(order.total)+'</div><div class="foot">'+esc(cfg.business_name||'Kiteezi Recreational Center')+'<br>'+esc(cfg.phone||'')+'<br>Thank you for choosing Kiteezi.</div><div class="actions"><label>Printer paper: <select id="paper"><option value="58mm">58 mm thermal</option><option value="80mm">80 mm thermal</option><option value="a5">A5</option><option value="a4">A4</option></select></label> <button onclick="const v=document.getElementById(\'paper\').value;document.body.className=\'print-\'+v;localStorage.setItem(\'kiteezi-print-profile\',v);window.print()">Print / Save PDF</button></div></div><script>document.getElementById(\'paper\').value=\''+esc(saved)+'\';document.getElementById(\'paper\').addEventListener(\'change\',function(){document.body.className=\'print-\'+this.value;localStorage.setItem(\'kiteezi-print-profile\',this.value)})</script></body></html>';
 w.document.write(html);w.document.close();w.focus();setTimeout(()=>w.print(),250);
 }
-async function loadOrderItems(id){let r=await api('/rest/v1/order_items?select=id,qty,unit_price,item_name_snapshot,notes,menu_items(name,station_id,service_stations(name))&order_id=eq.'+id);if(['barista','chef'].includes(profile?.role)){const target=profile.role==='barista'?'Barista':'Kitchen';r=r.filter(x=>(x.menu_items?.service_stations?.name||'')===target)}$('#orderItemsTable').innerHTML='<table><tr><th>Item</th><th>Station</th><th>Qty</th><th>Price</th><th>Notes</th></tr>'+r.map(x=>'<tr><td>'+esc(x.item_name_snapshot||x.menu_items?.name||'')+'</td><td><span class="pill">'+esc(x.menu_items?.service_stations?.name||'Unassigned')+'</span></td><td>'+x.qty+'</td><td>UGX '+money(x.unit_price)+'</td><td>'+esc(x.notes||'')+'</td></tr>').join('')+'</table>'}
+async function loadOrderItems(id){
+  setOrderMainView('items');
+  const rows=await api('/rest/v1/order_items?select=id,order_id,qty,unit_price,item_name_snapshot,notes,menu_items(name,station_id,service_stations(name))&order_id=eq.'+encodeURIComponent(id)+'&order=id');
+  const box=$('#orderItemsTable');if(!box)return;
+  box.innerHTML=rows.length
+    ? '<h3>Items in order #'+esc(String(id).slice(0,8).toUpperCase())+'</h3><table><tr><th>Item</th><th>Station</th><th>Qty</th><th>Unit Price</th><th>Line Total</th><th>Notes</th></tr>'+rows.map(x=>'<tr><td>'+esc(x.item_name_snapshot||x.menu_items?.name||'')+'</td><td>'+esc(x.menu_items?.service_stations?.name||'Unassigned')+'</td><td>'+Number(x.qty||0)+'</td><td>UGX '+money(x.unit_price)+'</td><td>UGX '+money(Number(x.qty||0)*Number(x.unit_price||0))+'</td><td>'+esc(x.notes||'')+'</td></tr>').join('')+'</table>'
+    : '<div class="state">No items were found for this order.</div>';
+}
+async function loadAllOrderItems(){
+  const box=$('#orderItemsTable');if(!box)return;
+  box.innerHTML='<div class="state">Loading order items…</div>';
+  const [items,orders]=await Promise.all([
+    api('/rest/v1/order_items?select=id,order_id,qty,unit_price,item_name_snapshot,notes,menu_items(name,service_stations(name))&order=id'),
+    api('/rest/v1/orders?select=id,status,created_at,total,customers(name)&order=created_at.desc')
+  ]);
+  const orderMap=new Map(orders.map(o=>[o.id,o]));
+  const visible=items.filter(item=>{
+    const order=orderMap.get(item.order_id);
+    return order && (['chef','barista'].includes(profile?.role)
+      ? (item.menu_items?.service_stations?.name||'')===(profile.role==='barista'?'Barista':'Kitchen')
+      : true);
+  });
+  box.innerHTML=visible.length
+    ? '<table><tr><th>Order</th><th>Date</th><th>Customer</th><th>Order Status</th><th>Item</th><th>Station</th><th>Qty</th><th>Unit Price</th><th>Line Total</th><th>Notes</th></tr>'+visible.map(x=>{
+      const o=orderMap.get(x.order_id);
+      return '<tr><td>#'+esc(String(x.order_id).slice(0,8).toUpperCase())+'</td><td>'+esc(o?.created_at?new Date(o.created_at).toLocaleString():'')+'</td><td>'+esc(o?.customers?.name||'Customer')+'</td><td>'+esc(o?.status||'')+'</td><td>'+esc(x.item_name_snapshot||x.menu_items?.name||'')+'</td><td>'+esc(x.menu_items?.service_stations?.name||'Unassigned')+'</td><td>'+Number(x.qty||0)+'</td><td>UGX '+money(x.unit_price)+'</td><td>UGX '+money(Number(x.qty||0)*Number(x.unit_price||0))+'</td><td>'+esc(x.notes||'')+'</td></tr>';
+    }).join('')+'</table>'
+    : '<div class="state">No order items have been recorded.</div>';
+}
+async function loadStationOrderRegister(){
+  const box=$('#stationOrdersTable');if(!box)return;
+  box.innerHTML='<div class="state">Loading station order records…</div>';
+  const [orders,progress,items]=await Promise.all([
+    api('/rest/v1/orders?select=id,status,created_at,total,customers(name)&order=created_at.desc'),
+    api('/rest/v1/order_station_progress?select=order_id,station_id,status,cancellation_reason,cancelled_at,service_stations(name,sort_order)&order=order_id.asc,station_id.asc'),
+    api('/rest/v1/order_items?select=id,order_id,qty,item_name_snapshot,notes,menu_items(name,service_stations(name))&order=id')
+  ]);
+  const orderMap=new Map(orders.map(o=>[o.id,o]));
+  const records=progress.filter(p=>orderMap.has(p.order_id)).map(p=>{
+    const order=orderMap.get(p.order_id);
+    const stationName=p.service_stations?.name||'Unassigned';
+    const stationItems=items.filter(item=>item.order_id===p.order_id&&(item.menu_items?.service_stations?.name||'Unassigned')===stationName);
+    return {p,order,stationName,stationItems};
+  });
+  box.innerHTML=records.length
+    ? '<table><tr><th>Order</th><th>Date</th><th>Customer</th><th>Station</th><th>Items sent to station</th><th>Station Status</th><th>Cancellation Reason</th><th>Order Status</th><th>Total</th></tr>'+records.map(({p,order,stationName,stationItems})=>'<tr><td>#'+esc(String(order.id).slice(0,8).toUpperCase())+'</td><td>'+esc(order.created_at?new Date(order.created_at).toLocaleString():'')+'</td><td>'+esc(order.customers?.name||'Customer')+'</td><td>'+esc(stationName)+'</td><td>'+stationItems.map(x=>esc(x.qty)+' × '+esc(x.item_name_snapshot||x.menu_items?.name||'Item')).join('<br>')+'</td><td><span class="pill">'+esc(stationStatusLabel(p.status))+'</span></td><td>'+esc(p.cancellation_reason||'—')+'</td><td>'+esc(order.status||'')+'</td><td>UGX '+money(order.total)+'</td></tr>').join('')+'</table>'
+    : '<div class="state">No station order records have been recorded yet.</div>';
+}
+async function printStationOrders(){
+  const box=$('#stationOrdersTable');if(!box)throw Error('Station orders are not available.');
+  const w=window.open('','_blank','width=1000,height=800');
+  if(!w)throw Error('Please allow pop-ups to print station orders.');
+  w.document.write('<!doctype html><html><head><title>Kiteezi Station Orders</title><style>body{font:12px Arial,sans-serif;padding:24px;color:#17231c}h1{font-size:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #bbb;padding:7px;text-align:left;vertical-align:top}th{background:#edf2ee}@media print{button{display:none}}</style></head><body><h1>Kiteezi Recreational Center — Station Orders</h1><p>Printed: '+esc(new Date().toLocaleString())+'</p>'+box.innerHTML+'<script>window.onload=()=>window.print()<\/script></body></html>');
+  w.document.close();
+}
+
 
 async function loadRecipeMappings(){
   const box=$('#recipeTable'); if(!box)return;
@@ -2371,4 +2447,4 @@ function closeModal(){$('#modal').classList.remove('open');$('#modalBody').inner
 
 // admin-login.js owns the login submit handler.
 $('#bookingTable').addEventListener('click',handleBookingActionClick);
-$('#logout').onclick=async()=>{const button=$('#logout');if(button)button.disabled=true;try{if(session?.access_token)await api('/auth/v1/logout',{method:'POST'})}catch{}finally{clearAdminSession();session=null;profile=null;location.reload()}};$('#nav').addEventListener('click',e=>{const a=e.target.closest('[data-tab]');if(a){e.preventDefault();history.replaceState(null,'','#'+a.dataset.tab);route(a.dataset.tab)}});window.addEventListener('hashchange',()=>route(location.hash.slice(1)));$('#modalClose').onclick=closeModal;$('#refreshBookings').onclick=loadBookings;$('#refreshOrders').onclick=loadOrders;$('#refreshInventory').onclick=loadInventory;$('#refreshStockRun').onclick=loadDailyStock;$('#setOpeningStock').onclick=setOpeningStock;$('#notificationBell').onclick=toggleNotifications;$('#closeNotificationPanel').onclick=()=>{const panel=$('#notificationPanel');if(panel)panel.style.display='none';};$('#markNotificationsRead').onclick=markNotificationsRead;$('#countStock').onclick=async()=>{const inv=await api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc'),d=$('#stockRunDate').value||today(),existing=await api('/rest/v1/inventory_daily_counts?select=id,inventory_item_id,physical_quantity&count_date=eq.'+d);modal('Enter physical stock count','<form id="countForm" class="form">'+inv.map(x=>{const e=existing.find(q=>q.inventory_item_id===x.id);return '<label>'+esc(x.name)+' ('+esc(x.unit)+')<input name="'+x.id+'" type="number" step="0.001" min="0" value="'+(e?.physical_quantity??'')+'"></label>'}).join('')+'<button class="btn btn-dark">Save counts</button></form>');$('#countForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);for(const x of inv){const v=f.get(x.id);if(v!==null&&v!==''){const old=existing.find(q=>q.inventory_item_id===x.id),body={inventory_item_id:x.id,count_date:d,physical_quantity:Number(v),counted_by:session.user.id};await api(old?'/rest/v1/inventory_daily_counts?id=eq.'+old.id:'/rest/v1/inventory_daily_counts',{method:old?'PATCH':'POST',body:JSON.stringify(body)})}}closeModal();loadDailyStock()}};$('#refreshPurchases').onclick=loadPurchases;$('#newStockAdjustment').onclick=addStockAdjustment;$('#refreshMenu').onclick=loadMenu;$('#refreshServices').onclick=loadServices;$('#refreshInquiries').onclick=loadInquiries;$('#refreshSwimmingTimetable').onclick=loadSwimmingTimetable;$('#refreshSwimmingSessions').onclick=loadSwimmingSessions;$('#newTask').onclick=()=>editTask();$('#refreshTasks').onclick=loadTasks;$('#newSwimmingSlot').onclick=()=>editSwimmingSlot(null);$('#refreshPages').onclick=loadContent;$('#refreshMedia').onclick=loadContent;$('#refreshAnnouncements').onclick=loadContent;$('#refreshReviews').onclick=loadReviews;$('#refreshCustomers').onclick=loadCustomers;$('#refreshSocial').onclick=loadSocial;$('#newStaff').onclick=addStaff;$('#refreshStaff').onclick=loadStaff;$('#toggleInactiveStaff').onclick=()=>{showInactiveStaff=!showInactiveStaff;$('#toggleInactiveStaff').textContent=showInactiveStaff?'Hide inactive staff':'Show inactive staff';loadStaff().catch(msg)};$('#newTeamPosition').onclick=()=>editTeamPosition();$('#refreshAccounting').onclick=loadAccounting;$('#accountingCashGenerate').onclick=()=>loadAccountingCashReport().catch(msg);$('#accountingOpsGenerate')?.addEventListener('click',()=>loadAccountingOperations().catch(msg));$('#accountingOpsDepartment')?.addEventListener('change',()=>loadAccountingOperations().catch(msg));document.querySelectorAll('[data-report-word]').forEach(b=>b.onclick=()=>exportAccountingWord(b.dataset.reportWord).catch(msg));document.querySelectorAll('[data-report-print]').forEach(b=>b.onclick=()=>printAccountingPanel(b.dataset.reportPrint).catch(msg));$('#accountingCashDownload').onclick=()=>exportAccountingWord('cash').catch(msg);$('#refreshSettings').onclick=loadSettings;$('#refreshAccountSettings')?.addEventListener('click',()=>loadAccountSettings().catch(msg));$('#enablePushNotifications')?.addEventListener('click',enablePhoneNotifications);$('#disablePushNotifications')?.addEventListener('click',disablePhoneNotifications);$('#sendStaffNotification')?.addEventListener('click',()=>sendStaffNotification().catch(msg));$('#refreshRoles').onclick=loadRolesAndPermissions;$('#accountingSubnav')?.addEventListener('click',e=>{const b=e.target.closest('[data-accounting-view]');if(!b)return;loadAccountingView(b.dataset.accountingView).catch(msg)});$('#saveSettings').onclick=saveSettings;$('#openMyAccountSecurity')?.addEventListener('click',()=>openMyAccountSecurity().catch(msg));$('#newRequisition').onclick=()=>createRequisition();$('#refreshRequisitions').onclick=loadRequisitions;$('#refreshGeneratedPOs').onclick=loadGeneratedPOs;$('#newServiceLog').onclick=()=>newServiceLog();$('#refreshServiceTally').onclick=loadServiceTally;document.getElementById('newOrder')?.addEventListener('click',()=>{route('restaurant');posClear();setupPos();loadPosMenu().catch(msg)});$('#newSocial').onclick=()=>editSocial();$('#newInventoryItem').onclick=()=>editInventory();$('#manageStations').onclick=editStations;$('#inventorySearch').oninput=e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#inventoryTable tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none')};$('#newMenu').onclick=()=>editMenu(); $('#inventorySubnav')?.addEventListener('click',e=>{const b=e.target.closest('[data-inv-tab]');if(!b)return;document.querySelectorAll('#inventorySubnav [data-inv-tab]').forEach(x=>x.classList.toggle('active',x===b));const key=b.dataset.invTab;document.querySelectorAll('[id^="inventory-panel-"]').forEach(x=>x.style.display=x.id==='inventory-panel-'+key?'block':'none');const loaders={items:loadInventory,daily:loadDailyStock,purchases:loadPurchases,movements:loadStockMovements,recipes:loadRecipeMappings};(loaders[key]||loadInventory)().catch(msg)}); document.querySelectorAll('[id^="inventory-panel-"]').forEach(x=>x.style.display=x.id==='inventory-panel-items'?'block':'none');$('#newService').onclick=()=>editService();$('#newSport').onclick=()=>editSport();$('#newMedia').onclick=addMedia;$('#newGalleryMedia').onclick=addGalleryMedia;$('#refreshGallery').onclick=loadGallery;$('#newAnnouncement').onclick=addAnnouncement;setupPos();setupOrderViews();setOrderView('orders');restore();
+$('#logout').onclick=async()=>{const button=$('#logout');if(button)button.disabled=true;try{if(session?.access_token)await api('/auth/v1/logout',{method:'POST'})}catch{}finally{clearAdminSession();session=null;profile=null;location.reload()}};$('#nav').addEventListener('click',e=>{const a=e.target.closest('[data-tab]');if(a){e.preventDefault();history.replaceState(null,'','#'+a.dataset.tab);route(a.dataset.tab)}});window.addEventListener('hashchange',()=>route(location.hash.slice(1)));$('#modalClose').onclick=closeModal;$('#refreshBookings').onclick=loadBookings;$('#refreshOrders').onclick=()=>{const view=$('#ordersMainNav [data-order-main].active')?.dataset.orderMain||'orders';if(view==='items')loadAllOrderItems().catch(msg);else if(view==='station')loadStationOrderRegister().catch(msg);else loadOrders().catch(msg)};$('#refreshInventory').onclick=loadInventory;$('#refreshStockRun').onclick=loadDailyStock;$('#setOpeningStock').onclick=setOpeningStock;$('#notificationBell').onclick=toggleNotifications;$('#closeNotificationPanel').onclick=()=>{const panel=$('#notificationPanel');if(panel)panel.style.display='none';};$('#markNotificationsRead').onclick=markNotificationsRead;$('#countStock').onclick=async()=>{const inv=await api('/rest/v1/inventory_items?select=id,name,unit&active=eq.true&order=name.asc'),d=$('#stockRunDate').value||today(),existing=await api('/rest/v1/inventory_daily_counts?select=id,inventory_item_id,physical_quantity&count_date=eq.'+d);modal('Enter physical stock count','<form id="countForm" class="form">'+inv.map(x=>{const e=existing.find(q=>q.inventory_item_id===x.id);return '<label>'+esc(x.name)+' ('+esc(x.unit)+')<input name="'+x.id+'" type="number" step="0.001" min="0" value="'+(e?.physical_quantity??'')+'"></label>'}).join('')+'<button class="btn btn-dark">Save counts</button></form>');$('#countForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);for(const x of inv){const v=f.get(x.id);if(v!==null&&v!==''){const old=existing.find(q=>q.inventory_item_id===x.id),body={inventory_item_id:x.id,count_date:d,physical_quantity:Number(v),counted_by:session.user.id};await api(old?'/rest/v1/inventory_daily_counts?id=eq.'+old.id:'/rest/v1/inventory_daily_counts',{method:old?'PATCH':'POST',body:JSON.stringify(body)})}}closeModal();loadDailyStock()}};$('#refreshPurchases').onclick=loadPurchases;$('#newStockAdjustment').onclick=addStockAdjustment;$('#refreshMenu').onclick=loadMenu;$('#refreshServices').onclick=loadServices;$('#refreshInquiries').onclick=loadInquiries;$('#refreshSwimmingTimetable').onclick=loadSwimmingTimetable;$('#refreshSwimmingSessions').onclick=loadSwimmingSessions;$('#newTask').onclick=()=>editTask();$('#refreshTasks').onclick=loadTasks;$('#newSwimmingSlot').onclick=()=>editSwimmingSlot(null);$('#refreshPages').onclick=loadContent;$('#refreshMedia').onclick=loadContent;$('#refreshAnnouncements').onclick=loadContent;$('#refreshReviews').onclick=loadReviews;$('#refreshCustomers').onclick=loadCustomers;$('#refreshSocial').onclick=loadSocial;$('#newStaff').onclick=addStaff;$('#refreshStaff').onclick=loadStaff;$('#toggleInactiveStaff').onclick=()=>{showInactiveStaff=!showInactiveStaff;$('#toggleInactiveStaff').textContent=showInactiveStaff?'Hide inactive staff':'Show inactive staff';loadStaff().catch(msg)};$('#newTeamPosition').onclick=()=>editTeamPosition();$('#refreshAccounting').onclick=loadAccounting;$('#accountingCashGenerate').onclick=()=>loadAccountingCashReport().catch(msg);$('#accountingOpsGenerate')?.addEventListener('click',()=>loadAccountingOperations().catch(msg));$('#accountingOpsDepartment')?.addEventListener('change',()=>loadAccountingOperations().catch(msg));document.querySelectorAll('[data-report-word]').forEach(b=>b.onclick=()=>exportAccountingWord(b.dataset.reportWord).catch(msg));document.querySelectorAll('[data-report-print]').forEach(b=>b.onclick=()=>printAccountingPanel(b.dataset.reportPrint).catch(msg));$('#accountingCashDownload').onclick=()=>exportAccountingWord('cash').catch(msg);$('#refreshSettings').onclick=loadSettings;$('#refreshAccountSettings')?.addEventListener('click',()=>loadAccountSettings().catch(msg));$('#enablePushNotifications')?.addEventListener('click',enablePhoneNotifications);$('#disablePushNotifications')?.addEventListener('click',disablePhoneNotifications);$('#sendStaffNotification')?.addEventListener('click',()=>sendStaffNotification().catch(msg));$('#refreshRoles').onclick=loadRolesAndPermissions;$('#accountingSubnav')?.addEventListener('click',e=>{const b=e.target.closest('[data-accounting-view]');if(!b)return;loadAccountingView(b.dataset.accountingView).catch(msg)});$('#saveSettings').onclick=saveSettings;$('#openMyAccountSecurity')?.addEventListener('click',()=>openMyAccountSecurity().catch(msg));$('#newRequisition').onclick=()=>createRequisition();$('#refreshRequisitions').onclick=loadRequisitions;$('#refreshGeneratedPOs').onclick=loadGeneratedPOs;$('#newServiceLog').onclick=()=>newServiceLog();$('#refreshServiceTally').onclick=loadServiceTally;document.getElementById('newOrder')?.addEventListener('click',()=>{route('restaurant');posClear();setupPos();loadPosMenu().catch(msg)});$('#newSocial').onclick=()=>editSocial();$('#newInventoryItem').onclick=()=>editInventory();$('#manageStations').onclick=editStations;$('#inventorySearch').oninput=e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#inventoryTable tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none')};$('#newMenu').onclick=()=>editMenu(); $('#inventorySubnav')?.addEventListener('click',e=>{const b=e.target.closest('[data-inv-tab]');if(!b)return;document.querySelectorAll('#inventorySubnav [data-inv-tab]').forEach(x=>x.classList.toggle('active',x===b));const key=b.dataset.invTab;document.querySelectorAll('[id^="inventory-panel-"]').forEach(x=>x.style.display=x.id==='inventory-panel-'+key?'block':'none');const loaders={items:loadInventory,daily:loadDailyStock,purchases:loadPurchases,movements:loadStockMovements,recipes:loadRecipeMappings};(loaders[key]||loadInventory)().catch(msg)}); document.querySelectorAll('[id^="inventory-panel-"]').forEach(x=>x.style.display=x.id==='inventory-panel-items'?'block':'none');$('#newService').onclick=()=>editService();$('#newSport').onclick=()=>editSport();$('#newMedia').onclick=addMedia;$('#newGalleryMedia').onclick=addGalleryMedia;$('#refreshGallery').onclick=loadGallery;$('#newAnnouncement').onclick=addAnnouncement;setupPos();setupOrderViews();setOrderView('orders');restore();
