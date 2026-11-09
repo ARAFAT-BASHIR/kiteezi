@@ -685,7 +685,7 @@
     else if (path.includes('sports')) type = 'sports';
     else if (path.includes('events')) type = 'events';
     else if (path.includes('booking')) type = 'general';
-    if (path.endsWith('//inquiry/') || path.includes('/admin/')) return;
+    if (path.endsWith('/inquiry/') || path.includes('/admin/')) return;
     const link = document.createElement('a');
     link.href = '/inquiry/?type=' + encodeURIComponent(type);
     link.className = 'kiteezi-inquiry-float';
