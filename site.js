@@ -588,7 +588,7 @@
           'click',
           () => {
             window.location.href =
-              'checkout.html';
+              '/checkout/';
           }
         );
       });
@@ -609,9 +609,9 @@
           <p>Swimming, dining, sports, gardens, celebrations and everyday relaxation in Kiteezi.</p>
           <div class="socials" data-social-links aria-label="Social media"></div>
         </div>
-        <div><h4>Explore</h4><a href="index.html">Home</a><a href="menu.html">Restaurant &amp; Menu</a><a href="events.html">Events &amp; Catering</a><a href="sports.html">Sports</a><a href="about.html">About Kiteezi</a><a href="gallery.html">Gallery</a></div>
-        <div><h4>Swimming</h4><a href="booking.html?service=swimming">Public Swimming</a><a href="swimming-schedule.html">School Swimming</a><a href="inquiry.html?type=coaching">Swimming Training</a><a href="inquiry.html?type=swimming">Swimming Enquiries</a></div>
-        <div><h4>Contact</h4><a data-site-setting="phone" href="#">+256 766 529086</a><a data-site-setting-href="business_email" href="#">Business email</a><a data-site-setting="whatsapp" data-site-setting-href="whatsapp_link" href="#" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><span aria-hidden="true">◉</span></a><a data-site-setting-href="location_url" href="#" target="_blank" rel="noopener noreferrer">Location</a><a href="contact.html">Contact page</a></div>
+        <div><h4>Explore</h4><a href="/">Home</a><a href="/menu/">Restaurant &amp; Menu</a><a href="/events/">Events &amp; Catering</a><a href="/sports/">Sports</a><a href="/about/">About Kiteezi</a><a href="/gallery/">Gallery</a></div>
+        <div><h4>Swimming</h4><a href="/booking/?service=swimming">Public Swimming</a><a href="/swimming-schedule/">School Swimming</a><a href="/inquiry/?type=coaching">Swimming Training</a><a href="/inquiry/?type=swimming">Swimming Enquiries</a></div>
+        <div><h4>Contact</h4><a data-site-setting="phone" href="#">+256 766 529086</a><a data-site-setting-href="business_email" href="#">Business email</a><a data-site-setting="whatsapp" data-site-setting-href="whatsapp_link" href="#" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><span aria-hidden="true">◉</span></a><a data-site-setting-href="location_url" href="#" target="_blank" rel="noopener noreferrer">Location</a><a href="/contact/">Contact page</a></div>
       </div>
       <div class="container copyright">© <span data-year></span> Kiteezi Recreational Center. All rights reserved.</div>`;
   }
@@ -670,7 +670,7 @@
       if (!link.dataset.siteSetting && !link.dataset.social) event.preventDefault();
       else if (link.getAttribute('href') === '#') {
         event.preventDefault();
-        window.location.href = 'contact.html';
+        window.location.href = '/contact/';
       }
     });
   }
@@ -685,9 +685,9 @@
     else if (path.includes('sports')) type = 'sports';
     else if (path.includes('events')) type = 'events';
     else if (path.includes('booking')) type = 'general';
-    if (path.endsWith('/inquiry.html') || path.includes('/admin/')) return;
+    if (path.endsWith('//inquiry/') || path.includes('/admin/')) return;
     const link = document.createElement('a');
-    link.href = 'inquiry.html?type=' + encodeURIComponent(type);
+    link.href = '/inquiry/?type=' + encodeURIComponent(type);
     link.className = 'kiteezi-inquiry-float';
     link.textContent = 'Ask a question';
     link.setAttribute('aria-label', 'Ask Kiteezi a question');
