@@ -1841,7 +1841,7 @@ async function editMedia(id){
   if(!x)throw Error('Website image not found.');
   const {categories,people}=await mediaPlacementData();
   const preset=mediaPresetForRow(x,categories,people);
-  modal('Website image','<form id="ed" class="form"><input name="title" value="'+esc(x.title||'')+'" placeholder="Image title" required><label>Replace image from device<input name="file" type="file" accept="image/*"><small class="muted">Upload a real image file. Maximum 50 MB. Existing image remains if no replacement is selected.</small></label><input name="alt" value="'+esc(x.alt_text||'')+'" placeholder="Descriptive alt text" required><label>Image placement<select name="preset">'+mediaPresetOptions(categories,people,preset)+'</select></label><div data-media-custom-fields><input name="pageCustom" value="'+esc(x.page_slug||'')+'" placeholder="Page slug"><input name="areaCustom" value="'+esc(x.area||'')+'" placeholder="Website area"><input name="slotCustom" value="'+esc(x.slot_key||'')+'" placeholder="Image position"></div><input name="page" type="hidden" value="'+esc(x.page_slug||'')+'"><input name="area" type="hidden" value="'+esc(x.area||'')+'"><input name="slot" type="hidden" value="'+esc(x.slot_key||'')+'"><input name="sort" type="number" value="'+Number(x.sort_order||0)+'"><label>Active <input name="active" type="checkbox" '+(x.active?'checked':'')+'></label><button class="btn btn-dark" type="submit">Save image</button></form>');
+  modal('Website image','<form id="ed" class="form"><input name="title" value="'+esc(x.title||'')+'" placeholder="Image title" required><label>Replace image from device<input name="file" type="file" accept="image/*"><small class="muted">Upload a real image file. Maximum 50 MB. Existing image remains if no replacement is selected.</small></label><input name="alt" value="'+esc(x.alt_text||'')+'" placeholder="Descriptive alt text" required><label>Image placement<select name="preset">'+mediaPresetOptions(categories,people,preset)+'</select></label><div data-media-custom-fields><input name="pageCustom" value="'+esc(x.page_slug||'')+'" placeholder="Page slug"><input name="areaCustom" value="'+esc(x.area||'')+'" placeholder="Website area"><input name="slotCustom" value="'+esc(x.slot_key||'')+'" placeholder="Image position"></div><input name="page" type="hidden" value="'+esc(x.page_slug||'')+'"><input name="area" type="hidden" value="'+esc(x.area||'')+'"><input name="slot" type="hidden" value="'+esc(x.slot_key||'')+'"><input name="sort" type="number" value="'+Number(x.sort_order||0)+'"><label>Active <input name="active" type="checkbox" '+(x.active?'checked':'')+'></label><button class="btn btn-dark" type="submit">Save image</button><p data-media-save-status role="status" aria-live="polite" class="muted" hidden></p></form>');
   const form=$('#ed'),presetSelect=form.querySelector('[name="preset"]');
   const replaceInput=form.querySelector('[name="file"]');
   replaceInput.addEventListener('change',()=>{const file=replaceInput.files?.[0],title=form.querySelector('[name="title"]'),alt=form.querySelector('[name="alt"]');if(file){if(!title.value.trim())title.value=suggestedImageTitle(file);if(!alt.value.trim())alt.value=suggestedImageTitle(file)}});
@@ -1859,13 +1859,18 @@ async function editMedia(id){
   presetSelect.addEventListener('change',syncPlacement);syncPlacement();
   form.onsubmit=async e=>{
     e.preventDefault();
-    const f=new FormData(form),file=f.get('file');
+    const f=new FormData(form),file=f.get('file'),button=form.querySelector('button[type="submit"]'),status=form.querySelector('[data-media-save-status]');
+    if(button?.disabled)return;
+    const setStatus=(message)=>{if(status){status.hidden=!message;status.textContent=message}};
     let imageUrl=x.url;
     try{
+      if(button){button.disabled=true;button.textContent='Preparing…'}
       if(file instanceof File&&file.size){
         if(file.size>52428800)throw Error('File exceeds the 50 MB limit.');
         imageFileExtension(file);
         const path='site/'+generateUniqueId()+'.'+imageFileExtension(file);
+        if(button)button.textContent='Uploading image…';
+        setStatus('Uploading image to storage. Keep this window open.');
         await storageUpload('site-media',path,file);
         imageUrl=SUPABASE_URL+'/storage/v1/object/public/site-media/'+path.split('/').map(encodeURIComponent).join('/');
       }
@@ -1876,12 +1881,22 @@ async function editMedia(id){
       if(!imageUrl)throw Error('Upload an image before saving.');
       if(!alt)throw Error('Alt text is required.');
       if(!page.value||!area.value||!slot.value)throw Error('Choose a valid image placement.');
+      if(button)button.textContent='Saving image details…';
+      setStatus('Image uploaded. Saving its website details…');
       await api('/rest/v1/media?id=eq.'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({
         title:String(f.get('title')||'').trim(),url:imageUrl,alt_text:alt,page_slug:page.value,area:area.value,slot_key:slot.value,
         sort_order:Number(f.get('sort')||0),active:f.get('active')==='on'
       })});
-      closeModal();await loadContent();
-    }catch(err){msg(err)}
+      if(button)button.textContent='Saved';
+      setStatus('Image saved successfully. Refreshing the content list…');
+      await loadContent();
+      closeModal();
+    }catch(err){
+      setStatus('Save failed: '+humanAdminError(err,'Please try again.'));
+      msg(err);
+    }finally{
+      if(button&&form.isConnected){button.disabled=false;button.textContent='Save image'}
+    }
   };
 }
 async function editAnnouncement(id){const x=(await api('/rest/v1/announcements?id=eq.'+id))[0];modal('Announcement','<form id="ed" class="form"><input name="title" value="'+esc(x.title)+'" required><textarea name="body">'+esc(x.body||'')+'</textarea><label>Published <input name="published" type="checkbox" '+(x.published?'checked':'')+'></label><button class="btn btn-dark">Save</button></form>');$('#ed').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);await api('/rest/v1/announcements?id=eq.'+id,{method:'PATCH',body:JSON.stringify({title:f.get('title'),body:f.get('body'),published:f.get('published')==='on'})});closeModal();loadContent()}}
