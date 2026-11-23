@@ -42,7 +42,7 @@ const setHTML=(s,v)=>{const el=$(s);if(el)el.innerHTML=v;};
 const setText=(s,v)=>{const el=$(s);if(el)el.textContent=v;};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function generateUniqueId(){
-  try{if(window.crypto&&typeof window.crypto.randomUUID==='function')return window.generateUniqueId()}catch{}
+  try{if(window.crypto&&typeof window.crypto.randomUUID==='function')return window.crypto.randomUUID()}catch{}
   const bytes=new Uint8Array(16);
   try{if(window.crypto&&typeof window.crypto.getRandomValues==='function')window.crypto.getRandomValues(bytes);else throw Error('Secure random unavailable')}
   catch{for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256)}
